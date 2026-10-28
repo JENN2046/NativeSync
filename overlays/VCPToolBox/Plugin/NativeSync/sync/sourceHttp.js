@@ -1,7 +1,7 @@
 'use strict';
 const {identity}=require('./protocol');
 const fail=(code,status=403)=>Object.assign(Error(code),{code,status});
-const binding=req=>({sourceId:req.headers?.['x-nativesync-source'],deviceId:req.headers?.['x-nativesync-device'],spaceId:req.headers?.['x-nativesync-space']});
+const binding=req=>({sourceId:req.headers?.['x-nativesync-source'],deviceId:req.headers?.['x-nativesync-device'],spaceId:req.headers?.['x-nativesync-space'],scopeHash:req.headers?.['x-nativesync-scope']});
 function scopeRequest(store,req){
  if(req.nativeSyncScopeApplied)return;
  const full=req.headers?.['x-nativesync-source'],selected=req.headers?.['x-nativesync-topics'];
@@ -26,11 +26,12 @@ function scopeRequest(store,req){
 }
 async function body(req){if(req.body!==undefined)return req.body;let raw='';for await(const chunk of req){raw+=chunk;if(Buffer.byteLength(raw)>128000)throw fail('BODY_TOO_LARGE',413);}try{return JSON.parse(raw);}catch{throw fail('INVALID_SOURCE_REQUEST',400);}}
 async function sourceRequest(store,req,url){
+ if(req.headers?.['x-nativesync-topics']!==undefined)throw fail('AMBIGUOUS_SYNC_SCOPE',400);
  const catalog=store.sourceCatalog;if(!catalog)throw fail('SOURCE_PROTOCOL_UNAVAILABLE',409);
  if(req.nativeSyncTopics!==undefined)throw fail('SOURCE_ADMIN_REQUIRED');
  if(req.method==='GET'&&url.pathname==='/source/info'){
   if([...url.searchParams.keys()].some(k=>!['sourceId','deviceId'].includes(k)))throw fail('INVALID_SOURCE_REQUEST',400);
-  return catalog.info(url.searchParams.get('sourceId'),url.searchParams.get('deviceId'));
+  return catalog.info(url.searchParams.get('sourceId'),url.searchParams.get('deviceId'),req.headers?.['x-nativesync-scope']);
  }
  const bound=binding(req);catalog.binding(bound);
  if(req.method==='POST'&&url.pathname==='/source/catalog')return catalog.publish(bound,await body(req));

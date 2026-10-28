@@ -8,14 +8,16 @@ async function plain(file,{directory=false,missing=false}={}){
 }
 // Native config membership is authoritative. Missing/failed reads are observations,
 // never deletions. In particular, do not upload the get-agents DTO or its prompts.
-async function sourceDirectory({appDataRoot,readAgentConfig,readGroupConfig}){
+async function sourceDirectory({appDataRoot,readAgentConfig,readGroupConfig,connection}){
  const agents=[],topics=[],errors=[],root=path.resolve(appDataRoot);
+ const {normalizeScope,permits}=require('./sourceScope'),scope=normalizeScope(connection?.sourceScope);
  await plain(root,{directory:true});
  for(const [ownerType,folder,read]of [['agent','Agents',readAgentConfig],['group','AgentGroups',readGroupConfig]]){
   const dir=path.join(root,folder);if(!await plain(dir,{directory:true,missing:true}))continue;
   const entries=await fs.readdir(dir,{withFileTypes:true});
   for(const entry of entries){if(!entry.isDirectory()||entry.isSymbolicLink())continue;
    const ownerId=entry.name;
+   if(!permits(scope,{ownerType,ownerId},true))continue;
    try{
     identity({ownerType,ownerId,topicId:'_',msgId:'_'});await plain(path.join(dir,ownerId),{directory:true});
     await plain(path.join(dir,ownerId,'config.json'));
@@ -25,6 +27,7 @@ async function sourceDirectory({appDataRoot,readAgentConfig,readGroupConfig}){
     const own={ownerType,ownerId,name:String(config.name||ownerId).slice(0,200),avatar:null};agents.push(own);
     const ids=new Set();
     for(const t of config.topics){
+     if(!permits(scope,{ownerType,ownerId,topicId:t.id}))continue;
      identity({ownerType,ownerId,topicId:t.id,msgId:'_'});if(ids.has(t.id))throw fail('SOURCE_DUPLICATE_TOPIC');ids.add(t.id);
      const history=path.join(root,'UserData',ownerId,'topics',t.id,'history.json');
      await assertHistoryPath(root,history);
@@ -37,6 +40,7 @@ async function sourceDirectory({appDataRoot,readAgentConfig,readGroupConfig}){
      const children=path.join(root,'UserData',ownerId,'topics');await assertHistoryPath(root,path.join(children,'_','history.json'));
      const dirs=await fs.readdir(children,{withFileTypes:true}).catch(e=>{if(e.code==='ENOENT')return [];throw e;});
      for(const d of dirs){if(!d.isDirectory()||!/^sidechat_\d+_[0-9a-f]+$/.test(d.name)||ids.has(d.name))continue;
+      if(!permits(scope,{ownerType,ownerId,topicId:d.name}))continue;
       const cd=path.join(children,d.name);await plain(cd,{directory:true});
       const markerFile=path.join(cd,'sidechat-child.json');if(!await plain(markerFile,{missing:true}))continue;
       const marker=JSON.parse(await fs.readFile(markerFile,'utf8'));

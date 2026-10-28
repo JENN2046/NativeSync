@@ -14,7 +14,7 @@ function reserveOwner(queue, root) {
 }
 
 function syncHeaders(connection){
-    if(connection.scopeMode==='source')return {'X-NativeSync-Source':connection.sourceId,'X-NativeSync-Device':connection.deviceId,'X-NativeSync-Space':connection.spaceId};
+    if(connection.scopeMode==='source')return {'X-NativeSync-Source':connection.sourceId,'X-NativeSync-Device':connection.deviceId,'X-NativeSync-Space':connection.spaceId,...(require('./sourceScope').scopeHash(connection.sourceScope)?{'X-NativeSync-Scope':require('./sourceScope').scopeHash(connection.sourceScope)}:{})};
     return connection.topics?.length?{'X-NativeSync-Topics':Buffer.from(JSON.stringify(connection.topics.map(t=>[t.itemType||'agent',t.itemId,t.topicId]))).toString('base64url')}:{};
 }
 function createSyncRequest(connection,timeoutMs=8000) {

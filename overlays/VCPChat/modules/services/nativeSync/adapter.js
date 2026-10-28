@@ -47,6 +47,7 @@ class NativeSyncAdapter {
         if (!adapter.state||typeof adapter.state!=='object'||adapter.state.deviceId !== adapter.deviceId || ![1,2].includes(adapter.state.version) || !Array.isArray(adapter.state.outbox) || !Number.isSafeInteger(adapter.state.cursor) || adapter.state.cursor < 0 || !adapter.state.acked) throw fail('INVALID_SYNC_STATE');
         if(!adapter.state.source&&options.source&&options.sourceAdoptionVerified===true)adapter.state.source=structuredClone(options.source);
         if (JSON.stringify(adapter.state.source?.binding||null)!==JSON.stringify(adapter.source?.binding||null)) throw fail('SOURCE_BINDING_CHANGED');
+        if(adapter.source&&adapter.state.topics.some(d=>!adapter.sourcePermits(d)))throw fail('SOURCE_SCOPE_MISMATCH');
         if (JSON.stringify(adapter.state.topics) !== JSON.stringify(adapter.topics)) throw fail('OWNER_BINDING_CHANGED');
         if (adapter.state.version===1) {
             const backup=adapter.statePath+'.v1-backup.'+sha256(JSON.stringify(adapter.state)).slice(0,16);
@@ -61,7 +62,7 @@ class NativeSyncAdapter {
         try { await adapter.recover(); }
         catch (error) { await adapter.recordDegradation(error); }
         return adapter;
-        } catch(error) { adapter.startupError=error.code||'SYNC_STARTUP_FAILED';if(activePaths.get(ownerKey)===adapter)activePaths.delete(ownerKey);throw error; }
+        } catch(error) { adapter.startupError=error.code||'SYNC_STARTUP_FAILED';if(policy?.isRecoveryFence)adapter.queue.configureSync(policy);if(activePaths.get(ownerKey)===adapter)activePaths.delete(ownerKey);throw error; }
         finally { openingQueues.delete(adapter.queue); }
     }
 
@@ -69,7 +70,7 @@ class NativeSyncAdapter {
         const endpoint = new URL(url);
         if (!(endpoint.protocol === 'https:' || (endpoint.protocol === 'http:' && endpoint.hostname === '127.0.0.1')) || endpoint.username || endpoint.password || endpoint.pathname !== '/' || endpoint.search || endpoint.hash) throw fail('PROTECTED_SYNC_ENDPOINT_REQUIRED');
         if (!queue || !deviceId || !statePath || !token || !Array.isArray(topics) || (!source&&!topics.length)) throw fail('INVALID_SYNC_OPTIONS');
-        this.source=source;this.fullSource=Boolean(source);
+        this.source=source;this.fullSource=Boolean(source)&&!require('./sourceScope').normalizeScope(source?.binding?.scope);
         this.queue = queue; this.statePath = statePath; this.deviceId = deviceId;
         this.url = endpoint.origin; this.token = token; this.notify = notify; this.persist = persist;
         this.requestOverride = request; this.tail = Promise.resolve(); this.busy = false;
@@ -86,6 +87,12 @@ class NativeSyncAdapter {
         this.state = { version: 2,format:'native-message-intents-v1', deviceId, topics: this.topics, cursor: 0, acked: {}, outbox: [], pending: null,localCommits:{},receipts:{},inbox:[],drift:{},...(source?{source:structuredClone(source)}:{}) };
     }
 
+    outsideSource(d){
+        if(!this.source||this.sourcePermits(d)||this.isEnabled(d))return false;
+        const file=this.queue.getHistoryPath(d.itemId,d.topicId),key=process.platform==='win32'?file.toLowerCase():file;
+        if(this.bindings.has(key))throw fail('OWNER_PATH_CONFLICT');return true;
+    }
+    sourcePermits(d){return Boolean(this.source)&&require('./sourceScope').permits(this.source.binding.scope,d);}
     canonical(raw,topicId){return this.source?require('./sourceSnapshot').canonicalSourceMessage(raw,topicId):canonicalMessage(raw,topicId);}
     isEnabled(d) {
         return this.topics.some(t => t.itemId === d.itemId && t.itemType === (d.itemType || 'agent') && t.topicId === d.topicId);
@@ -93,17 +100,18 @@ class NativeSyncAdapter {
     recoveryFence(code) {
         const adapter=this;
         const beforeWrite=async d=>{
-            if(adapter.source||adapter.isEnabled(d))throw fail(adapter.startupError||code);
+            if(adapter.fullSource||adapter.sourcePermits(d)||adapter.isEnabled(d))throw fail(adapter.startupError||code);
             const file=adapter.queue.getHistoryPath(d.itemId,d.topicId),key=process.platform==='win32'?file.toLowerCase():file;
             if(adapter.bindings.has(key))throw fail('OWNER_PATH_CONFLICT');
         };
-        return {isRecoveryFence:true,fullSource:Boolean(this.source),topics:this.topics,isEnabled:d=>adapter.isEnabled(d),beforeMutation:beforeWrite,beforeWrite,
+        return {isRecoveryFence:true,fullSource:this.fullSource,topics:this.topics,isEnabled:d=>adapter.isEnabled(d),beforeMutation:beforeWrite,beforeWrite,
             beforeRead:async d=>{if(adapter.isEnabled(d)){adapter.assertTopic(d);await adapter.assertPhysicalPath(d);}},
             retryLocalCommit:async()=>{throw fail(adapter.startupError||code);},
             diagnostics:()=>({enabled:true,degraded:adapter.startupError||code,readOnly:true,selectedTopics:adapter.topics.length,localCommits:[],outboxSize:adapter.state?.outbox?.length||0,pending:false})};
     }
     async addSourceTopic(d) {
         if(!this.source)throw fail('FULL_SOURCE_REQUIRED');
+        if(!this.sourcePermits(d))throw fail('SOURCE_TOPIC_NOT_APPROVED');
         const normalized={itemId:d.itemId,itemType:d.itemType||'agent',topicId:d.topicId};
         identity({...wireTopic(normalized),msgId:'_binding'});
         if(this.isEnabled(normalized))return;
@@ -169,6 +177,7 @@ class NativeSyncAdapter {
         if(proof&&(d.syncSource!=='remote'||!this.sameEvent(proof.event,d.syncEvent)))throw fail('SYNC_RECOVERY_REQUIRED');
     }
     async beforeMutation(d) {
+        if(this.outsideSource(d))return;
         if(this.sourceDeletionActive(d)||this.sourceDeleted?.(d))throw fail('SOURCE_DIRECTORY_DELETED');
         if(this.source&&!this.sourceExpected&&d.syncSource!=='remote'&&!d.syncResumeCommitId)throw fail('SOURCE_STARTUP_RECOVERY_REQUIRED');
         if(this.source&&!this.isEnabled(d)&&d.syncSource!=='remote'){if(!this.ensureSourceTopic)throw fail('SOURCE_TOPIC_NOT_ATTACHED');await this.ensureSourceTopic(d);}
@@ -185,6 +194,7 @@ class NativeSyncAdapter {
         }
     }
     async beforeWrite(d) {
+        if(this.outsideSource(d))return;
         if(this.sourceDeletionActive(d))throw fail('SOURCE_DIRECTORY_DELETED');
         if(this.source&&!this.sourceExpected&&d.syncSource!=='remote'&&!d.syncResumeCommitId)throw fail('SOURCE_STARTUP_RECOVERY_REQUIRED');
         if(this.source&&!this.isEnabled(d)&&d.syncSource!=='remote'){if(!this.ensureSourceTopic)throw fail('SOURCE_TOPIC_NOT_ATTACHED');await this.ensureSourceTopic(d);}

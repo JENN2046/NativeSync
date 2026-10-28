@@ -1,4 +1,5 @@
 'use strict';
+const {normalizeScope,scopeHash,permits}=require('./sourceScope');
 const {randomUUID}=require('node:crypto');
 const {identity,stable,sha256}=require('./protocol');
 const fail=(code,status=409)=>Object.assign(Error(code),{code,status});
@@ -16,7 +17,7 @@ class SourceCatalog{
   const grants=JSON.parse(config.NativeSyncFullSources||'[]');
   if(!Array.isArray(grants)||grants.length>32)throw fail('INVALID_SOURCE_GRANTS',400);
   this.grants=new Map();
-  for(const grant of grants){fields(grant,['sourceId','deviceId','label']);if(!opaque(grant.sourceId)||!opaque(grant.deviceId)||this.grants.has(grant.sourceId)||(grant.label!==undefined&&(typeof grant.label!=='string'||grant.label.length>100)))throw fail('INVALID_SOURCE_GRANTS',400);this.grants.set(grant.sourceId,{...grant});}
+  for(const grant of grants){fields(grant,['sourceId','deviceId','label','scope']);if(!opaque(grant.sourceId)||!opaque(grant.deviceId)||this.grants.has(grant.sourceId)||(grant.label!==undefined&&(typeof grant.label!=='string'||grant.label.length>100)))throw fail('INVALID_SOURCE_GRANTS',400);this.grants.set(grant.sourceId,{...grant,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{})});}
   this.staticTopics=JSON.parse(config.NativeMobileTopics||'[]');if(!Array.isArray(this.staticTopics))throw fail('INVALID_SOURCE_GRANTS',400);
   this.db.exec('BEGIN IMMEDIATE');
   try{
@@ -32,6 +33,10 @@ class SourceCatalog{
    for(const [sourceId,grant] of this.grants){
     const binding=this.db.prepare('SELECT * FROM source_bindings WHERE source_id=?').get(sourceId);
     if(binding&&(binding.device_id!==grant.deviceId||binding.space_id!==this.spaceId))throw fail('SOURCE_BINDING_CHANGED');
+    const scopeKey='sourceScope:'+sourceId,scopeValue=stable(normalizeScope(grant.scope));
+    const savedScope=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get(scopeKey);
+    if((savedScope&&savedScope.value!==scopeValue)||(!savedScope&&binding&&normalizeScope(grant.scope)))throw fail('SOURCE_SCOPE_CHANGED');
+    this.db.prepare('INSERT OR IGNORE INTO native_sync_metadata(key,value) VALUES(?,?)').run(scopeKey,scopeValue);
     this.db.prepare('INSERT OR IGNORE INTO source_bindings VALUES(?,?,?)').run(sourceId,grant.deviceId,this.spaceId);
     this.db.prepare('INSERT OR IGNORE INTO source_catalog_versions(source_id,revision) VALUES(?,0)').run(sourceId);
    }
@@ -43,9 +48,15 @@ class SourceCatalog{
   const grant=this.grants.get(value.sourceId);if(!grant||grant.deviceId!==value.deviceId)throw fail('SOURCE_NOT_APPROVED',403);
   if(value.spaceId!==this.spaceId)throw fail('SOURCE_SPACE_MISMATCH',403);
   const saved=this.db.prepare('SELECT * FROM source_bindings WHERE source_id=?').get(value.sourceId);if(!saved||saved.device_id!==value.deviceId||saved.space_id!==value.spaceId)throw fail('SOURCE_BINDING_CHANGED',403);
+  if((value.scopeHash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);
   return grant;
  }
- info(sourceId,deviceId){const grant=this.grants.get(sourceId);if(!grant||grant.deviceId!==deviceId)throw fail('SOURCE_NOT_APPROVED',403);return {version:1,sourceId,deviceId,spaceId:this.spaceId,revision:this.revision(sourceId)};}
+ assertScope(sourceId,d,owner=false){const grant=this.grants.get(sourceId);if(!grant||!permits(grant.scope,d,owner))throw fail('SOURCE_TOPIC_NOT_APPROVED',403);}
+ authorizePush(binding,op){
+  if(binding){this.binding(binding);this.assertScope(binding.sourceId,op);}
+  else if([...this.grants.values()].some(g=>g.deviceId===op?.deviceId&&normalizeScope(g.scope)))throw fail('SOURCE_BINDING_REQUIRED',403);
+ }
+ info(sourceId,deviceId,hash){const grant=this.grants.get(sourceId);if(!grant||grant.deviceId!==deviceId)throw fail('SOURCE_NOT_APPROVED',403);if((hash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);return {version:1,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{}),sourceId,deviceId,spaceId:this.spaceId,revision:this.revision(sourceId)};}
  revision(sourceId){return this.db.prepare('SELECT revision FROM source_catalog_versions WHERE source_id=?').get(sourceId)?.revision||0;}
  keyFor(sourceId,d){return this.staticTopics.find(t=>tuple(t).every((v,i)=>v===tuple(d)[i]))?.key||'full_'+sha256(stable([sourceId,...tuple(d)])).slice(0,40);}
  publish(binding,body){
@@ -54,6 +65,9 @@ class SourceCatalog{
   const agents=body.agents.map(row=>{fields(row,['ownerType','ownerId','name','avatar']);validateIdentity(row,true);if(typeof row.name!=='string'||row.name.length>200)throw fail('INVALID_SOURCE_CATALOG',400);return {...row,avatar:avatar(row.avatar),topicId:''};});
   const topics=body.topics.map(row=>{fields(row,['ownerType','ownerId','topicId','name','archived','sourceState','previouslyAttached']);validateIdentity(row);if(typeof row.name!=='string'||row.name.length>500||(row.archived!==undefined&&typeof row.archived!=='boolean')||(row.previouslyAttached!==undefined&&typeof row.previouslyAttached!=='boolean')||(row.sourceState!==undefined&&!['available','file-pending','unavailable'].includes(row.sourceState)))throw fail('INVALID_SOURCE_CATALOG',400);return {...row,key:this.keyFor(binding.sourceId,row)};});
   const removed=body.removed.map(row=>{fields(row,['ownerType','ownerId','topicId','kind']);if(!['owner','topic'].includes(row.kind))throw fail('INVALID_SOURCE_CATALOG',400);validateIdentity(row,row.kind==='owner');return {...row,topicId:row.kind==='owner'?'':row.topicId};});
+  for(const row of agents)this.assertScope(binding.sourceId,row,true);
+  for(const row of topics)this.assertScope(binding.sourceId,row);
+  for(const row of removed){this.assertScope(binding.sourceId,row,row.kind==='owner');if(row.kind==='owner'&&normalizeScope(this.grants.get(binding.sourceId).scope))throw fail('LIMITED_SOURCE_OWNER_DELETE_REQUIRES_TOPIC',403);}
   const requestHash=sha256(stable(body));this.db.exec('BEGIN IMMEDIATE');
   try{
    const prior=this.db.prepare('SELECT request_hash,result_json FROM source_catalog_ops WHERE source_id=? AND op_id=?').get(binding.sourceId,body.opId);
@@ -77,10 +91,10 @@ class SourceCatalog{
  }
  entity(sourceId,ownerType,ownerId,topicId){return this.db.prepare('SELECT * FROM source_catalog_entities WHERE source_id=? AND owner_type=? AND owner_id=? AND topic_id=?').get(sourceId,ownerType,ownerId,topicId);}
  entities(sourceId,kind){if(!this.grants.has(sourceId))return [];return this.db.prepare("SELECT * FROM source_catalog_entities WHERE source_id=? AND "+(kind==='agents'?"topic_id=''":"topic_id<>''")+' ORDER BY owner_type,owner_id,topic_id').all(sourceId).map(r=>({...r,...JSON.parse(r.metadata)}));}
- activeTopic(sourceId,d){const row=this.entity(sourceId,...tuple(d)),owner=this.entity(sourceId,d.ownerType,d.ownerId,'');return row&&!row.deleted&&owner&&!owner.deleted?row:null;}
+ activeTopic(sourceId,d){if(!permits(this.grants.get(sourceId)?.scope,d))return null;const row=this.entity(sourceId,...tuple(d)),owner=this.entity(sourceId,d.ownerType,d.ownerId,'');return row&&!row.deleted&&owner&&!owner.deleted?row:null;}
  topicKeys(sourceId){return this.entities(sourceId,'topics').filter(t=>this.activeTopic(sourceId,t)).map(t=>JSON.stringify(tuple(t)));}
  hasFullEntries(){return Boolean(this.db.prepare('SELECT 1 FROM source_catalog_entities LIMIT 1').get());}
- verifyLegacy(binding,body){this.binding(binding);fields(body,['cursor','records']);if(!Number.isSafeInteger(body.cursor)||body.cursor<0||!Array.isArray(body.records)||body.records.length>128)throw fail('INVALID_SOURCE_PROOF',400);if(body.cursor>Number(this.store.headStmt.get().seq))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');for(const item of body.records){fields(item,['ownerType','ownerId','topicId','msgId','seq','hash','metadataHash']);identity(item);const row=this.db.prepare('SELECT * FROM journal WHERE seq=?').get(item.seq);if(!row||row.owner_type!==item.ownerType||row.owner_id!==item.ownerId||row.topic_id!==item.topicId||row.msg_id!==item.msgId||row.hash!==item.hash||(item.metadataHash&&item.metadataHash!==(row.metadata_hash||sha256(stable({})))))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');}return {verified:true};}
+ verifyLegacy(binding,body){this.binding(binding);fields(body,['cursor','records']);if(!Number.isSafeInteger(body.cursor)||body.cursor<0||!Array.isArray(body.records)||body.records.length>128)throw fail('INVALID_SOURCE_PROOF',400);if(body.cursor>Number(this.store.headStmt.get().seq))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');for(const item of body.records){fields(item,['ownerType','ownerId','topicId','msgId','seq','hash','metadataHash']);identity(item);this.assertScope(binding.sourceId,item);const row=this.db.prepare('SELECT * FROM journal WHERE seq=?').get(item.seq);if(!row||row.owner_type!==item.ownerType||row.owner_id!==item.ownerId||row.topic_id!==item.topicId||row.msg_id!==item.msgId||row.hash!==item.hash||(item.metadataHash&&item.metadataHash!==(row.metadata_hash||sha256(stable({})))))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');}return {verified:true};}
  beginBaseline(binding,body){
   this.binding(binding);fields(body,['planId','ownerType','ownerId','topicId']);validateIdentity(body);if(!opaque(body.planId)||!this.activeTopic(binding.sourceId,body))throw fail('SOURCE_TOPIC_UNAVAILABLE',403);
   const prior=this.db.prepare('SELECT * FROM source_baselines WHERE source_id=? AND plan_id=?').get(binding.sourceId,body.planId);
