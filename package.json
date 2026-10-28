@@ -1,0 +1,13 @@
+{
+  "name": "native-sync-r21-source",
+  "version": "0.0.0-initial",
+  "private": true,
+  "license": "CC-BY-NC-SA-4.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test --test-reporter=tap tests/snapshot-prompt.test.cjs",
+    "verify:source": "python3 tools/verify_source.py"
+  }
+}

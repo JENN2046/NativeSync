@@ -1,0 +1,13 @@
+{
+  "remote": "https://github.com/JENN2046/NativeSync.git",
+  "githubConnectorInspection": {
+    "visibility": "public",
+    "size": 0,
+    "defaultBranch": "main"
+  },
+  "nativeCloneTimedOut": true,
+  "remoteRefsVerifiedByNativeGit": false,
+  "localOnlyBranch": "codex/initial-import",
+  "pushed": false,
+  "initialImportIsNewSnapshotNotUpstreamHistory": true
+}

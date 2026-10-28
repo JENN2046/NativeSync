@@ -1,0 +1,9 @@
+'use strict';const test=require('node:test'),assert=require('node:assert/strict');const {snapshotPrompt}=require('../overlays/VCPToolBox/Plugin/NativeSync/mobile/snapshotPrompt');
+test('desktop snapshot stays unchanged',()=>assert.equal(snapshotPrompt({systemPrompt:'[[VCPToolUse=Forbidden]]\nplain'}),'[[VCPToolUse=Forbidden]]\nplain'));
+test('native snapshot retains prefix marker and suffix around frozen content',()=>assert.equal(snapshotPrompt({promptPolicy:'native-alias-snapshot',agentAlias:'Nova',systemPrompt:'frozen',promptTemplate:'[[VCPToolUse=Forbidden]]\n{{agent:Nova}}\nsuffix'}),'[[VCPToolUse=Forbidden]]\nfrozen\nsuffix'));
+test('both native alias forms and repeated references use same immutable snapshot',()=>assert.equal(snapshotPrompt({promptPolicy:'native-alias-snapshot',agentAlias:'Nova',systemPrompt:'frozen',promptTemplate:'{{Nova}}/{{agent:Nova}}'}),'frozen/frozen'));
+test('snapshot content is inserted literally without replacement-dollar expansion',()=>assert.equal(snapshotPrompt({promptPolicy:'native-alias-snapshot',agentAlias:'Nova',systemPrompt:'$& $` $$',promptTemplate:'{{Nova}}'}),'$& $` $$'));
+test('legacy v1 with no promptTemplate retains native snapshot fallback',()=>assert.equal(snapshotPrompt({promptPolicy:'native-alias-snapshot',agentAlias:'Nova',systemPrompt:'frozen'}),'frozen'));
+test('other native variables remain native variables',()=>assert.equal(snapshotPrompt({promptPolicy:'native-alias-snapshot',agentAlias:'Nova',systemPrompt:'{{Date}}',promptTemplate:'{{Nova}}'}),'{{Date}}'));
+test('missing snapshot rejects instead of rereading mutable native agent',()=>assert.throws(()=>snapshotPrompt({promptPolicy:'native-alias-snapshot',agentAlias:'Nova'}),/SNAPSHOT_UNAVAILABLE/));
+test('mismatched alias rejects',()=>assert.throws(()=>snapshotPrompt({promptPolicy:'native-alias-snapshot',agentAlias:'Nova',systemPrompt:'frozen',promptTemplate:'{{Other}}'}),/AUTHORITY_CONFLICT/));

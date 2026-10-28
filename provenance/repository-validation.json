@@ -1,0 +1,23 @@
+{
+  "sourceByteVerification": "83 imported files checked",
+  "pureTests": {
+    "tests": 8,
+    "pass": 8
+  },
+  "mobileRebuild": {
+    "files": 8,
+    "hashesMatched": 8
+  },
+  "matchingImportedHostInputs": true,
+  "knownGap": {
+    "exitCode": 1,
+    "tests": 7,
+    "pass": 6,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "intendedScopeFailureRetained": true
+  },
+  "productionWrites": 0,
+  "pushed": false
+}

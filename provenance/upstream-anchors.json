@@ -1,0 +1,14 @@
+{
+  "VCPChat": {
+    "repository": "https://github.com/JENN2046/VCPChat",
+    "head": "0eafb037d33617d95b4bd68321a591f2908e3589",
+    "tree": "7ac0277d6cbc5ed493d384723979d6d306580c24",
+    "headDoesNotRepresentAllDeployedOverlays": true
+  },
+  "VCPToolBox": {
+    "repository": "https://github.com/JENN2046/VCPToolBox",
+    "head": "afc089973f0c34b6cab2d5d67f0f97f204ba7a56",
+    "tree": "98c35ec0cca1d1a802f1f8ba3fb15de15733f9ca",
+    "headDoesNotRepresentAllDeployedOverlays": true
+  }
+}

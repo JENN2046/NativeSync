@@ -1,0 +1,703 @@
+diff --git a/main.js b/main.js
+index a926ec1..fc5e8e9 100644
+--- a/main.js
++++ b/main.js
+@@ -1281,10 +1281,10 @@ if (!gotTheLock) {
+             fileWatcher,
+             logger: console
+         });
+-        require('./modules/ipc/nativeHistoryHandlers').initialize({ ipcMain, historyMutationQueue, getNativeSyncRuntime: () => nativeSyncRuntime });
++        require('./modules/ipc/nativeHistoryHandlers').initialize({ ipcMain, historyMutationQueue });
+         tavernHandlers.initialize({ APP_DATA_ROOT_IN_PROJECT });
+         nativeSyncRuntime = await require('./modules/services/nativeSync/runtime').createNativeSyncRuntime({
+-            queue: historyMutationQueue, appDataRoot: APP_DATA_ROOT_IN_PROJECT,
++            queue: historyMutationQueue, appDataRoot: APP_DATA_ROOT_IN_PROJECT, ipcMain,
+             args: process.argv, isolated: Boolean(isolatedAppDataRoot),
+             readSettings: () => appSettingsManager.readSettings(),
+             readAgentConfig: id => agentConfigManager.readAgentConfig(id),
+diff --git a/tests/native-sync-aa-status.test.cjs b/tests/native-sync-aa-status.test.cjs
+index 194911f..a5424ae 100644
+--- a/tests/native-sync-aa-status.test.cjs
++++ b/tests/native-sync-aa-status.test.cjs
+@@ -107,7 +107,7 @@ test('B3 stopped and unresolved AA states remain explicit while review resolutio
+ 
+ test('B3 result IPC and preload offer only explicit read identifiers to the chat role', async () => {
+     const handlers = new Map(), calls = [];
+-    require('../modules/ipc/nativeHistoryHandlers').initialize({ ipcMain: { handle: (name, fn) => handlers.set(name, fn) }, historyMutationQueue: {}, getNativeSyncRuntime: () => ({ getNativeTaskResult: async (...args) => { calls.push(args); return { content: 'verified' }; } }) });
++    require('../modules/services/nativeSync/queries').registerNativeSyncQueries({ ipcMain: { handle: (name, fn) => handlers.set(name, fn), removeHandler: name => handlers.delete(name) }, getRuntime: () => ({ getNativeTaskResult: async (...args) => { calls.push(args); return { content: 'verified' }; } }) });
+     const read = (...args) => handlers.get('native-sync:task-result')({}, topic.itemId, topic.itemType, topic.topicId, ...args);
+     assert.equal((await read('job-one', 'aa-one')).success, true); assert.deepEqual(calls[0], [topic, 'job-one', 'aa-one']);
+     assert.equal((await read({}, 'aa-one')).error, 'INVALID_NATIVE_TASK_QUERY'); assert.equal(calls.length, 1);
+diff --git a/tests/native-sync-connection.test.cjs b/tests/native-sync-connection.test.cjs
+index a95a832..9c2dd51 100644
+--- a/tests/native-sync-connection.test.cjs
++++ b/tests/native-sync-connection.test.cjs
+@@ -86,9 +86,10 @@ test('cached shared state starts offline, captures Outbox under exclusion and re
+     assert.equal(pushes, 0); assert.equal(runtime.adapter.degraded, 'NETWORK_UNAVAILABLE');
+     online = true;
+     const deadline = Date.now() + 3000;
+-    while (runtime.adapter.state.outbox.length || runtime.adapter.state.cursor !== 2 || runtime.adapter.busy) { assert.ok(Date.now() < deadline); await new Promise(resolve => setTimeout(resolve, 10)); }
+-    assert.equal(pushes, 1); assert.equal(operations.size, 1); assert.equal(runtime.adapter.state.pending, null);
++    while (runtime.adapter.state.outbox.length || runtime.adapter.state.cursor !== 2) { assert.ok(Date.now() < deadline); await new Promise(resolve => setTimeout(resolve, 10)); }
+     await runtime.close();
++    assert.equal(runtime.adapter.busy, false);
++    assert.equal(pushes, 1); assert.equal(operations.size, 1); assert.equal(runtime.adapter.state.pending, null);
+ });
+ test('failed first attachment cannot publish local messages or create sync state', async t => {
+     const f = await fixture(t); await f.write();
+diff --git a/tests/native-sync-execution-status.test.cjs b/tests/native-sync-execution-status.test.cjs
+index 67f7946..6a1cc75 100644
+--- a/tests/native-sync-execution-status.test.cjs
++++ b/tests/native-sync-execution-status.test.cjs
+@@ -127,7 +127,7 @@ test('B4.3 slow and failed execution reads never block native Outbox flush or in
+ 
+ test('B4.3 late runtime injection and preload expose a narrow read query with owned change subscription', async () => {
+     const handlers = new Map(); let runtime = null, calls = 0;
+-    require('../modules/ipc/nativeHistoryHandlers').initialize({ ipcMain: { handle: (name, fn) => handlers.set(name, fn) }, historyMutationQueue: {}, getNativeSyncRuntime: () => runtime });
++    require('../modules/services/nativeSync/queries').registerNativeSyncQueries({ ipcMain: { handle: (name, fn) => handlers.set(name, fn), removeHandler: name => handlers.delete(name) }, getRuntime: () => runtime });
+     const get = (...args) => handlers.get('native-sync:executions')({}, ...args);
+     assert.deepEqual(await get(topic.itemId, topic.itemType, topic.topicId, false), { success: true, enabled: false });
+     runtime = { getExecutionStatus: async (d, options) => { calls++; assert.deepEqual(d, topic); assert.deepEqual(options, { refresh: false }); return { enabled: true }; } };
+diff --git a/tests/native-sync-host-convergence.test.cjs b/tests/native-sync-host-convergence.test.cjs
+new file mode 100644
+index 0000000..f396a5e
+--- /dev/null
++++ b/tests/native-sync-host-convergence.test.cjs
+@@ -0,0 +1,160 @@
++'use strict';
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs/promises');
++const path = require('node:path');
++const os = require('node:os');
++const { HistoryMutationQueue } = require('../modules/services/historyMutationQueue');
++const { NativeSyncAdapter } = require('../modules/services/nativeSync/adapter');
++const { createNativeSyncRuntime } = require('../modules/services/nativeSync/runtime');
++const topic = { itemId:'synthetic-agent', itemType:'agent', topicId:'shared-topic' };
++const ordinary = { ...topic, topicId:'ordinary-topic' };
++const message = id => ({id,role:'user',content:'synthetic '+id,timestamp:1});
++const gate = () => { let resolve; const promise = new Promise(r => {resolve=r;}); return {promise,resolve}; };
++async function fixture(t, state = true) {
++    const root = await fs.mkdtemp(path.join(os.tmpdir(),'bridge-convergence-'));
++    const queue = new HistoryMutationQueue({userDataDir:path.join(root,'UserData'),logger:{warn(){}}});
++    const statePath = path.join(root,'.native-sync','state.json');
++    if (state) {
++        await fs.mkdir(path.dirname(statePath),{recursive:true});
++        await fs.writeFile(statePath,JSON.stringify({version:2,format:'native-message-intents-v1',deviceId:'synthetic-device',topics:[topic],cursor:0,acked:{},outbox:[],pending:null,localCommits:{},receipts:{},inbox:[],drift:{}}));
++    }
++    t.after(async()=>{await queue.dispose();await fs.rm(root,{recursive:true,force:true});});
++    const options = {queue,statePath,deviceId:'synthetic-device',topics:[topic],url:'https://synthetic.invalid',token:'fixture-only',request:()=>assert.fail('unexpected network')};
++    return {root,queue,statePath,options};
++}
++async function connection(f,enabled=true) {
++    await fs.mkdir(path.dirname(f.statePath),{recursive:true});
++    await fs.writeFile(path.join(path.dirname(f.statePath),'connection.json'),JSON.stringify({version:1,enabled,historySelectionApproved:true,deviceId:'synthetic-device',topics:[topic],serverUrl:'https://synthetic.invalid',credentialSource:'existing-vcp-settings',publishCatalog:false}));
++}
++const settings = () => ({vcpServerUrl:'https://synthetic.invalid',vcpApiKey:'fixture-only'});
++
++test('C1 never-enabled native read and save create no sync state or network',async t=>{
++    const f=await fixture(t,false);
++    assert.equal(await createNativeSyncRuntime({queue:f.queue,appDataRoot:f.root,readSettings:()=>assert.fail('credential read'),request:()=>assert.fail('network')}),null);
++    await f.queue.mutate(ordinary,()=>[message('local')]);
++    assert.deepEqual((await f.queue.readSnapshot(ordinary)).history,[message('local')]);
++    await assert.rejects(fs.stat(path.dirname(f.statePath)),{code:'ENOENT'});
++});
++test('C2 old shared state without connection stays guarded and healthy topic saves',async t=>{
++    const f=await fixture(t); const before=await fs.readFile(f.statePath,'utf8');
++    const bridge=await createNativeSyncRuntime({queue:f.queue,appDataRoot:f.root,readSettings:()=>assert.fail('credential read'),request:()=>assert.fail('network')});
++    t.after(()=>bridge?.close());
++    await assert.rejects(f.queue.replace(topic,[message('must-not-write')]),{code:'SYNC_CONNECTION_REQUIRED'});
++    const boundary=require('../modules/services/syncWriterBoundary').createSyncWriterBoundary(f.queue);
++    assert.throws(()=>boundary.assertWrite({ownerType:'agent',ownerId:topic.itemId,topicId:topic.topicId}),{code:'SYNC_WRITER_EXCLUDED'});
++    boundary.assertWrite({ownerType:'agent',ownerId:ordinary.itemId,topicId:ordinary.topicId});
++    await f.queue.mutate(ordinary,()=>[message('healthy')]);
++    assert.equal((await f.queue.read(ordinary)).length,1);
++    assert.equal(await fs.readFile(f.statePath,'utf8'),before);
++});
++test('C2 disabled connection preserves shared recovery protection without credentials',async t=>{
++    const f=await fixture(t);await connection(f,false);
++    const bridge=await createNativeSyncRuntime({queue:f.queue,appDataRoot:f.root,readSettings:()=>assert.fail('credential read')});t.after(()=>bridge?.close());
++    await assert.rejects(f.queue.mutate(topic,()=>[message('blocked')]),{code:'SYNC_CONNECTION_REQUIRED'});
++    await f.queue.mutate(ordinary,()=>[message('healthy')]);
++});
++test('C2 invalid connection leaves old shared fence and healthy writes available',async t=>{
++    const f=await fixture(t);await connection(f);
++    await assert.rejects(createNativeSyncRuntime({queue:f.queue,appDataRoot:f.root,readSettings:()=>({vcpServerUrl:'https://wrong.invalid',vcpApiKey:'fixture-only'})}),{code:'DESKTOP_BACKEND_IDENTITY_MISMATCH'});
++    await assert.rejects(f.queue.mutate(topic,()=>[message('blocked')]),{code:'DESKTOP_BACKEND_IDENTITY_MISMATCH'});
++    await f.queue.mutate(ordinary,()=>[message('healthy')]);
++});
++test('C2 corrupt old state never falls through to unprotected native writes',async t=>{
++    const f=await fixture(t);await fs.writeFile(f.statePath,'{');
++    await assert.rejects(createNativeSyncRuntime({queue:f.queue,appDataRoot:f.root,readSettings:()=>assert.fail('credential read')}),{code:'INVALID_SYNC_STATE_JSON'});
++    await assert.rejects(f.queue.mutate(topic,()=>[message('blocked')]),{code:'INVALID_SYNC_STATE_JSON'});
++    const boundary=require('../modules/services/syncWriterBoundary').createSyncWriterBoundary(f.queue);
++    assert.equal(boundary.active(),true);
++    assert.throws(()=>boundary.assertWrite({ownerType:'agent',ownerId:topic.itemId,topicId:topic.topicId}),{code:'SYNC_WRITER_EXCLUDED'});
++});
++test('C2 actual host registration contains a known binding failure and leaves native startup usable',async t=>{
++    const f=await fixture(t);await connection(f);const handlers=new Map();
++    const ipcMain={handle(n,fn){assert.equal(handlers.has(n),false);handlers.set(n,fn);},removeHandler(n){handlers.delete(n);}};
++    const bridge=await createNativeSyncRuntime({queue:f.queue,appDataRoot:f.root,ipcMain,readSettings:()=>({vcpServerUrl:'https://wrong.invalid',vcpApiKey:'fixture-only'}),request:()=>assert.fail('network')});
++    assert.equal(bridge.startupError,'DESKTOP_BACKEND_IDENTITY_MISMATCH');
++    await assert.rejects(f.queue.mutate(topic,()=>[message('blocked')]),{code:'DESKTOP_BACKEND_IDENTITY_MISMATCH'});
++    await f.queue.mutate(ordinary,()=>[message('native-host-still-usable')]);
++    assert.deepEqual(await handlers.get('native-sync:executions')(null,topic.itemId,'agent',topic.topicId),{success:true,enabled:false,degraded:'DESKTOP_BACKEND_IDENTITY_MISMATCH'});
++    await bridge.close();assert.equal(handlers.size,0);
++});
++test('C3 overlapping adapter opens cannot pass an opening recovery fence',async t=>{
++    const f=await fixture(t), entered=gate(), release=gate();let first;
++    const opening=NativeSyncAdapter.open({...f.options,persist:async(file,state)=>{entered.resolve();await release.promise;await fs.writeFile(file,JSON.stringify(state));}});
++    t.after(async()=>{release.resolve();await opening.then(a=>a.close(),()=>{});});
++    await entered.promise;
++    let second;
++    try {await assert.rejects(async()=>{second=await NativeSyncAdapter.open(f.options);},{code:'SYNC_ALREADY_ATTACHED'});}
++    finally {await second?.close();release.resolve();first=await opening;await first.close();}
++});
++test('C3 runtime claims ownership before credential-read asynchronous wait',async t=>{
++    const f=await fixture(t);await connection(f);const entered=gate(),release=gate();let reads=0;
++    const options={queue:f.queue,appDataRoot:f.root,readSettings:async()=>{reads++;entered.resolve();await release.promise;return settings();},intervalMs:60000,request:()=>assert.fail('network')};
++    const first=createNativeSyncRuntime(options);await entered.promise;
++    await assert.rejects(f.queue.mutate(topic,()=>[message('too-early')]),{code:'SYNC_STARTUP_RECOVERY_REQUIRED'});
++    await f.queue.mutate(ordinary,()=>[message('healthy-before-network-ready')]);
++    let second;const rejected=assert.rejects(async()=>{second=await createNativeSyncRuntime(options);},{code:'SYNC_ALREADY_ATTACHED'});
++    release.resolve();const bridge=await first;
++    try {await rejected;assert.equal(reads,1);}finally {await second?.close();await bridge.close();}
++});
++test('C3 different queues cannot attach the same AppData concurrently',async t=>{
++    const f=await fixture(t);await connection(f);
++    const opts={appDataRoot:f.root,readSettings:settings,intervalMs:60000,request:()=>assert.fail('network')};
++    const first=await createNativeSyncRuntime({...opts,queue:f.queue});
++    const other=new HistoryMutationQueue({userDataDir:f.queue.userDataDir});
++    try {await assert.rejects(createNativeSyncRuntime({...opts,queue:other}),{code:'SYNC_ALREADY_ATTACHED'});}finally {await first.close();await other.dispose();}
++});
++test('C3 old close handle cannot detach a reopened owner',async t=>{
++    const f=await fixture(t);const first=await NativeSyncAdapter.open(f.options);await first.close();
++    const next=await NativeSyncAdapter.open(f.options);
++    await first.close();assert.equal(f.queue.syncPolicy,next);await next.close();
++});
++test('C3 adapter startup failure preserves fence and permits an explicit retry',async t=>{
++    const f=await fixture(t);
++    await assert.rejects(NativeSyncAdapter.open({...f.options,persist:async()=>{throw Object.assign(Error('synthetic'),{code:'SYNTHETIC_PERSIST_FAILURE'});}}),{code:'SYNTHETIC_PERSIST_FAILURE'});
++    await assert.rejects(f.queue.mutate(topic,()=>[message('blocked')]),{code:'SYNTHETIC_PERSIST_FAILURE'});
++    const next=await NativeSyncAdapter.open(f.options);await next.close();
++});
++test('C3 bridge owns query registration, closes pending query and releases only its handlers',async t=>{
++    const f=await fixture(t,false),handlers=new Map();
++    const ipcMain={handle(name,fn){assert.equal(handlers.has(name),false);handlers.set(name,fn);},removeHandler(name){handlers.delete(name);}};
++    const bridge=await createNativeSyncRuntime({queue:f.queue,appDataRoot:f.root,ipcMain});
++    assert.ok(handlers.has('native-sync:executions'));assert.equal(handlers.has('native-history:messages'),false);
++    assert.deepEqual(await handlers.get('native-sync:executions')(null,topic.itemId,'agent',topic.topicId),{success:true,enabled:false});
++    assert.deepEqual(await handlers.get('native-sync:task-result')(null,topic.itemId,'agent',topic.topicId,'','bad'),{success:false,error:'INVALID_NATIVE_TASK_QUERY'});
++    await bridge.close();assert.equal(handlers.size,0);await bridge.close();
++});
++test('C3 query shutdown drains admitted work and a stale close cannot remove a new owner',async()=>{
++    const {registerNativeSyncQueries}=require('../modules/services/nativeSync/queries');
++    const handlers=new Map(), entered=gate(), release=gate();
++    const ipcMain={handle(name,fn){assert.equal(handlers.has(name),false);handlers.set(name,fn);},removeHandler(name){handlers.delete(name);}};
++    const first=registerNativeSyncQueries({ipcMain,getRuntime:()=>({async getExecutionStatus(){entered.resolve();await release.promise;return {enabled:true};}})});
++    const oldHandler=handlers.get('native-sync:executions');const read=oldHandler(null,'a','agent','t');await entered.promise;
++    const closing=first.close();
++    assert.throws(()=>registerNativeSyncQueries({ipcMain,getRuntime:()=>null}),{code:'SYNC_ALREADY_ATTACHED'});
++    assert.deepEqual(await oldHandler(null,'a','agent','t'),{success:false,error:'SYNC_BRIDGE_CLOSED'});
++    release.resolve();assert.deepEqual(await read,{success:true,enabled:true});await closing;
++    const next=registerNativeSyncQueries({ipcMain,getRuntime:()=>null});await first.close();assert.equal(handlers.size,2);await next.close();
++});
++test('C3 runtime close holds ownership through an outstanding result read and permits reopen afterwards',async t=>{
++    const f=await fixture(t);await connection(f);const entered=gate(),release=gate();
++    const opts={queue:f.queue,appDataRoot:f.root,readSettings:settings,intervalMs:60000,executionIntervalMs:60000,request:async()=>{entered.resolve();await release.promise;return {version:1,topic:{ownerId:topic.itemId,ownerType:'agent',topicId:topic.topicId},observedAt:1,executions:[]};}};
++    const first=await createNativeSyncRuntime(opts);const read=first.getExecutionStatus(topic);await entered.promise;
++    const closing=first.close();
++    await assert.rejects(createNativeSyncRuntime(opts),{code:'SYNC_ALREADY_ATTACHED'});
++    release.resolve();await read;await closing;
++    const next=await createNativeSyncRuntime(opts);await first.close();assert.equal(f.queue.syncPolicy,next.adapter);await next.close();
++});
++test('C4 native durable writer has no dependency on removable sync implementation',async()=>{
++    const source=await fs.readFile(path.join(__dirname,'../modules/services/historyMutationQueue.js'),'utf8');
++    assert.equal(source.includes("require('./nativeSync/durableJson')"),false);
++    assert.equal(typeof require('../modules/utils/durableJson').durableJson,'function');
++});
++test('C6 old paired adapter resumes unchanged state and original pending opId',async t=>{
++    const f=await fixture(t);const adapter=await NativeSyncAdapter.open(f.options);
++    await f.queue.mutate(topic,()=>[message('offline')]);const op=adapter.state.outbox[0].opId;await adapter.close();
++    const old=require('../../baseline/modules/services/nativeSync/adapter').NativeSyncAdapter;
++    const other=new (require('../../baseline/modules/services/historyMutationQueue').HistoryMutationQueue)({userDataDir:f.queue.userDataDir});
++    const reopened=await old.open({...f.options,queue:other});
++    try {assert.equal(reopened.state.outbox.length,1);assert.equal(reopened.state.outbox[0].opId,op);assert.equal(reopened.state.deviceId,'synthetic-device');assert.equal(reopened.state.cursor,0);}finally{await reopened.close();await other.dispose();}
++});
+diff --git a/modules/ipc/nativeHistoryHandlers.js b/modules/ipc/nativeHistoryHandlers.js
+index e91b4b9..97ec672 100644
+--- a/modules/ipc/nativeHistoryHandlers.js
++++ b/modules/ipc/nativeHistoryHandlers.js
+@@ -1,23 +1,7 @@
+ 'use strict';
+ const { mergeTerminal } = require('../services/nativeSync/mergeTerminal');
+-function initialize({ ipcMain, historyMutationQueue: queue, getNativeSyncRuntime = () => null }) {
++function initialize({ ipcMain, historyMutationQueue: queue }) {
+     ipcMain.handle('native-history:status', () => queue.syncPolicy?.diagnostics() || { enabled: false });
+-    ipcMain.handle('native-sync:executions', async (_event, itemId, itemType, topicId, refresh = true) => {
+-        try {
+-            if (typeof refresh !== 'boolean') throw Object.assign(Error('INVALID_EXECUTION_QUERY'), { code: 'INVALID_EXECUTION_QUERY' });
+-            const runtime = getNativeSyncRuntime();
+-            if (!runtime) return { success: true, enabled: false };
+-            return { success: true, ...await runtime.getExecutionStatus({ itemId, itemType, topicId }, { refresh }) };
+-        } catch (error) { return { success: false, error: error.code || 'EXECUTION_STATUS_UNAVAILABLE' }; }
+-    });
+-    ipcMain.handle('native-sync:task-result', async (_event, itemId, itemType, topicId, executionId, nativeTaskId) => {
+-        try {
+-            if ([executionId, nativeTaskId].some(value => typeof value !== 'string' || !value || value.length > 512 || /[\x00-\x1f]/.test(value))) throw Object.assign(Error('INVALID_NATIVE_TASK_QUERY'), { code: 'INVALID_NATIVE_TASK_QUERY' });
+-            const runtime = getNativeSyncRuntime();
+-            if (!runtime) throw Object.assign(Error('NATIVE_TASK_RESULT_UNAVAILABLE'), { code: 'NATIVE_TASK_RESULT_UNAVAILABLE' });
+-            return { success: true, ...await runtime.getNativeTaskResult({ itemId, itemType, topicId }, executionId, nativeTaskId) };
+-        } catch (error) { return { success: false, error: error.code || 'NATIVE_TASK_RESULT_UNAVAILABLE' }; }
+-    });
+     ipcMain.handle('native-history:messages', async (_event, itemId, itemType, topicId, intent) => {
+         const d = {itemId,itemType,topicId};
+         if (!queue.isSyncEnabled(d)) return {handled:false};
+diff --git a/modules/services/historyMutationQueue.js b/modules/services/historyMutationQueue.js
+index 222f342..8cb51a5 100644
+--- a/modules/services/historyMutationQueue.js
++++ b/modules/services/historyMutationQueue.js
+@@ -134,7 +134,7 @@ class HistoryMutationQueue {
+         let writeWarning = null;
+         try {
+             if (this.isSyncEnabled(descriptor)) {
+-                await require('./nativeSync/durableJson').durableJson(historyPath, clone(history));
++                await require('../utils/durableJson').durableJson(historyPath, clone(history));
+             } else {
+                 await fs.writeJson(tempPath, clone(history), { spaces: 2 });
+                 await fs.rename(tempPath, historyPath);
+diff --git a/modules/services/syncWriterBoundary.js b/modules/services/syncWriterBoundary.js
+index ee0db13..8e6bf8b 100644
+--- a/modules/services/syncWriterBoundary.js
++++ b/modules/services/syncWriterBoundary.js
+@@ -9,9 +9,10 @@ function createSyncWriterBoundary(queue) {
+     const normalize = p => process.platform === 'win32' ? p.toLowerCase() : p;
+     const topics = () => queue?.syncPolicy?.topics || [];
+     return {
+-        active: () => topics().length > 0,
++        active: () => queue?.syncPolicy?.blocksAllWrites === true || topics().length > 0,
+         assertWrite(target) {
+             if (!queue || target.ownerType === 'user') return;
++            if (queue.syncPolicy?.blocksAllWrites === true) throw Object.assign(new Error('History recovery scope is not yet verified.'), {code:'SYNC_WRITER_EXCLUDED',retryable:false,status:409});
+             if (topics().length) {
+                 const owner = path.resolve(queue.userDataDir, target.ownerId);
+                 const paths = target.topicId == null ? [owner] : [owner, path.join(owner, 'topics'), path.join(owner, 'topics', target.topicId), queue.getHistoryPath(target.ownerId, target.topicId)];
+diff --git a/modules/utils/durableJson.js b/modules/utils/durableJson.js
+new file mode 100644
+index 0000000..aca7f89
+--- /dev/null
++++ b/modules/utils/durableJson.js
+@@ -0,0 +1,26 @@
++'use strict';
++const fs = require('node:fs/promises');
++const path = require('node:path');
++const { randomUUID } = require('node:crypto');
++
++async function durableJson(file, value) {
++    await fs.mkdir(path.dirname(file), { recursive: true });
++    const temporary = `${file}.${randomUUID()}.tmp`;
++    let handle;
++    try {
++        handle = await fs.open(temporary, 'wx', 0o600);
++        await handle.writeFile(JSON.stringify(value));
++        await handle.sync();
++        await handle.close(); handle = null;
++        await fs.rename(temporary, file);
++        // Windows does not expose a portable directory fsync.
++        if (process.platform !== 'win32') {
++            const directory = await fs.open(path.dirname(file), 'r');
++            try { await directory.sync(); } finally { await directory.close(); }
++        }
++    } finally {
++        await handle?.close().catch(() => {});
++        await fs.rm(temporary, { force: true });
++    }
++}
++module.exports = { durableJson };
+diff --git a/modules/services/nativeSync/adapter.js b/modules/services/nativeSync/adapter.js
+index 1f00866..bb15b6b 100644
+--- a/modules/services/nativeSync/adapter.js
++++ b/modules/services/nativeSync/adapter.js
+@@ -27,12 +27,18 @@ function validatePullPage(result, cursor, limit) {
+ 
+ // State locks never wait for Queue or network. Queue -> short state transaction is
+ // the only nested lock order; HTTP is always outside both locks.
++const openingQueues = new WeakSet();
++const activePaths = new Map();
++const stateKey = file => process.platform === 'win32' ? path.resolve(file).toLowerCase() : path.resolve(file);
+ class NativeSyncAdapter {
+     static async open(options) {
+         const adapter = new NativeSyncAdapter(options);
++        const ownerKey=stateKey(adapter.statePath);
++        if(openingQueues.has(adapter.queue)||activePaths.has(ownerKey))throw fail('SYNC_ALREADY_ATTACHED');
+         const policy=adapter.queue.syncPolicy;
+         if(policy&&JSON.stringify(policy.topics)!==JSON.stringify(adapter.topics))throw fail('OWNER_BINDING_CHANGED');
+         if(policy&&!policy.isRecoveryFence)throw fail('SYNC_ALREADY_ATTACHED');
++        openingQueues.add(adapter.queue);activePaths.set(ownerKey,adapter);
+         adapter.queue.configureSync(adapter.recoveryFence('SYNC_STARTUP_RECOVERY_REQUIRED'));
+         try {
+         let loaded=false;
+@@ -53,7 +59,8 @@ class NativeSyncAdapter {
+         try { await adapter.recover(); }
+         catch (error) { await adapter.recordDegradation(error); }
+         return adapter;
+-        } catch(error) { adapter.startupError=error.code||'SYNC_STARTUP_FAILED';throw error; }
++        } catch(error) { adapter.startupError=error.code||'SYNC_STARTUP_FAILED';if(activePaths.get(ownerKey)===adapter)activePaths.delete(ownerKey);throw error; }
++        finally { openingQueues.delete(adapter.queue); }
+     }
+ 
+     constructor({ queue, statePath, deviceId, url, token, topics, notify = () => {}, persist = durableJson, request = null }) {
+@@ -539,6 +546,14 @@ class NativeSyncAdapter {
+     }
+     async synchronize() { await this.flush(); await this.pull(); }
+     diagnostics() { return { degraded: this.degraded,lastTransportError:this.lastTransportError||null, configurationError:this.configurationError||null, attachmentError:this.attachmentError||null, cursor: this.state.cursor,receivedCursor:this.state.cursor,materializedThrough:this.state.inbox.length?Math.min(...this.state.inbox.map(x=>x.event.seq))-1:this.state.cursor,inboundBuffered:this.state.inbox.length,conflicts:this.state.outbox.filter(op=>op.status).map(op=>({opId:op.opId,msgId:op.msgId,code:op.error?.code,status:op.error?.status})),localCommits:Object.values(this.state.localCommits).map(c=>({id:c.id,source:c.source,stage:c.stage,code:c.error?.code})),receipts:Object.values(this.state.receipts),drift:this.state.drift,pending: Boolean(this.state.pending), outboxSize: this.state.outbox.length }; }
+-    async close() { await this.tail.catch(() => {}); if(this.queue.syncPolicy===this)this.queue.configureSync(this.recoveryFence('SYNC_BRIDGE_CLOSED')); }
++    close() {
++        if(this.closing)return this.closing;
++        this.closing=(async()=>{
++            await this.tail.catch(() => {});
++            if(this.queue.syncPolicy===this)this.queue.configureSync(this.recoveryFence('SYNC_BRIDGE_CLOSED'));
++            const key=stateKey(this.statePath);if(activePaths.get(key)===this)activePaths.delete(key);
++        })();
++        return this.closing;
++    }
+ }
+ module.exports = { NativeSyncAdapter, validatePullPage };
+diff --git a/modules/services/nativeSync/durableJson.js b/modules/services/nativeSync/durableJson.js
+index aca7f89..7d1a86a 100644
+--- a/modules/services/nativeSync/durableJson.js
++++ b/modules/services/nativeSync/durableJson.js
+@@ -1,26 +1,3 @@
+ 'use strict';
+-const fs = require('node:fs/promises');
+-const path = require('node:path');
+-const { randomUUID } = require('node:crypto');
+-
+-async function durableJson(file, value) {
+-    await fs.mkdir(path.dirname(file), { recursive: true });
+-    const temporary = `${file}.${randomUUID()}.tmp`;
+-    let handle;
+-    try {
+-        handle = await fs.open(temporary, 'wx', 0o600);
+-        await handle.writeFile(JSON.stringify(value));
+-        await handle.sync();
+-        await handle.close(); handle = null;
+-        await fs.rename(temporary, file);
+-        // Windows does not expose a portable directory fsync.
+-        if (process.platform !== 'win32') {
+-            const directory = await fs.open(path.dirname(file), 'r');
+-            try { await directory.sync(); } finally { await directory.close(); }
+-        }
+-    } finally {
+-        await handle?.close().catch(() => {});
+-        await fs.rm(temporary, { force: true });
+-    }
+-}
+-module.exports = { durableJson };
++// Compatibility export for existing Bridge callers. Native persistence owns this utility.
++module.exports = require('../../utils/durableJson');
+diff --git a/modules/services/nativeSync/localAttachment.js b/modules/services/nativeSync/localAttachment.js
+new file mode 100644
+index 0000000..9855c59
+--- /dev/null
++++ b/modules/services/nativeSync/localAttachment.js
+@@ -0,0 +1,65 @@
++'use strict';
++const fs = require('node:fs/promises');
++const path = require('node:path');
++const { identity, fail } = require('./protocol');
++
++// Local admission precedes credentials and network. No second binding/state file.
++// If a damaged state cannot attest its binding, startup remains fail-closed.
++async function attachLocalRecovery({ queue, statePath }) {
++    let topics = null, state = null, code = 'SYNC_STARTUP_RECOVERY_REQUIRED';
++    const previous = queue?.syncPolicy;
++    const previousObserver = queue?.commitObserver;
++    const key = file => process.platform === 'win32' ? file.toLowerCase() : file;
++    let bindings = new Set();
++    const selected = d => topics === null || topics.some(t => t.itemId === d.itemId && t.itemType === (d.itemType || 'agent') && t.topicId === d.topicId);
++    async function physicalPath(d) {
++        const root = path.resolve(queue.userDataDir), file = queue.getHistoryPath(d.itemId, d.topicId);
++        let current = root;
++        for (const segment of ['', ...path.relative(root, file).split(path.sep)]) {
++            if (segment) current = path.join(current, segment);
++            try { const stat = await fs.lstat(current); if (stat.isSymbolicLink() || (stat.isFile() && stat.nlink > 1)) throw fail('OWNER_PATH_ALIAS'); }
++            catch (error) { if (error.code !== 'ENOENT') throw error; }
++        }
++    }
++    async function deny(d) {
++        if (selected(d)) throw fail(code);
++        if (bindings.has(key(queue.getHistoryPath(d.itemId,d.topicId)))) throw fail('OWNER_PATH_CONFLICT');
++    }
++    const fence = {
++        isRecoveryFence:true,
++        get topics() { return topics; },
++        get blocksAllWrites() { return topics === null; },
++        isEnabled:selected, beforeMutation:deny, beforeWrite:deny,
++        beforeRead:async d => { if (selected(d)) { if (topics === null) throw fail(code); await physicalPath(d); } },
++        retryLocalCommit:async()=>{throw fail(code);},
++        diagnostics:()=>({enabled:true,readOnly:true,degraded:code,selectedTopics:topics?.length ?? null,outboxSize:state?.outbox?.length ?? null,pending:state ? Boolean(state.pending) : null,localCommits:state ? Object.values(state.localCommits || {}).map(r=>({id:r.id,stage:r.stage,source:r.source,code:r.error?.code})) : null}),
++    };
++    if (queue) queue.configureSync(fence);
++    try {
++        const directory = await fs.lstat(path.dirname(statePath));
++        if (!directory.isDirectory() || directory.isSymbolicLink()) throw fail('SYNC_STATE_ALIAS');
++        const stat = await fs.lstat(statePath);
++        if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1) throw fail('SYNC_STATE_ALIAS');
++        try { state = JSON.parse(await fs.readFile(statePath,'utf8')); }
++        catch (error) { if (error instanceof SyntaxError) throw fail('INVALID_SYNC_STATE_JSON'); throw error; }
++        if (!state || ![1,2].includes(state.version) || typeof state.deviceId !== 'string' || !state.deviceId || !Array.isArray(state.topics) || !state.topics.length || !Array.isArray(state.outbox) || !Number.isSafeInteger(state.cursor) || state.cursor < 0 || !state.acked || typeof state.acked !== 'object') throw fail('INVALID_SYNC_STATE');
++        if (state.version === 2 && (state.format !== 'native-message-intents-v1' || !state.localCommits || !state.receipts || !Array.isArray(state.inbox) || !state.drift)) throw fail('INVALID_SYNC_STATE');
++        const normalized = state.topics.map(t=>({itemId:t.itemId,itemType:t.itemType || 'agent',topicId:t.topicId}));
++        const nextBindings = new Set();
++        for (const t of normalized) {
++            identity({ownerType:t.itemType,ownerId:t.itemId,topicId:t.topicId,msgId:'_binding'});
++            const file = queue?.getHistoryPath(t.itemId,t.topicId);
++            if (file) { if (nextBindings.has(key(file))) throw fail('OWNER_PATH_CONFLICT'); nextBindings.add(key(file)); }
++        }
++        topics = normalized; bindings = nextBindings;
++        return {exists:true,state,fence,setError:error=>{code=error;}};
++    } catch (error) {
++        if (error.code === 'ENOENT') {
++            if (queue?.syncPolicy === fence) queue.configureSync(previous,previousObserver);
++            return {exists:false,state:null,fence:previous,setError:()=>{}};
++        }
++        code = error.code || 'SYNC_STATE_UNAVAILABLE';
++        throw error;
++    }
++}
++module.exports = { attachLocalRecovery };
+diff --git a/modules/services/nativeSync/queries.js b/modules/services/nativeSync/queries.js
+new file mode 100644
+index 0000000..ab0216e
+--- /dev/null
++++ b/modules/services/nativeSync/queries.js
+@@ -0,0 +1,52 @@
++'use strict';
++const owners = new WeakMap();
++
++// Fixed, read-only IPC contract. The Bridge owns registration and cleanup.
++function registerNativeSyncQueries({ipcMain,getRuntime}) {
++    if (owners.has(ipcMain)) throw Object.assign(Error('SYNC_ALREADY_ATTACHED'),{code:'SYNC_ALREADY_ATTACHED'});
++    const owner = {}, registered = [], pending = new Set();
++    let stopped = false, closing;
++    owners.set(ipcMain,owner);
++    const register = (name, action, fallback) => {
++        ipcMain.handle(name, (...args) => {
++            if (stopped) return Promise.resolve({success:false,error:'SYNC_BRIDGE_CLOSED'});
++            const operation = Promise.resolve().then(()=>action(...args)).catch(error=>({success:false,error:error.code || fallback}));
++            pending.add(operation); operation.finally(()=>pending.delete(operation));
++            return operation;
++        });
++        registered.push(name);
++    };
++    try {
++        register('native-sync:executions',async (_event,itemId,itemType,topicId,refresh=true)=>{
++            if (typeof refresh !== 'boolean') throw Object.assign(Error('INVALID_EXECUTION_QUERY'),{code:'INVALID_EXECUTION_QUERY'});
++            const runtime=getRuntime();
++            if (!runtime) return {success:true,enabled:false};
++            return {success:true,...await runtime.getExecutionStatus({itemId,itemType,topicId},{refresh})};
++        },'EXECUTION_STATUS_UNAVAILABLE');
++        register('native-sync:task-result',async (_event,itemId,itemType,topicId,executionId,nativeTaskId)=>{
++            if ([executionId,nativeTaskId].some(v=>typeof v!=='string'||!v||v.length>512||/[\x00-\x1f]/.test(v))) throw Object.assign(Error('INVALID_NATIVE_TASK_QUERY'),{code:'INVALID_NATIVE_TASK_QUERY'});
++            const runtime=getRuntime();
++            if (!runtime) throw Object.assign(Error('NATIVE_TASK_RESULT_UNAVAILABLE'),{code:'NATIVE_TASK_RESULT_UNAVAILABLE'});
++            return {success:true,...await runtime.getNativeTaskResult({itemId,itemType,topicId},executionId,nativeTaskId)};
++        },'NATIVE_TASK_RESULT_UNAVAILABLE');
++    } catch (error) {
++        for (const name of registered) ipcMain.removeHandler(name);
++        if (owners.get(ipcMain) === owner) owners.delete(ipcMain);
++        throw error;
++    }
++    return {
++        close() {
++            if (closing) return closing;
++            stopped=true;
++            closing=(async()=>{
++                await Promise.allSettled([...pending]);
++                if (owners.get(ipcMain) === owner) {
++                    for (const name of registered) ipcMain.removeHandler(name);
++                    owners.delete(ipcMain);
++                }
++            })();
++            return closing;
++        },
++    };
++}
++module.exports = { registerNativeSyncQueries };
+diff --git a/modules/services/nativeSync/runtime.js b/modules/services/nativeSync/runtime.js
+index c49b66c..c547160 100644
+--- a/modules/services/nativeSync/runtime.js
++++ b/modules/services/nativeSync/runtime.js
+@@ -3,6 +3,15 @@ const path = require('node:path');
+ const fs = require('node:fs/promises');
+ const { NativeSyncAdapter } = require('./adapter');
+ const { fail } = require('./protocol');
++const { attachLocalRecovery } = require('./localAttachment');
++const { registerNativeSyncQueries } = require('./queries');
++const queueOwners = new WeakMap(), rootOwners = new Map();
++function reserveOwner(queue, root) {
++    const key=process.platform==='win32'?path.resolve(root).toLowerCase():path.resolve(root);
++    if ((queue && queueOwners.has(queue)) || rootOwners.has(key) || (queue?.syncPolicy && !queue.syncPolicy.isRecoveryFence)) throw fail('SYNC_ALREADY_ATTACHED');
++    const owner={};rootOwners.set(key,owner);if(queue)queueOwners.set(queue,owner);
++    return ()=>{if(rootOwners.get(key)===owner)rootOwners.delete(key);if(queue&&queueOwners.get(queue)===owner)queueOwners.delete(queue);};
++}
+ 
+ function createSyncRequest({url,token},timeoutMs=8000) {
+     return async(route,{body}={})=>{
+@@ -16,21 +25,36 @@ function createSyncRequest({url,token},timeoutMs=8000) {
+     };
+ }
+ 
+-async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated = false, notify, notifyExecutionStatus, intervalMs = 250, executionIntervalMs = 5000, readSettings, readAgentConfig, readGroupConfig, readTavernRules, readExecutionPolicy, thumbnail, request, requestBinary, storeAttachment }) {
++async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated = false, notify, notifyExecutionStatus, intervalMs = 250, executionIntervalMs = 5000, readSettings, readAgentConfig, readGroupConfig, readTavernRules, readExecutionPolicy, thumbnail, request, requestBinary, storeAttachment, ipcMain }) {
+     const poc = args.includes('--native-sync-poc');
+     if (poc && !isolated) throw fail('ISOLATED_APP_DATA_REQUIRED');
+     if (!poc && !appDataRoot) return null;
+-    const connection = poc ? null : await require('./connection').readConnection({ appDataRoot, readSettings });
+-    if (!poc && !connection) return null;
++    const option = name => args.find(arg => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
++    if (poc) {
++        let endpoint;
++        try { endpoint = new URL(option('native-sync-url')); } catch { throw fail('ISOLATED_LOOPBACK_REQUIRED'); }
++        if (endpoint.protocol !== 'http:' || endpoint.hostname !== '127.0.0.1') throw fail('ISOLATED_LOOPBACK_REQUIRED');
++    }
++    const releaseOwner=reserveOwner(queue,appDataRoot);
++    let local,adapter,queries;
++    try {
+     const statePath = path.join(appDataRoot, '.native-sync', 'state.json');
+-    let existingState = false, prepared = !connection;
+-    if (connection) {
+-        try {
+-            const stat = await fs.lstat(statePath);
+-            if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1) throw fail('SYNC_STATE_ALIAS');
+-            existingState = true;
+-        } catch (error) { if (error.code !== 'ENOENT') throw error; }
++    local = await attachLocalRecovery({queue,statePath});
++    const connection = poc ? null : await require('./connection').readConnection({ appDataRoot, readSettings });
++    if (!poc && !connection) {
++        if (!local.exists && !ipcMain) { releaseOwner(); return null; }
++        local.setError('SYNC_CONNECTION_REQUIRED');
++        let closing;
++        const dormant={
++            adapter:null,
++            async getExecutionStatus(){return {enabled:false};},
++            async getNativeTaskResult(){throw fail('NATIVE_TASK_RESULT_UNAVAILABLE');},
++            close(){return closing ||= (async()=>{await queries?.close();releaseOwner();})();},
++        };
++        if(ipcMain)queries=registerNativeSyncQueries({ipcMain,getRuntime:()=>dormant});
++        return dormant;
+     }
++    let existingState = local.exists, prepared = !connection;
+     const send = request || createSyncRequest(connection || {});
+     let publicationError = null,bootstrap;
+     const publishConfiguration = async () => {
+@@ -57,13 +81,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
+     // Existing shared histories attach Queue policy locally before network work.
+     // First attachment still requires the approved online comparison.
+     if (!existingState) await prepare();
+-    const option = name => args.find(arg => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
+-    if (poc) {
+-        let endpoint;
+-        try { endpoint = new URL(option('native-sync-url')); } catch { throw fail('ISOLATED_LOOPBACK_REQUIRED'); }
+-        if (endpoint.protocol !== 'http:' || endpoint.hostname !== '127.0.0.1') throw fail('ISOLATED_LOOPBACK_REQUIRED');
+-    }
+-    const adapter = await NativeSyncAdapter.open({ queue, statePath,bootstrap, ...(connection || { url: option('native-sync-url'), deviceId: option('native-sync-device'), topics: JSON.parse(option('native-sync-topics') || '[]'), token: 'isolated-poc-token' }), ...((connection || request) ? { request: send } : {}), notify });
++    adapter = await NativeSyncAdapter.open({ queue, statePath,bootstrap, ...(connection || { url: option('native-sync-url'), deviceId: option('native-sync-device'), topics: JSON.parse(option('native-sync-topics') || '[]'), token: 'isolated-poc-token' }), ...((connection || request) ? { request: send } : {}), notify });
+     const download=requestBinary||(async route=>{
+         let response;try{response=await fetch(connection.url+route,{headers:{Authorization:`Bearer ${connection.token}`,'X-NativeSync-Protocol':'2','X-NativeSync-Capabilities':'attachments-v1,message-intents-v1'},redirect:'error',signal:AbortSignal.timeout(30000)});}catch{throw fail('NETWORK_UNAVAILABLE');}
+         if(!response.ok){let code;try{code=(await response.json()).error?.code;}catch{}throw fail(/^ATTACHMENT_[A-Z_]+$/.test(code||'')?code:'ATTACHMENT_DOWNLOAD_FAILED');}
+@@ -76,6 +94,8 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
+         connection, file: path.join(appDataRoot, '.native-sync', 'execution-status.json'), request: send,
+         notify: result => notifyExecutionStatus?.(withLocal(result)),
+     }) : null;
++    let runtime;
++    if(ipcMain)queries=registerNativeSyncQueries({ipcMain,getRuntime:()=>runtime});
+     // Read-only execution discovery has its own timer/promise. Slow or failed
+     // status reads must never hold the History catch-up loop or Queue policy.
+     let stopped = false, running = null, executionRunning = null, lastConfigCheck = Date.now(), lastAttachmentCheck = 0;
+@@ -92,17 +112,55 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
+         }).finally(() => { running = null; });
+     }, intervalMs);
+     timer.unref?.();
+-    return {
++    let closing;
++    runtime = {
+         adapter,
+         async getExecutionStatus(d, { refresh = true } = {}) {
++            if (stopped) throw fail('SYNC_BRIDGE_CLOSED');
+             if (!executionStatus) return { enabled: false };
+             return withLocal(refresh ? await executionStatus.refresh(d) : executionStatus.read(d));
+         },
+         async getNativeTaskResult(d, executionId, nativeTaskId) {
++            if (stopped) throw fail('SYNC_BRIDGE_CLOSED');
+             if (!executionStatus) throw fail('NATIVE_TASK_RESULT_UNAVAILABLE');
+             return executionStatus.result(d, executionId, nativeTaskId);
+         },
+-        async close() { stopped = true; clearInterval(timer); clearInterval(executionTimer); await running; await executionRunning; await executionStatus?.close(); await adapter.close(); },
++        close() {
++            if(closing)return closing;
++            stopped=true;clearInterval(timer);clearInterval(executionTimer);
++            closing=(async()=>{
++                await queries?.close();
++                await running;await executionRunning;
++                // Host quit admission already stops new native requests. Keep the
++                // capture observer until admitted local Queue work has settled.
++                await Promise.allSettled([...(queue?.queues?.values() || [])]);
++                await executionStatus?.close();await adapter.close();releaseOwner();
++            })();
++            return closing;
++        },
+     };
++    return runtime;
++    } catch(error) {
++        local?.setError(error.code || 'SYNC_STARTUP_FAILED');
++        await queries?.close();
++        if(adapter){adapter.startupError=error.code || 'SYNC_STARTUP_FAILED';await adapter.close();}
++        // The real host must reach native startup when a known local binding
++        // can remain fenced. Standalone callers retain their rejection contract.
++        // An unreadable/unattested state never reaches this fallback.
++        if(ipcMain && local && error.code !== 'SYNC_ALREADY_ATTACHED') {
++            let closing;
++            const degraded={
++                adapter:null, startupError:error.code || 'SYNC_STARTUP_FAILED',
++                async getExecutionStatus(){return {enabled:false,degraded:this.startupError};},
++                async getNativeTaskResult(){throw fail('NATIVE_TASK_RESULT_UNAVAILABLE');},
++                close(){return closing ||= (async()=>{await queries?.close();releaseOwner();})();},
++            };
++            try {queries=registerNativeSyncQueries({ipcMain,getRuntime:()=>degraded});}
++            catch(registrationError){releaseOwner();throw registrationError;}
++            return degraded;
++        }
++        releaseOwner();
++        throw error;
++    }
+ }
+ module.exports = { createNativeSyncRuntime,createSyncRequest };
+diff --git a/preloads/api/chat.js b/preloads/api/chat.js
+index 268c04f..8ffde14 100644
+--- a/preloads/api/chat.js
++++ b/preloads/api/chat.js
+@@ -5,7 +5,7 @@
+ const { invoke, on, onSignal } = require('../core/define');
+ 
+ module.exports = {
+-    handlers: ['modules/ipc/chatHandlers.js', 'modules/ipc/nativeHistoryHandlers.js', 'main.js'],
++    handlers: ['modules/ipc/chatHandlers.js', 'modules/ipc/nativeHistoryHandlers.js', 'modules/services/nativeSync/queries.js', 'main.js'],
+     roles: ['chat'],
+     api: {
+         // 话题
+diff --git a/tests/native-sync-message-intents.test.cjs b/tests/native-sync-message-intents.test.cjs
+index 41ec1bb..cb8dcfd 100644
+--- a/tests/native-sync-message-intents.test.cjs
++++ b/tests/native-sync-message-intents.test.cjs
+@@ -78,6 +78,9 @@ for(const phase of ['intent-prepared','history-written'])test('H05/H06: actual s
+   await a.append(msg('z'),other);await a.adapter.retryLocalCommit(topic,record.id);
+  }else assert.equal((await a.queue.read(topic)).length,0);
+  assert.ok(a.adapter.state.outbox.some(op=>op.opId===opId));await a.adapter.flush();
++ const applied=f.service.store.db.prepare('SELECT result_json FROM applied_ops WHERE op_id=?').get(opId);assert.ok(applied);
++ const event=f.service.store.db.prepare('SELECT msg_id,action FROM journal WHERE seq=?').get(JSON.parse(applied.result_json).seq);assert.equal(event.msg_id,'b');assert.equal(event.action,'delete');
++ assert.equal(f.service.store.db.prepare("SELECT count(*) AS n FROM journal WHERE action='delete'").get().n,1);
+  assert.equal(f.service.store.db.prepare('SELECT count(*) AS n FROM messages WHERE deleted=1').get().n,1);assert.equal(a.adapter.state.localCommits[JSON.stringify({ownerId:topic.itemId,ownerType:'agent',topicId:topic.topicId})],undefined);
+ });
+ test('H06: live confirmation failure reports saved/pending, recovers before a later write, and preserves the first op',async t=>{

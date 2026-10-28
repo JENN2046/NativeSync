@@ -1,0 +1,27 @@
+{
+  "files": [
+    {
+      "path": "server.js",
+      "beforeSha256": "c764c1b7d6a53befc0d553fd6dffd106ae4f98fd6d45e21098ca76f49cd28cbd",
+      "afterSha256": "3e84bb5b59defb53140c8de3defd57505e18efab97b4e8c5a8d8ef2c2c4d8bea",
+      "stdioExcluded": true
+    },
+    {
+      "path": "Plugin.js",
+      "beforeSha256": "6e73e1b6aca8af50e7a8df548e6ea2aac3e723fd865b6e5c61788a3739b347b1",
+      "afterSha256": "650dd438bc1ae44eb2b4a2e5a4c5e2c7ca9db1ea69941262665667d5e9382e0f",
+      "stdioExcluded": true
+    },
+    {
+      "path": "Plugin/AgentAssistant/AgentAssistant.js",
+      "beforeSha256": "0b99d2582eb94d33de10a196884055d84ad5277bd321a78b6f6f91c0ae2cd146",
+      "afterSha256": "9d6c94b166054762849126330861fa468a6aeca8e03f652f029ff114ccb23e08",
+      "stdioExcluded": true
+    }
+  ],
+  "patchSha256": "a22f16692017e6b47530115f83a4df91db359d8fd411d29526515d0cc8958c58",
+  "isolatedApplyVerified": true,
+  "currentHostAlreadyContainsTheseChanges": true,
+  "notSafeToApplyBlindlyToAnotherHost": true,
+  "agentManagerPatchRequired": false
+}

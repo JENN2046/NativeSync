@@ -1,0 +1,37 @@
+[
+  {
+    "path": "main.js",
+    "sha256": "6252303f6373dc4953ec558c2662c7a98d645bfdca3d8bb59c21a02157b0d471",
+    "ownership": "existing-host dependency or integration; not copied as NativeSync own core"
+  },
+  {
+    "path": "preloads/api/chat.js",
+    "sha256": "c1a7a266b60e64954c694eeddc82865eead14b9459b46dd253b1e228121c81c0",
+    "ownership": "existing-host dependency or integration; not copied as NativeSync own core"
+  },
+  {
+    "path": "modules/services/historyMutationQueue.js",
+    "sha256": "d6606731d89e7339aa803bd82676c107c0bcc5b0fcb29a9560ec8d0dc8c9bb26",
+    "ownership": "existing-host dependency or integration; not copied as NativeSync own core"
+  },
+  {
+    "path": "modules/services/syncWriterBoundary.js",
+    "sha256": "bb5c0fcac6d26c8b2d084a184263a537fb3437a1db4f8cf1b33a6458d1ac7631",
+    "ownership": "existing-host dependency or integration; not copied as NativeSync own core"
+  },
+  {
+    "path": "modules/utils/durableJson.js",
+    "sha256": "30450602e92726ce5f122eff97e7b10cd1697a7e3b0b875a867e71c6b2b6b007",
+    "ownership": "existing-host dependency or integration; not copied as NativeSync own core"
+  },
+  {
+    "path": "VCPDistributedServer/Plugin/VCPMobileSync/sync/canonical.js",
+    "sha256": "388d514fdd5f5451a707987ca31de3391da52e12d99c39d16d032fa749e3f3d3",
+    "ownership": "existing-host dependency or integration; not copied as NativeSync own core"
+  },
+  {
+    "path": "VCPDistributedServer/Plugin/VCPMobileSync/core/hash.js",
+    "sha256": "88bd3d0a901c0555813309eb6a9ba6a9fc6b00fc48df4b8894bcde05bb36dbb2",
+    "ownership": "existing-host dependency or integration; not copied as NativeSync own core"
+  }
+]

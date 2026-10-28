@@ -1,0 +1,507 @@
+{
+  "remoteRepository": "JENN2046/NativeSync",
+  "branch": "codex/initial-import",
+  "importType": "new snapshot import; not reconstructed upstream history",
+  "files": [
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/connection.js",
+      "originPath": "modules/services/nativeSync/connection.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "a53739189a93d470ab56688e3010e3cdeaa7691f30d2a4cf39e48b34b9a4478a"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/executionStatus.js",
+      "originPath": "modules/services/nativeSync/executionStatus.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "9c8607af4646b07c1c73718227d94bea97e4d2664e71a1bf60d1f8f15ff97a02"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/durableJson.js",
+      "originPath": "modules/services/nativeSync/durableJson.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "0d6cdc18d75f9016f21ecbc700013b49d54aa2d6f130685aba3afa3f5c76cd00"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/executionConfigs.js",
+      "originPath": "modules/services/nativeSync/executionConfigs.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "2c81ad9c4fef7ea3b42c6ed07b8e451c0ff4bdb1e21b53ce112b3f5099597c0a"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/localAttachment.js",
+      "originPath": "modules/services/nativeSync/localAttachment.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "04e1e3a8148a1ecd97b0742c9192b226ef29d44e167b04bb0b5fa6c67260c5ba"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceSnapshot.js",
+      "originPath": "modules/services/nativeSync/sourceSnapshot.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "ea21a3e299fe46b32950a35986cbd5b21d4a419ed589deaa6e23ba288fa97fb6"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/catalog.js",
+      "originPath": "modules/services/nativeSync/catalog.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "602646eed5b982e61303363c2cd0eba3b8d2533411a8e522b33708fd02cda239"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/nativeTasks.js",
+      "originPath": "modules/services/nativeSync/nativeTasks.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "b9eeba52ea7f22a56b92af0a8fb102c72b3e869d02d099e833308b3db4631225"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/metadata.js",
+      "originPath": "modules/services/nativeSync/metadata.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "8048264b72ef3689a667f6dee1096849c534cdd0a0db8295eb2485ad0113d577"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceDirectory.js",
+      "originPath": "modules/services/nativeSync/sourceDirectory.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "cfdab21f0bd4a64b15f40ace3426bc77e035f759e7fd250cf7ec747f2ad8d79f"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/runtime.js",
+      "originPath": "modules/services/nativeSync/runtime.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "76f8df54734c4d281645d20f4684e12343c6b1e5a0a9c84e4ac89b722f0fabae"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/protocol.js",
+      "originPath": "modules/services/nativeSync/protocol.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "69477661d4688d4c715046452bb3191023deffacf23b1f021fb15e99bdde33f1"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/initialImport.js",
+      "originPath": "modules/services/nativeSync/initialImport.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "51e5b5c36609c4ed7ace4dc106018c820397af1fdd408df02c956657041e2d3d"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/queries.js",
+      "originPath": "modules/services/nativeSync/queries.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "e21c2f18228e545f7043b2508a72d935bbf90e67618f7b0ba03a6db385fdb669"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/adapter.js",
+      "originPath": "modules/services/nativeSync/adapter.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "cdaec2ad2d703e8b70dc4ed131b34d07e5bede70c05a2e5f4cf2c0cd1a75af58"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceSync.js",
+      "originPath": "modules/services/nativeSync/sourceSync.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "a9fbd9d8d68246dbca587665f1df0b7cbc90df3d18a693a090cab6eddd36793f"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/mergeTerminal.js",
+      "originPath": "modules/services/nativeSync/mergeTerminal.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "de5a3fe53264c6e0385099ce33fb057984b1dd6ed9bf9d9bed2ac52684cb21bf"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/attachments.js",
+      "originPath": "modules/services/nativeSync/attachments.js",
+      "kind": "installed-chat-readonly",
+      "sha256": "fb6a825aad30676400a8c23946f7fd8a3d17cfd5d4d76f0607b3680f84a0a0c6"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/native-sync.js",
+      "originPath": "Plugin/NativeSync/native-sync.js",
+      "kind": "installed-server-readonly",
+      "sha256": "6e2afb6402cd73f98a922cc514fe9ed176dc082d8df8feba239e0233c515592c"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/plugin-manifest.json",
+      "originPath": "Plugin/NativeSync/plugin-manifest.json",
+      "kind": "installed-server-readonly",
+      "sha256": "7366fbb4e684f33ec32c2bc147743fb4f259eef1db8100c1974de7a08f74fa6d"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "originPath": "Plugin/NativeSync/sync/httpService.js",
+      "kind": "installed-server-readonly",
+      "sha256": "baa69fa4655e63bba047005afa21250d36fe53452994fcd25aab4026f8d88c50"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceHttp.js",
+      "originPath": "Plugin/NativeSync/sync/sourceHttp.js",
+      "kind": "installed-server-readonly",
+      "sha256": "99e1a8adc3c2285e4457b8bfa5ac555a550737736cc1f818646cd51a0d342d1c"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/centralStore.js",
+      "originPath": "Plugin/NativeSync/sync/centralStore.js",
+      "kind": "installed-server-readonly",
+      "sha256": "7300ed7af9970e05bc561895aed74e7031712329aab038b6db09bc279317e660"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/metadata.js",
+      "originPath": "Plugin/NativeSync/sync/metadata.js",
+      "kind": "installed-server-readonly",
+      "sha256": "3f9ec708152f0f856c86cbd060eec707cc5b868000f82c0c03836710ae809cec"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/protocol.js",
+      "originPath": "Plugin/NativeSync/sync/protocol.js",
+      "kind": "installed-server-readonly",
+      "sha256": "d3e522948d2676a3b4f6e3d931ec0435fd1387bd62fd2c6f422f75569df25b0f"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/messageCausality.js",
+      "originPath": "Plugin/NativeSync/sync/messageCausality.js",
+      "kind": "installed-server-readonly",
+      "sha256": "9161e09d16f37c15fcca92ab9fd5c518ae6969d3c44f9359976ed9663e88e3b7"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "originPath": "Plugin/NativeSync/sync/sourceCatalog.js",
+      "kind": "installed-server-readonly",
+      "sha256": "334b2905a420111f006e95708b9b4a045377ace626931188d1a570b954f8caf9"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "originPath": "Plugin/NativeSync/mobile/portal.js",
+      "kind": "installed-server-readonly",
+      "sha256": "da7e1a57960bb6ba199c438194682e253f74061a08c500a1c6874900c8a42320"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/submissionRecovery.js",
+      "originPath": "Plugin/NativeSync/mobile/submissionRecovery.js",
+      "kind": "installed-server-readonly",
+      "sha256": "e2ae8d70b7af64301a5ea68ce1e7422599f95925869107bb6d950f4454eb18d4"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/connection.js",
+      "originPath": "Plugin/NativeSync/mobile/connection.js",
+      "kind": "installed-server-readonly",
+      "sha256": "756c9020775c68f33077a434d95e2f8ef2623b41c6ee0c5a9976f9b37bb0d7b5"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/executionConfigs.js",
+      "originPath": "Plugin/NativeSync/mobile/executionConfigs.js",
+      "kind": "installed-server-readonly",
+      "sha256": "b443b1b38f0fb1dd1dcf36746cc0c3ff23e0f3ba9135b83cc8cdc4e36fbeecb9"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "originPath": "Plugin/NativeSync/mobile/execution.js",
+      "kind": "installed-server-readonly",
+      "sha256": "696b31da32b0e441fae8ad2f78f4f64dad9c1b1dea814cd39b988545d0e492ca"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/nativeTasks.js",
+      "originPath": "Plugin/NativeSync/mobile/nativeTasks.js",
+      "kind": "installed-server-readonly",
+      "sha256": "eb22c597feeeae23308099fcc56f57e12f4999ecda12241f4c582e8b71e2f6b1"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/pdfText.js",
+      "originPath": "Plugin/NativeSync/mobile/pdfText.js",
+      "kind": "installed-server-readonly",
+      "sha256": "d0e4af4acddf651c635abf372177e19613d97ad64607bac8008bc25245b5c7fa"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/groupTurn.js",
+      "originPath": "Plugin/NativeSync/mobile/groupTurn.js",
+      "kind": "installed-server-readonly",
+      "sha256": "002c41cbc3b92567f3768514109d9c8490264bbc732818fb51e3c7370b4cf2cf"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/nativeResponse.js",
+      "originPath": "Plugin/NativeSync/mobile/nativeResponse.js",
+      "kind": "installed-server-readonly",
+      "sha256": "3851bb47d59b9897699aa8c8670f9c234bb26d917ceeece8141998d76b2d8956"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/snapshotPrompt.js",
+      "originPath": "Plugin/NativeSync/mobile/snapshotPrompt.js",
+      "kind": "installed-server-readonly",
+      "sha256": "7d10c8ae439888c32ecba739fbee64f2f094f3e3fd3509c9ec68811aafd8a9af"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/nativePacket.js",
+      "originPath": "Plugin/NativeSync/mobile/nativePacket.js",
+      "kind": "installed-server-readonly",
+      "sha256": "ad778a263041749c32b2037cd9212f8ff11b21e5ec42e4c920aa57ea0d49077c"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/attachmentRoutes.js",
+      "originPath": "Plugin/NativeSync/mobile/attachmentRoutes.js",
+      "kind": "installed-server-readonly",
+      "sha256": "ab28b125e9cb20ee221c0f1dd1beeea4a5fad2b0d387f9e5aa379d422099bee4"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/effectiveContext.js",
+      "originPath": "Plugin/NativeSync/mobile/effectiveContext.js",
+      "kind": "installed-server-readonly",
+      "sha256": "4bf4d55e1889dfa9c4038f4d0253b5ae180aba21464441b7bf67f634bef7f1cf"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/groupRequest.js",
+      "originPath": "Plugin/NativeSync/mobile/groupRequest.js",
+      "kind": "installed-server-readonly",
+      "sha256": "c509d2689ff626d194196665e225ea283f29638e45b19c80a8a4b25d3612f024"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/attachments.js",
+      "originPath": "Plugin/NativeSync/mobile/attachments.js",
+      "kind": "installed-server-readonly",
+      "sha256": "bfe10e265aaf77902ddce59d3b00e9ee84e9c94f1a6b772fa77eece72441cba1"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/streamWatchdog.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/streamWatchdog.js",
+      "kind": "installed-server-readonly",
+      "sha256": "139d1b568ba40264a740c636cf65bf7e2dc20f8ba2e6d85d8bf68c8092efec60"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/groupChatUrl.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/groupChatUrl.js",
+      "kind": "installed-server-readonly",
+      "sha256": "b1fc3e79467705eef02da96710ebf9d9daadfa06ad57ed1957f2086e291b3855"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/streamDelta.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/streamDelta.js",
+      "kind": "installed-server-readonly",
+      "sha256": "e8984983e8b8938e32b411565c08481d3f66d02291598fdfb187af3d775d6e80"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/groupContextWindow.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/groupContextWindow.js",
+      "kind": "installed-server-readonly",
+      "sha256": "50348c483de22cbe2335cbdf66eea1e713d6504166ac47651990eb479e48ba32"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modelSelection.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/modelSelection.js",
+      "kind": "installed-server-readonly",
+      "sha256": "1fc60600dacf29ec4601c45e9a167284db3de2a2c6df87cce0eae1fe8926298f"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/modules/contextSanitizer.js",
+      "originPath": "Plugin/NativeSync/nativeRules/modules/contextSanitizer.js",
+      "kind": "installed-server-readonly",
+      "sha256": "ddbef2472d52fb641b25d64690bde04bfc074294a8457561b5b1ed6eeacd057f"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/modules/tavernRulesEngine.js",
+      "originPath": "Plugin/NativeSync/nativeRules/modules/tavernRulesEngine.js",
+      "kind": "installed-server-readonly",
+      "sha256": "ede855fbe40b70cd7b13684671047d040180cef2b354a6e8677a1b1b5c1c51bb"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/modules/renderer/markdownCodeDomainScanner.js",
+      "originPath": "Plugin/NativeSync/nativeRules/modules/renderer/markdownCodeDomainScanner.js",
+      "kind": "installed-server-readonly",
+      "sha256": "512b3b8364d7b2e6d53d80e5c86c57a51007cf270a5e43c3987be90aacb1ada7"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/modules/renderer/toolResultRegions.js",
+      "originPath": "Plugin/NativeSync/nativeRules/modules/renderer/toolResultRegions.js",
+      "kind": "installed-server-readonly",
+      "sha256": "f684a4be9a7ff2f76dc6e97e498883c088bbf618591d6cdc5fb8eec7a00888aa"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/contextCompactionState.js",
+      "originPath": "Plugin/NativeSync/nativeRules/modules/chat/contextCompactionState.js",
+      "kind": "installed-server-readonly",
+      "sha256": "ca2a2e8b9fd59445dd986a6cfcae47dafebdcb6bb4dc27fb616e3a5f3116906f"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/requestMetadata.js",
+      "originPath": "Plugin/NativeSync/nativeRules/modules/chat/requestMetadata.js",
+      "kind": "installed-server-readonly",
+      "sha256": "f1b7064e896fe05e22359d86a2a1a8305ae817f08ed3dfa0ab1186432931615b"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/requestEnvelope.js",
+      "originPath": "Plugin/NativeSync/nativeRules/modules/chat/requestEnvelope.js",
+      "kind": "installed-server-readonly",
+      "sha256": "f311d0ce8e7becd4f97b4f1180a51e4051f3f66d7a7c1f1fd2df7403bc25ef96"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/sequentialMode.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/modes/sequentialMode.js",
+      "kind": "installed-server-readonly",
+      "sha256": "7d4a3a2e89aeb8e3dd7c13dbc6427c29f4d2b85d46f04a0ae0f233d662cb06c4"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/inviteOnlyMode.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/modes/inviteOnlyMode.js",
+      "kind": "installed-server-readonly",
+      "sha256": "1e77da13df87a8d12bddd0b8d474bbc8b90dfaf4d7ae2934d2814f8b33ba553c"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/baseChatMode.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/modes/baseChatMode.js",
+      "kind": "installed-server-readonly",
+      "sha256": "e76f53930084405516709b5b6e8314202f29300a1e3e84017de5feb89a072fad"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/natureRandomMode.js",
+      "originPath": "Plugin/NativeSync/nativeRules/Groupmodules/modes/natureRandomMode.js",
+      "kind": "installed-server-readonly",
+      "sha256": "eeea58c6e70acb435d38d906707aeb6e97118ede6f0f687715614de53aa9ac64"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/canonical/canonical.js",
+      "originPath": "Plugin/NativeSync/sync/canonical/canonical.js",
+      "kind": "installed-server-readonly",
+      "sha256": "4421dc2c11f7211d22d5d8e9ee6fe32cc7a19b4c83068a66d8d3dfd95c405672"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/canonical/hash.js",
+      "originPath": "Plugin/NativeSync/sync/canonical/hash.js",
+      "kind": "installed-server-readonly",
+      "sha256": "1d8accca65491332f2462cc8c735998444be782dfd59e7933195155a09489d37"
+    },
+    {
+      "path": "overlays/VCPToolBox/modules/requestExecutionContext.js",
+      "originPath": "modules/requestExecutionContext.js",
+      "kind": "native-execution-extension",
+      "sha256": "f8202d450806d8962888c2f7153eea92b0b13dfb4ea8942a4b5f53b30866a7ee"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js",
+      "originPath": "Plugin/AgentAssistant/delegationContinuity.js",
+      "kind": "native-execution-extension",
+      "sha256": "bb2e19aefa3cf7834591feb22c3dbc86e2d49c7e5bc39b0c2bd910b446ee79d7"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/package-lock.json",
+      "originPath": "apps/mobile/package-lock.json",
+      "kind": "public-v8-mobile-source",
+      "sha256": "50d06796bdc8b0b2ea6128c201e06d3ec1f4e3831a14a3ca1e9b7d06c3d85e09"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/package.json",
+      "originPath": "apps/mobile/package.json",
+      "kind": "public-v8-mobile-source",
+      "sha256": "f82a63d238be79efc6bb4544ea18e611fbe29a1798b5a7590ceb2d84f861e6d6"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/index.html",
+      "originPath": "apps/mobile/index.html",
+      "kind": "public-v8-mobile-source",
+      "sha256": "d71c2390b8077845243c2f6def00927e02b2208da41603ee36b8c97fbd5258b5"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/vite.config.js",
+      "originPath": "apps/mobile/vite.config.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "4c8bbc00ddc0591bb89ed18a4af3f261525369d5568f0f1881f0e8bd4b7cac33"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/main.js",
+      "originPath": "apps/mobile/src/main.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "56965894c5294d6e37e940fdda18d5f259ad9a7266d49812f732a773e49abdbc"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/submissionRecovery.js",
+      "originPath": "apps/mobile/src/submissionRecovery.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "5e4852dca74e4121ae56749c39f55e35b822a26004a5f1fbd3b130b56afa1e36"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/App.vue",
+      "originPath": "apps/mobile/src/App.vue",
+      "kind": "public-v8-mobile-source",
+      "sha256": "5f266e3986f90c66a64f222b23486e8d76d6700a3445d423ff7012d54fb7d33f"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/attachmentStatus.js",
+      "originPath": "apps/mobile/src/attachmentStatus.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "ba934e01e2ae4a8f9b3e40c1410a64eca4c3e94cbd0420c8d6967df68dfd4054"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/nativeTasks.js",
+      "originPath": "apps/mobile/src/nativeTasks.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "d2059ce3efab338b53751d6f34f8cae54a53c1ea296c043d76d982cf65789f31"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/attachmentUpload.js",
+      "originPath": "apps/mobile/src/attachmentUpload.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "3fd4275a68a225cd96c1116dbb215abb5a3a97a7753f9489eb4967d54e7e66ee"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/directoryHistory.js",
+      "originPath": "apps/mobile/src/directoryHistory.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "52b8f7d1f4a8f06e277ec5e9dfb6514c6e47245027dbb865b4c67e1189e95a96"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/style.css",
+      "originPath": "apps/mobile/src/style.css",
+      "kind": "public-v8-mobile-source",
+      "sha256": "28288c090555c0d5b635965be4261b8ec5e328c84c0674d968d1a42d71ccda31"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/public/icon-512.png",
+      "originPath": "apps/mobile/public/icon-512.png",
+      "kind": "public-v8-mobile-source",
+      "sha256": "39704b707d37d98ef42a91fb8ac1e7197d9772a87d795258cfa1a9e758f58a62"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/public/manifest.webmanifest",
+      "originPath": "apps/mobile/public/manifest.webmanifest",
+      "kind": "public-v8-mobile-source",
+      "sha256": "fb11d99176f326ae1c0d49ff8a7b890c599dff37522594f6a8159402bbea7456"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/public/icon-192.png",
+      "originPath": "apps/mobile/public/icon-192.png",
+      "kind": "public-v8-mobile-source",
+      "sha256": "3294b329f7230778b3da55db4d1124d12ff77b3dc3a03fc1d3015dd4b6049f88"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/public/icon.svg",
+      "originPath": "apps/mobile/public/icon.svg",
+      "kind": "public-v8-mobile-source",
+      "sha256": "16e5a8d331ce6eac59372018e9d320d34fdaa99cda1f5108f18b424b8d4fdf92"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/public/sw.js",
+      "originPath": "apps/mobile/public/sw.js",
+      "kind": "public-v8-mobile-source",
+      "sha256": "ca561071e5877f6aa8d346682c7544d99a61b796daebf119e2878a3e0e1e8480"
+    },
+    {
+      "path": "LICENSES/VCPToolBox-LICENSE.txt",
+      "originPath": "LICENSE",
+      "kind": "installed-upstream-license",
+      "sha256": "5392a8b3f46108fa3494e8c15b57da9e14e9bbd93335590cb5b50364fcf770a8"
+    },
+    {
+      "path": "compat/baselines/VCPToolBox/server.js",
+      "originPath": "server.js",
+      "kind": "pre-native-sync-public-host-baseline",
+      "sha256": "c764c1b7d6a53befc0d553fd6dffd106ae4f98fd6d45e21098ca76f49cd28cbd"
+    },
+    {
+      "path": "compat/baselines/VCPToolBox/Plugin.js",
+      "originPath": "Plugin.js",
+      "kind": "pre-native-sync-public-host-baseline",
+      "sha256": "6e73e1b6aca8af50e7a8df548e6ea2aac3e723fd865b6e5c61788a3739b347b1"
+    },
+    {
+      "path": "compat/baselines/VCPToolBox/Plugin/AgentAssistant/AgentAssistant.js",
+      "originPath": "Plugin/AgentAssistant/AgentAssistant.js",
+      "kind": "pre-native-sync-public-host-baseline",
+      "sha256": "0b99d2582eb94d33de10a196884055d84ad5277bd321a78b6f6f91c0ae2cd146"
+    }
+  ],
+  "stdioExcluded": true,
+  "realConfigHistoryDatabaseExcluded": true
+}

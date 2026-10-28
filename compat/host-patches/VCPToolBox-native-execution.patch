@@ -1,0 +1,257 @@
+diff --git a/server.js b/server.js
+index 4b8cf4a..41bcdaa 100644
+--- a/server.js
++++ b/server.js
+@@ -553,10 +553,18 @@ else console.log('未加载任何全局上下文转换规则。');
+ 
+ const app = express();
+ app.set('trust proxy', true); // 新增：信任代理，以便正确解析 X-Forwarded-For 头，解决本地IP识别为127.0.0.1的问题
++// Mobile requests use scoped sessions; the plugin enforces HTTPS and Origin.
++app.use('/mobile', (req, res) => {
++    const mobile = pluginManager.getServiceModule('NativeSync');
++    if (!mobile?.handleMobile) return res.status(503).json({ error: { code: 'MOBILE_DISABLED' } });
++    return mobile.handleMobile(req, res);
++});
+ app.use(cors({ origin: '*' })); // 启用 CORS，允许所有来源的跨域请求，方便本地文件调试
+ 
+ // 在路由决策之前解析请求体，以便 req.body 可用
+ app.use(express.json({ limit: '300mb' }));
++// Scoped observation/cancellation only; original model and approval pipelines remain authoritative.
++app.use(require('./modules/requestExecutionContext').middleware);
+ app.use(express.urlencoded({ limit: '300mb', extended: true }));
+ app.use(express.text({ limit: '300mb', type: 'text/plain' })); // 新增：用于处理纯文本请求体
+ 
+@@ -1566,6 +1574,7 @@ async function startServer() {
+     console.log('[Server] node-fetch 模块预热完毕，准备处理请求。');
+ 
+     server = app.listen(port, process.env.HOST || '127.0.0.1', () => {
++        pluginManager.getServiceModule('NativeSync')?.setExecutionEndpoint?.({ url: `http://127.0.0.1:${server.address().port}/v1/chat/completions`, key: serverKey });
+         console.log(`中间层服务器正在监听端口 ${port}`);
+         console.log(`API 服务器地址: ${apiUrl}`);
+ 
+@@ -1628,6 +1637,7 @@ async function gracefulShutdown(exitCode = 0, reason = 'signal') {
+     shutdownReason = reason;
+     shutdownStartedAt = Date.now();
+     serverLifecycleState = SERVER_LIFECYCLE.DRAINING;
++    pluginManager.getServiceModule('NativeSync')?.beginDrain?.();
+ 
+     console.log(`[Server] Initiating graceful shutdown. reason=${reason}, exitCode=${exitCode}`);
+     console.log(`[Server][ShutdownTrace] Phase 0/10 - shutdown requested. activeRequests=${activeRequests.size}`);
+diff --git a/Plugin.js b/Plugin.js
+index 240d5a2..c889bff 100644
+--- a/Plugin.js
++++ b/Plugin.js
+@@ -10,6 +10,7 @@ const express = require('express'); // For plugin API routing
+ const chokidar = require('chokidar');
+ const { getAuthCode } = require('./modules/captchaDecoder'); // 导入统一的解码函数
+ const ToolApprovalManager = require('./modules/toolApprovalManager');
++const nativeExecutionContext = require('./modules/requestExecutionContext');
+ const { hasFoldMarkers, buildDynamicFoldObject } = require('./modules/foldProtocol');
+ const { sanitizeToolResult } = require('./modules/toolResultPrivacyGuard');
+ const toolCallRecordStore = require('./modules/toolCallRecordStore');
+@@ -1304,6 +1305,7 @@ class PluginManager extends EventEmitter {
+     }
+ 
+     async processToolCall(toolName, toolArgs, requestIp = null, sourceNode = null, executionOptions = {}) {
++        nativeExecutionContext.throwIfCancelled();
+         const shouldManageToolCallRecord = !executionOptions?.toolCallRecordHandle;
+         const managedToolCallRecord = shouldManageToolCallRecord
+             ? toolCallRecordStore.beginRecord({ toolName, args: toolArgs || {}, requestIp, sourceNode })
+@@ -1399,7 +1401,7 @@ class PluginManager extends EventEmitter {
+             }
+ 
+             try {
+-                const approvalResult = await approvalPromise;
++                const approvalResult = await nativeExecutionContext.waitForApproval(approvalPromise, () => this.handleApprovalResponse(requestId, false, 'Native execution cancelled before tool dispatch'));
+                 if (approvalResult && approvalResult.silentRejected === true) {
+                     const userFeedback = typeof approvalResult.userFeedback === 'string'
+                         ? approvalResult.userFeedback.trim()
+@@ -1455,6 +1457,7 @@ class PluginManager extends EventEmitter {
+ 
+         // Manifest 驱动的工具生命周期 VCPInfo 由主进程统一发送。
+         // 同步插件子进程退出、被杀或超时，都不会影响已发送的 WebSocket 通知。
++        nativeExecutionContext.throwIfCancelled();
+         const lifecycleContext = this.toolLifecycleVcpInfo.createContext(
+             plugin,
+             pluginSpecificArgs,
+@@ -1466,7 +1469,13 @@ class PluginManager extends EventEmitter {
+         );
+         this.toolLifecycleVcpInfo.emit(lifecycleContext, 'start');
+ 
++        return nativeExecutionContext.runToolInvocation({
++            pluginName: toolName,
++            recordId: executionOptions?.toolCallRecordHandle?.id || managedToolCallRecord?.id || null
++        }, async () => {
+         try {
++            nativeExecutionContext.throwIfCancelled();
++            nativeExecutionContext.toolStarted();
+             const executionResult = await this.executionBridgeRegistry.execute(
+                 plugin,
+                 pluginSpecificArgs,
+@@ -1616,8 +1625,9 @@ class PluginManager extends EventEmitter {
+             if (managedToolCallRecord?.id && sanitizedErrorObject && typeof sanitizedErrorObject === 'object' && !sanitizedErrorObject.tool_call_record_id) {
+                 sanitizedErrorObject.tool_call_record_id = managedToolCallRecord.id;
+             }
+-            throw new Error(JSON.stringify(sanitizedErrorObject));
++            throw Object.assign(new Error(JSON.stringify(sanitizedErrorObject)), { code: e.code });
+         }
++        });
+     }
+ 
+     async executePlugin(pluginName, inputData, requestIp = null, executionOptions = {}) {
+diff --git a/Plugin/AgentAssistant/AgentAssistant.js b/Plugin/AgentAssistant/AgentAssistant.js
+index 3fe8c11..eceba99 100644
+--- a/Plugin/AgentAssistant/AgentAssistant.js
++++ b/Plugin/AgentAssistant/AgentAssistant.js
+@@ -4,6 +4,10 @@ const path = require('path');
+ const dotenv = require('dotenv');
+ const axios = require('axios');
+ const { v4: uuidv4 } = require('uuid');
++const nativeExecutionContext = require('../../modules/requestExecutionContext');
++const { createDelegationContinuity, sameIdentity } = require('./delegationContinuity');
++const delegationContinuity = createDelegationContinuity(path.join(__dirname, '..', '..'));
++let unregisterContinuityProvider;
+ const {
+     normalizeReasoningTag,
+     normalizeReasoningModelFilters,
+@@ -71,6 +75,8 @@ function initialize(config, dependencies) {
+ 
+     // 加载配置
+     loadAgentsFromLocalConfig();
++    unregisterContinuityProvider?.();
++    unregisterContinuityProvider = nativeExecutionContext.registerNativeTaskProvider('AgentAssistant', getDelegationContinuity);
+ 
+     if (dependencies && dependencies.vcpLogFunctions && typeof dependencies.vcpLogFunctions.pushVcpInfo === 'function') {
+         pushVcpInfo = dependencies.vcpLogFunctions.pushVcpInfo;
+@@ -89,6 +95,8 @@ function initialize(config, dependencies) {
+  * Shuts down the service, clearing any intervals.
+  */
+ function shutdown() {
++    unregisterContinuityProvider?.();
++    unregisterContinuityProvider = null;
+     if (cleanupInterval) {
+         clearInterval(cleanupInterval);
+         if (DEBUG_MODE) console.error('[AgentAssistant Service] Context cleanup interval stopped.');
+@@ -560,7 +568,8 @@ function createDelegationSnapshot(state) {
+         cancelRequested: !!state.cancelRequested,
+         completionStatus: state.completionStatus || null,
+         finalReportPreview: state.finalReportPreview || '',
+-        archivePath: state.archivePath || null
++        archivePath: state.archivePath || null,
++        ...(state.continuity ? { nativeContinuityIdentity: state.continuity.identity, continuityError: state.continuityError || null } : {})
+     };
+ }
+ 
+@@ -587,6 +596,48 @@ function getDelegationDetail(delegationId) {
+     return completedDelegations.find(item => item.id === delegationId) || null;
+ }
+ 
++// Structured, read-only native evidence. The legacy text query and public callback
++// file are not used to certify a NativeSync task's terminal state.
++async function getDelegationContinuity(identity) {
++    try {
++        const receipt = delegationContinuity.read(identity, { includeResult: identity.includeResult === true });
++        if (receipt) return receipt;
++        const state = activeDelegations.get(identity.nativeTaskId);
++        const recent = completedDelegations.find(item => item.id === identity.nativeTaskId);
++        const acceptedIdentity = state?.continuity?.identity || recent?.nativeContinuityIdentity;
++        if (!acceptedIdentity || !sameIdentity(acceptedIdentity, identity)) {
++            return { ...identity, state: 'unknown', revision: 0, code: 'NATIVE_TASK_NOT_FOUND' };
++        }
++        if (state && ['running', 'waiting', 'cancelling'].includes(state.status)) {
++            return { ...acceptedIdentity, state: state.status, revision: 0, updatedAt: state.updatedAt };
++        }
++        return { ...acceptedIdentity, state: 'unknown', reviewRequired: true, revision: 0, code: state?.continuityError || recent?.continuityError || 'NATIVE_RESULT_UNCONFIRMED' };
++    } catch (error) {
++        return { ...identity, state: 'unknown', reviewRequired: true, revision: 0, code: error.code || 'NATIVE_RESULT_READ_FAILED' };
++    }
++}
++
++async function publishDelegationContinuity(state, nativeStatus, report, archivePath) {
++    if (!state?.continuity) return;
++    // A projection failure must never reclassify/re-run an already finished AA job.
++    state.continuity.terminalHandled = true;
++    let receipt;
++    try {
++        receipt = delegationContinuity.persist(state.continuity.identity, {
++            nativeStatus, endTime: state.endTime, archivePath, report
++        });
++    } catch (error) {
++        state.continuityError = error.code || 'NATIVE_RESULT_STORE_FAILED';
++        console.error(`[AgentAssistant Continuity] Native result unconfirmed for ${state.id}: ${state.continuityError}`);
++        return;
++    }
++    try { await state.continuity.observe(receipt); }
++    catch (error) {
++        state.continuityError = 'NATIVE_TASK_PROJECTION_FAILED';
++        console.error(`[AgentAssistant Continuity] Projection pending for ${state.id}: ${error.code || 'OBSERVER_FAILED'}`);
++    }
++}
++
+ function cancelDelegation(delegationId, reason = '用户从管理面板请求取消。') {
+     const state = activeDelegations.get(delegationId);
+     if (!state) {
+@@ -766,6 +817,10 @@ async function processToolCall(args) {
+     // Handle basic Task Delegation request
+     if (String(task_delegation).toLowerCase() === 'true') {
+         const delegationId = `aa-delegation-${Date.now()}-${uuidv4().slice(0, 8)}`;
++        const acceptedContinuity = await nativeExecutionContext.acceptNativeTask({
++            pluginName: 'AgentAssistant', nativeTaskId: delegationId, agentBaseName: agentConfig.baseName
++        });
++        const continuity = acceptedContinuity ? { ...acceptedContinuity, terminalHandled: false } : null;
+         const delegationSenderName = maid || "系统任务中心";
+         const temporaryToolsSystemPrompt = buildTemporaryToolsSystemPrompt(inject_tools);
+ 
+@@ -788,13 +843,15 @@ async function processToolCall(args) {
+             cancelReason: '',
+             completionStatus: null,
+             finalReportPreview: '',
+-            archivePath: null
++            archivePath: null,
++            continuity
+         });
+ 
+         if (DEBUG_MODE) console.error(`[AgentAssistant Service] Starting async delegation ${delegationId} for ${agent_name}`);
+ 
+         // Launch the background task un-awaited
+         executeDelegation(delegationId, agentConfig, promptWithRiverAttachment, promptTextForStorage, delegationSenderName, temporaryToolsSystemPrompt).catch(async err => {
++            if (continuity?.terminalHandled) return;
+             console.error(`[AgentAssistant Service] Background delegation task ${delegationId} failed:`, err);
+             const state = activeDelegations.get(delegationId);
+             const status = err.code === 'DELEGATION_CANCELLED' ? 'Cancelled' : 'Failed';
+@@ -804,6 +861,12 @@ async function processToolCall(args) {
+                 state.finalReportPreview = truncateText(`任务执行过程中发生异常: ${err.message}`);
+                 state.endTime = Date.now();
+                 state.updatedAt = Date.now();
++                if (!continuity) rememberCompletedDelegation(state);
++            }
++            if (continuity && state) {
++                const report = `任务执行过程中发生异常: ${err.message}`;
++                state.archivePath = await archiveDelegationReport(delegationId, agentConfig.baseName, status, report, promptTextForStorage);
++                await publishDelegationContinuity(state, status, report, state.archivePath);
+                 rememberCompletedDelegation(state);
+             }
+             await sendDelegationCallback(delegationId, status, `任务执行过程中发生异常: ${err.message}`, agent_name);
+@@ -1164,6 +1227,7 @@ async function executeDelegation(delegationId, agentConfig, taskPromptContent, t
+             completionStatus = 'Cancelled';
+             finalReport = `委托任务已取消。原因: ${err.message}`;
+         } else {
++            if (activeDelegations.get(delegationId)?.continuity) finalReport = `任务执行过程中发生异常: ${err.message}`;
+             throw err;
+         }
+     } finally {
+@@ -1192,6 +1256,7 @@ async function executeDelegation(delegationId, agentConfig, taskPromptContent, t
+         const archivePath = await archiveDelegationReport(delegationId, agentConfig.baseName, completionStatus, secureReport, taskPromptForSystem);
+         if (finalState) {
+             finalState.archivePath = archivePath || null;
++            await publishDelegationContinuity(finalState, completionStatus, secureReport, archivePath);
+             rememberCompletedDelegation(finalState);
+         }
+         activeDelegations.delete(delegationId);
+@@ -1272,5 +1337,6 @@ module.exports = {
+     reloadConfig: loadAgentsFromLocalConfig,
+     listDelegations,
+     getDelegationDetail,
++    getDelegationContinuity,
+     cancelDelegation
+ };

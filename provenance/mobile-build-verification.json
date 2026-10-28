@@ -1,0 +1,10 @@
+{
+  "npmCiExitCode": 0,
+  "prodConfigOrKeysInherited": false,
+  "buildExitCode": 0,
+  "expectedFiles": 8,
+  "actualFiles": 8,
+  "matchingFiles": 8,
+  "different": [],
+  "unexpected": []
+}
