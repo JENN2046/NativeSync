@@ -214,13 +214,20 @@ class MobilePortal {
         res.setHeader('Set-Cookie',`${cookieName}=${token}; Path=/mobile; HttpOnly; Secure; SameSite=Strict; Max-Age=${this.sessionSeconds}`);res.json({authenticated:true,server:this.connection.information()});
     }
     createPairing(options={},requestScope={}) {
-        if(!options||Object.keys(options).some(k=>!['scopeMode','sourceId'].includes(k)))throw error('INVALID_PAIRING_SCOPE');
+        if(!options||Object.keys(options).some(k=>!['scopeMode','sourceId','snapshot'].includes(k)))throw error('INVALID_PAIRING_SCOPE');
+        if(options.snapshot!==undefined&&(typeof options.snapshot!=='boolean'||options.scopeMode!=='source'))throw error('INVALID_PAIRING_SCOPE');
         let scopes=this.staticTopics.filter(t=>requestScope.topics===undefined||requestScope.topics.includes(JSON.stringify([t.ownerType,t.ownerId,t.topicId]))).map(t=>t.key);
         if(options.scopeMode!==undefined&&options.scopeMode!=='selected'&&options.scopeMode!=='source')throw error('INVALID_PAIRING_SCOPE');
         if(options.scopeMode==='source'){
             if(requestScope.topics!==undefined&&requestScope.source?.sourceId!==options.sourceId)throw error('SOURCE_SCOPE_MISMATCH',403);
             if(!this.sourceCatalog?.grants.has(options.sourceId))throw error('SOURCE_NOT_APPROVED',403);
-            scopes=['source:'+options.sourceId];
+            if(options.snapshot===true){
+                // Reuse the existing exact-topic session grants. This creates a
+                // new bounded pairing; it never changes existing sessions/pins.
+                const rows=this.sourceCatalog.entities(options.sourceId,'topics').filter(t=>this.sourceCatalog.activeTopic(options.sourceId,t));
+                if(!rows.length||rows.length>128||rows.some(t=>!t.ready))throw error('PAIRING_SCOPE_NOT_READY',409);
+                scopes=rows.map(t=>t.key);if(new Set(scopes).size!==scopes.length||scopes.some(k=>typeof k!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(k)))throw error('PAIRING_SCOPE_NOT_READY',409);
+            }else scopes=['source:'+options.sourceId];
         }else if(options.sourceId!==undefined)throw error('INVALID_PAIRING_SCOPE');
         const code=randomBytes(24).toString('base64url'),expiresAt=Date.now()+180000;
         this.db.prepare('INSERT INTO mobile_pairings(hash,expires,scopes) VALUES(?,?,?)').run(digest(code),expiresAt,JSON.stringify(scopes));

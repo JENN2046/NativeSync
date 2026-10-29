@@ -3,12 +3,13 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 m=json.loads((ROOT/'provenance/source-manifest.json').read_text(encoding='utf-8'))
 successorFile=ROOT/'provenance/limited-source-changes.json'
 successor=json.loads(successorFile.read_text()) if successorFile.exists() else {'files':[]}
-changed={r['path']:r for r in successor['files']}
-for row in m['files']:
- f=ROOT/row['path'];assert f.is_file(),row['path'];r=changed.get(row['path']);assert not r or r['baselineSha256']==row['sha256'],row['path']
- assert hashlib.sha256(f.read_bytes()).hexdigest()==(r['candidateSha256'] if r else row['sha256']),row['path']
+expected={r['path']:r['sha256'] for r in m['files']}
 for row in successor['files']:
- assert hashlib.sha256((ROOT/row['path']).read_bytes()).hexdigest()==row['candidateSha256'],row['path']
+ assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
+auditFile=ROOT/'provenance/reuse-audit-changes.json'
+for row in (json.loads(auditFile.read_text())['files'] if auditFile.exists() else []):
+ assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
+for name,digest in expected.items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest,name
 tracked=subprocess.run(['git','ls-files','-z'],cwd=ROOT,capture_output=True,check=True).stdout.decode().split(chr(0))
 if not any(tracked):
  files=[p for p in ROOT.rglob('*') if p.is_file() and not any(x in p.relative_to(ROOT).parts for x in ['.git','node_modules','dist','.local','.artifacts','__pycache__'])]
