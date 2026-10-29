@@ -16,3 +16,19 @@ known-gaps/first-batch-existing-protocol.test.cjs 当前包含18项：原7项按
 执行环境移除 provider/凭据变量，服务仅监听127.0.0.1，输入均为合成数据。
 
 旧 C1/C2/112 项仍是历史证据，不计作这次运行；不启动真实模型或浏览器验收。
+
+## M2/M3 连续冲刺
+
+新增20项受支持路径断言：M2 9项、真实子进程退出3项、M3多Agent/失败关闭8项。
+另有 `known-gaps/m3-existing-source-expansion.test.cjs` 的1项**必需升级能力**探针，
+当前真实失败于 SOURCE_BINDING_CHANGED。不能把该失败或“正确拒绝迁移”的断言计为升级通过。
+完整 runner 的成功执行结果是 PARTIAL/退出2；其他未预期失败为退出1。
+
+```sh
+python3 tools/run_m2_m3.py --hosts /absolute/isolated/hosts --node /absolute/node24 --output /absolute/new-output
+```
+
+每文件独立进程，最小无凭据环境；JS fetch只准127.0.0.1，退出探针校验临时根及loopback。
+手机是实际MobilePortal的只读HTTP会话，使用本机可信代理的TLS终止语义，不是实际TLS、
+PWA渲染或真实手机；远端冲突写者通过真实CentralStore.apply注入合成事实。
+临时engine未设置模型endpoint，未调用provider、工具或AA。旧43项未重跑、未混入本批计数。

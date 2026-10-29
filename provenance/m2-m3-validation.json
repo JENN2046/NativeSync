@@ -1,0 +1,63 @@
+{
+  "sourceBaseline": "354d52ac27a2681a646916c65573c26cb158e759",
+  "sourceBaselineTree": "20c3da04a7270a5c2fe32cea7cb2c35f423ce791",
+  "result": "PARTIAL_KNOWN_M3_UPGRADE_BLOCKED",
+  "supportedAssertions": {
+    "tests": 20,
+    "pass": 20,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "requiredExistingBindingUpgrade": {
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "newProductFileChanges": 0,
+  "M2": "isolated supported paths pass",
+  "M3": "explicit initial multi-Agent scope passes; existing-bound-source expansion blocked",
+  "scopeMigrationErrors": [
+    "SOURCE_SCOPE_CHANGED",
+    "SOURCE_BINDING_CHANGED",
+    "SOURCE_IDENTITY_COLLISION"
+  ],
+  "old43TestsRerun": false,
+  "oldC1C2OrPhoneRerun": false,
+  "productionServiceOrDataAccessed": false,
+  "externalProviderCalls": 0,
+  "newCodeSources": [
+    {
+      "path": "tests/fixtures/boundedSourceHarness.cjs",
+      "sha256": "54e2d1f2f50e0a813bf7a6382ac43d92d1136e36d20f5f05edae048484238aad"
+    },
+    {
+      "path": "tests/fixtures/boundedCrashChild.cjs",
+      "sha256": "e648711a4bac62b0145a17929c899a5d692c7ec3b93ccdeddba53af298ce6ceb"
+    },
+    {
+      "path": "tests/m2-continuity.test.cjs",
+      "sha256": "9ce9a3681e7a552824418781ab3fab1f7617cf6efadaeba8719690c025ec3af3"
+    },
+    {
+      "path": "tests/m2-process-recovery.test.cjs",
+      "sha256": "6820f247b2600fbebb039da401891c7475a17b3b8cd16e723cf14dec0d2f5614"
+    },
+    {
+      "path": "tests/m3-multi-agent.test.cjs",
+      "sha256": "555fe72478104b9f9e5e67702fc010414e7f4ee0f413f9e330003111cae0665e"
+    },
+    {
+      "path": "tests/known-gaps/m3-existing-source-expansion.test.cjs",
+      "sha256": "480585e10510c22744064057624c4279e07e7b4d736a8ef14b48e4c8f50e101c"
+    },
+    {
+      "path": "tools/run_m2_m3.py",
+      "sha256": "e5b2535b29d3e198d7dc6b10e693f34b46674d77a462abeb940834f318b060d4"
+    }
+  ]
+}

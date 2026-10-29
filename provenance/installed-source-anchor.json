@@ -1,0 +1,58 @@
+{
+  "productCommit": "354d52ac27a2681a646916c65573c26cb158e759",
+  "productTree": "20c3da04a7270a5c2fe32cea7cb2c35f423ce791",
+  "publicMainAtSprintStart": "65fd5863ab7f62139111a828d86bfb4bc627e7c1",
+  "installationReceipt": "https://github.com/JENN2046/VCPChat/issues/70#issuecomment-6477542265",
+  "limitedImportReceipt": "https://github.com/JENN2046/VCPChat/issues/70#issuecomment-6478236358",
+  "phoneReadonlyReceipt": "https://github.com/JENN2046/VCPChat/issues/70#issuecomment-6485646567",
+  "statusAuthority": "Issue comments are historical evidence; this file is not production authorization",
+  "historicalProvenanceFlagsPreserved": true,
+  "productionInspectedDuringSprint": false,
+  "scope": "11 NativeSync products only, no stdio or host core changes",
+  "productFiles": [
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/adapter.js",
+      "sha256": "5384252bddc1e75e0aee28976fca921bc29b633e703a10805c105c5d37c923ff"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/connection.js",
+      "sha256": "707d95dc490f2b7d68b7cfb1ad2c5ec96b689cfb7f7aba8cca93206c80b84722"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/localAttachment.js",
+      "sha256": "312b946f526fe12cda75b34f3f6cfd75101476813fd3abf85f8768bd5208ea81"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/runtime.js",
+      "sha256": "21e0896c246a6cc53a808c1555ae259c6b7ac78978af65389ea4d0e1bcd04364"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceDirectory.js",
+      "sha256": "4d854b5dcfbf43b9f52dd0912b0265d682aed8c0850be7219dafeab222c08a64"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceSync.js",
+      "sha256": "4f49d08329e26c111852c35a1dfd5a595782c6a7c6d7b651721ba60bc09b456c"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "sha256": "5fe1190232f78c246f0e4c889b802f6b2f497019b5fc8400a6bb853cf356cf3c"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "sha256": "dcb4ad38a58fccaefe4525a33f13c00bf7eea5d172d3a94f6cd0b85b8367b31e"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceHttp.js",
+      "sha256": "19dc66a35a57a5becc090dbc82240b5e7e4d3b07caaf977094d80b219de99ae9"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceScope.js",
+      "sha256": "33b5bdbe01391ac90841064f0a9c64ca5af6825d62aad0cfa66a92d583a53f29"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceScope.js",
+      "sha256": "33b5bdbe01391ac90841064f0a9c64ca5af6825d62aad0cfa66a92d583a53f29"
+    }
+  ]
+}

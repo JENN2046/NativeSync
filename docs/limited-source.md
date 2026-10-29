@@ -1,9 +1,11 @@
 # Limited SourceSync contract (isolated candidate)
 
-This is a local-only candidate on the initial public snapshot
-`65fd5863ab7f62139111a828d86bfb4bc627e7c1`. It has not been deployed or pushed.
-Coordination and installation decisions remain in VCPChat #70. C1/C2 acceptance
-and the installed three-core-file compatibility combination are unchanged.
+The bounded product bytes originate at local commit
+`354d52ac27a2681a646916c65573c26cb158e759`. Their installation and first limited
+history/mobile-read use are recorded in VCPChat #70; see
+provenance/installed-source-anchor.json. The later M2/M3 sprint changes only
+tests, reproduction and documentation; it has not been deployed or pushed.
+Older provenance files retain their snapshot-time pre-install flags.
 
 ## Explicit scope
 
@@ -74,7 +76,7 @@ The original failure is retained in the external evidence package. The old
 required safety assertion now runs against an explicit limited grant; a separate
 legacy whole-root test still asserts that the foreign topic is included there.
 
-No real history, model/provider, AA/tool or phone execution is part of this work.
+No real history, model/provider, AA/tool or phone execution is part of the isolated M2/M3 sprint.
 No C1/C2, Electron or Chromium acceptance is repeated. Production enrollment and
 installation need a separate exact authorization after this candidate is reviewed.
 Post-adoption code rollback must not discard scoped state or fall back to selected;
