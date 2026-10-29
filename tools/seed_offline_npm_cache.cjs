@@ -15,7 +15,7 @@ const npmRoot=path.dirname(path.dirname(fs.realpathSync(npmCLI))),cacache=create
   const url=new URL(row.url);if(url.protocol!=='https:'||url.hostname!=='registry.npmjs.org'||url.username||url.password||url.search)throw Error('PUBLIC_REGISTRY_ONLY');
   const file=path.resolve(base,row.file);if(!file.startsWith(base+path.sep)||!row.file.startsWith('tarballs/'))throw Error('INVALID_TARBALL_PATH');
   const bytes=fs.readFileSync(file);if(bytes.length!==row.bytes||crypto.createHash('sha256').update(bytes).digest('hex')!==row.sha256||'sha512-'+crypto.createHash('sha512').update(bytes).digest('base64')!==row.integrity)throw Error('TARBALL_INTEGRITY_MISMATCH');
-  await cacache.put(cache,'make-fetch-happen:request-cache:'+row.url,bytes,{integrity:row.integrity,metadata:{time:Date.now(),url:row.url,reqHeaders:{},resHeaders:{'content-type':'application/octet-stream','cache-control':'public,max-age=31536000'},options:{compress:true}}});
+  await cacache.put(path.join(cache,'_cacache'),'make-fetch-happen:request-cache:'+row.url,bytes,{integrity:row.integrity,metadata:{time:Date.now(),url:row.url,reqHeaders:{},resHeaders:{'content-type':'application/octet-stream','cache-control':'public,max-age=31536000'},options:{compress:true}}});
  }
  console.log(JSON.stringify({packages:expected.length,publicOnly:true,credentialsCopied:false,cache}));
 })().catch(e=>{console.error(e);process.exitCode=1;});
