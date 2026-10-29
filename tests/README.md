@@ -40,3 +40,10 @@ dependencies (better-sqlite3 12.4.1 must have its Node ABI137 native binding).
 It runs directly affected cases, not the whole old43/C1/C2/phone acceptance.
 The old known-gaps new-source transfer probe remains an unsupported alternative;
 same-source approval is positively tested in scope-transition.test.cjs.
+
+## Batch1 targeted publication closure
+
+See `docs/batch1-publication-closure.md`. `run_full_feature.py` now includes the six
+real HTTP/SQLite publication fault and byte-boundary cases, retaining the original
+113 selected assertions; expected final selection119 in16 files. Product bytes
+remain equal to d1b3b56c. All earlier113 counts remain historical, not new runs.

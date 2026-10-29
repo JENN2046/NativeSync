@@ -48,3 +48,11 @@ The current isolated branch adds explicit same-source approved CAS with old phon
 rights frozen, and reuses existing native execution/attachment/group/AA paths.
 See docs/controlled-scope-transition.md. This code is not installed or published;
 the real two-topic pilot and continuous-write authorization status are unchanged.
+
+### Batch1 final targeted closure
+
+The same local integration line retains d1b3b56c product bytes. Added real HTTP
+config-batch fault/admission and UTF8 boundary tests, credential-free public tarball
+cache reproduction tooling and offline Batch2 preparation. See
+[publication closure](docs/batch1-publication-closure.md). No deployment/production
+authorization or formal release is implied.

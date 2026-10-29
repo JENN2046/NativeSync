@@ -8,7 +8,7 @@ for n in names:
  f=repo/n;t=hosts/f.relative_to(repo/'overlays');t.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(f,t)
 for f in (repo/'tests/host-fixtures').glob('*.test.cjs'):shutil.copyfile(f,hosts/'VCPToolBox/tests'/f.name)
 env={'PATH':str(pathlib.Path(node).parent)+':/usr/bin:/bin','HOME':str(out),'LANG':'C.UTF-8','TZ':'UTC','NATIVESYNC_TEST_HOSTS':str(hosts),'VCP_R21_BOX_SOURCE':str(hosts/'VCPToolBox'),'VCP_R21_AA_DEPENDENCIES':str(deps),'NODE_V8_COVERAGE':str(out/'module-coverage')}
-selection=[(repo/'tests'/n,None) for n in ['scope-transition.test.cjs','source-execution-wiring.test.cjs','m2-continuity.test.cjs','m2-process-recovery.test.cjs','m3-multi-agent.test.cjs','reuse-audit.test.cjs']]
+selection=[(repo/'tests'/n,None) for n in ['execution-publication-recovery.test.cjs','scope-transition.test.cjs','source-execution-wiring.test.cjs','m2-continuity.test.cjs','m2-process-recovery.test.cjs','m3-multi-agent.test.cjs','reuse-audit.test.cjs']]
 selection += [(hosts/'VCPToolBox/tests'/n,None) for n in ['native-sync-mobile-recovery.test.cjs','native-sync-attachments.test.cjs','native-sync-attachment-routes.test.cjs','native-sync-groupchat.test.cjs','native-sync-aa-continuity.test.cjs','native-sync-aa-native-chain.test.cjs','native-sync-native-approval.test.cjs']]
 selection += [(hosts/'VCPChat/tests/native-sync-attachments.test.cjs',None)]
 selection += [(hosts/'VCPChat/tests/native-sync-full-source.test.cjs','F1 source coordinator|F2 directory precedes')]
