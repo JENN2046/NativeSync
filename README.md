@@ -41,3 +41,10 @@ PWA：在overlays/VCPToolBox/apps/mobile使用锁定依赖构建；当前已实�
 `docs/m2-m3.md` 区分已支持路径与既有绑定扩展的缺口。`test:m2-m3` 运行定向合成集成
 及真实进程退出；保留一个明确失败的必需升级探针，退出2表示PARTIAL，不代表全绿。
 原两话题持续写入的生产授权仍待决定；隔离测试不授予实际部署、更多真实资料或发布权限。
+
+## Controlled scope and full-feature integration candidate
+
+The current isolated branch adds explicit same-source approved CAS with old phone
+rights frozen, and reuses existing native execution/attachment/group/AA paths.
+See docs/controlled-scope-transition.md. This code is not installed or published;
+the real two-topic pilot and continuous-write authorization status are unchanged.

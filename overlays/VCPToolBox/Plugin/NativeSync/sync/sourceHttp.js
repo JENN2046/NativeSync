@@ -33,7 +33,7 @@ async function sourceRequest(store,req,url){
   if([...url.searchParams.keys()].some(k=>!['sourceId','deviceId'].includes(k)))throw fail('INVALID_SOURCE_REQUEST',400);
   return catalog.info(url.searchParams.get('sourceId'),url.searchParams.get('deviceId'),req.headers?.['x-nativesync-scope']);
  }
- const bound=binding(req);catalog.binding(bound);
+ const bound=binding(req);if(req.method==='POST'&&url.pathname==='/source/scope-transition')return catalog.transition(bound,await body(req));catalog.binding(bound);
  if(req.method==='POST'&&url.pathname==='/source/catalog')return catalog.publish(bound,await body(req));
  if(req.method==='POST'&&url.pathname==='/source/verify-state')return catalog.verifyLegacy(bound,await body(req));
  if(req.method==='POST'&&url.pathname==='/source/baselines')return catalog.beginBaseline(bound,await body(req));

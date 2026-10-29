@@ -14,7 +14,8 @@ class MobilePortal {
         this.origin = new URL(config.NativeMobileOrigin).origin;
         if (!this.origin.startsWith('https://')) throw error('MOBILE_HTTPS_ORIGIN_REQUIRED');
         const list = JSON.parse(config.NativeMobileTopics || '[]');
-        if (!Array.isArray(list) || (!list.length && !store.sourceCatalog?.grants.size) || list.length > 8) throw error('EXPLICIT_MOBILE_TOPICS_REQUIRED');
+        if (!Array.isArray(list) || (!list.length && !store.sourceCatalog?.grants.size) || list.length > 128) throw error('EXPLICIT_MOBILE_TOPICS_REQUIRED');
+        if(list.length>8&&(!store.sourceCatalog||list.some(t=>![...store.sourceCatalog.grants.values()].some(g=>require('../sync/sourceScope').permits(g.scope,t)||(g.approvedScope!==undefined&&require('../sync/sourceScope').permits(g.approvedScope,t))))))throw error('EXPLICIT_MOBILE_TOPICS_REQUIRED');
         this.topics = list.map(t => {
             identity({ ...t, msgId: '_' });
             if (!['agent','group'].includes(t.ownerType) || !/^[a-zA-Z0-9_-]{1,64}$/.test(t.key)) throw error('INVALID_MOBILE_TOPIC');
@@ -163,7 +164,7 @@ class MobilePortal {
     }
     hasSourceScope(session){return session.scopes.some(k=>k.startsWith('source:'));}
     sourceIds(session){return session.scopes.filter(k=>k.startsWith('source:')).map(k=>k.slice(7)).filter(id=>this.sourceCatalog?.grants.has(id));}
-    topicAllowed(topic,session){return !topic.directoryDeleted&&(session.scopes.includes(topic.key)||(topic.sourceId&&this.sourceIds(session).includes(topic.sourceId)));}
+    topicAllowed(topic,session){return !topic.directoryDeleted&&(session.scopes.includes(topic.key)||(topic.sourceId&&this.sourceIds(session).includes(topic.sourceId)&&Boolean(this.sourceCatalog.activeTopic(topic.sourceId,topic))));}
     refreshDirectoryTopics(){
         if(!this.sourceCatalog)return;
         const rows=this.db.prepare("SELECT * FROM source_catalog_entities WHERE topic_id<>''").all();
@@ -242,7 +243,7 @@ class MobilePortal {
         this.db.exec('BEGIN IMMEDIATE');
         try {
             if(!this.db.prepare('UPDATE mobile_pairings SET used=1 WHERE hash=? AND used=0 AND expires>?').run(hash,now).changes)throw error('INVALID_PAIRING',401);
-            this.db.prepare('INSERT INTO mobile_sessions(hash,id,expires,scopes) VALUES(?,?,?,?)').run(digest(token),id,now+this.sessionSeconds*1000,grant.scopes);this.db.exec('COMMIT');
+            this.db.prepare('INSERT INTO mobile_sessions(hash,id,expires,scopes) VALUES(?,?,?,?)').run(digest(token),id,now+this.sessionSeconds*1000,this.db.prepare('SELECT scopes FROM mobile_pairings WHERE hash=?').get(hash).scopes);this.db.exec('COMMIT');
         } catch(e){this.db.exec('ROLLBACK');throw e;}
         res.setHeader('Set-Cookie',`${cookieName}=${token}; Path=/mobile; HttpOnly; Secure; SameSite=Strict; Max-Age=${this.sessionSeconds}`);
         res.json({authenticated:true});

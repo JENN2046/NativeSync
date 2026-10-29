@@ -1,0 +1,56 @@
+{
+  "baseline": "10101ba5f894b1e3e327ef1f82fdbc20f10f2947",
+  "files": [
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/adapter.js",
+      "baselineSha256": "5384252bddc1e75e0aee28976fca921bc29b633e703a10805c105c5d37c923ff",
+      "candidateSha256": "fd058b885a54bfd37f0556f47a7bf47cd7c2fa88a2ab5b808da6555bd78835f6"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/connection.js",
+      "baselineSha256": "707d95dc490f2b7d68b7cfb1ad2c5ec96b689cfb7f7aba8cca93206c80b84722",
+      "candidateSha256": "830be7eabf913ee63f2e65cd7e29f82d6bed3000381e37274e9427ea080ca6e1"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/executionConfigs.js",
+      "baselineSha256": "2c81ad9c4fef7ea3b42c6ed07b8e451c0ff4bdb1e21b53ce112b3f5099597c0a",
+      "candidateSha256": "97632b8b544e7a67ca94ae6131163ab1357c48630106551c7f5595ad245e6b73"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/runtime.js",
+      "baselineSha256": "21e0896c246a6cc53a808c1555ae259c6b7ac78978af65389ea4d0e1bcd04364",
+      "candidateSha256": "a544d3543bb96e47f762bb3252c3404eb8d417150707bc47af7941303c3f7482"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceScope.js",
+      "baselineSha256": "33b5bdbe01391ac90841064f0a9c64ca5af6825d62aad0cfa66a92d583a53f29",
+      "candidateSha256": "eb347c9622b57e8c4b14a196046f4bb2b81a595a5d77a5fd111bade6d7db0e29"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceSync.js",
+      "baselineSha256": "4f49d08329e26c111852c35a1dfd5a595782c6a7c6d7b651721ba60bc09b456c",
+      "candidateSha256": "ba2fb594c9f0764b50a64640466074d7ad70807d4f2760623cf5a3c6e3991379"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "baselineSha256": "60eb07921e51d0369d9e29de818bff53732bcb81944e9a468822a8bf3bfcac90",
+      "candidateSha256": "4c117edc6827b4e1b5366890f2eb31f6e4594915d6b57801b19e0ae1feff4df6"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "baselineSha256": "dcb4ad38a58fccaefe4525a33f13c00bf7eea5d172d3a94f6cd0b85b8367b31e",
+      "candidateSha256": "df4b2330a85c0d80b3636cbd0170d4c81008bea8e8fa4243f4701a00ff8fe20c"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceHttp.js",
+      "baselineSha256": "19dc66a35a57a5becc090dbc82240b5e7e4d3b07caaf977094d80b219de99ae9",
+      "candidateSha256": "d8b53d58f9988d914a2e7a7aa6950ae380d667e404755bd89f10dfec11cc260a"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceScope.js",
+      "baselineSha256": "33b5bdbe01391ac90841064f0a9c64ca5af6825d62aad0cfa66a92d583a53f29",
+      "candidateSha256": "eb347c9622b57e8c4b14a196046f4bb2b81a595a5d77a5fd111bade6d7db0e29"
+    }
+  ],
+  "productionDeployed": false
+}

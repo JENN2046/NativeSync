@@ -4,7 +4,7 @@ const {durableJson}=require('./durableJson');
 const {sourceDirectory,sourceEntityKey,assertHistoryPath}=require('./sourceDirectory');
 const {wireTopic,descriptor,messageKey,messageHash,canonicalMessage,sha256,stable,fail,identity}=require('./protocol');
 const {fieldsFrom,emptyHash,envelopeFor,assertCompatibleBackfill}=require('./metadata');
-const {normalizeScope,scopeHash,permits}=require('./sourceScope');
+const {normalizeScope,scopeHash,permits,expansion}=require('./sourceScope');
 const ROOT='/api/v1/sync/source',PAGE=100,CATALOG_BYTES=96000,CATALOG_ITEMS=64;
 const bindingFor=c=>({...(normalizeScope(c.sourceScope)?{scope:normalizeScope(c.sourceScope)}:{}),sourceId:c.sourceId,spaceId:c.spaceId,deviceId:c.deviceId,rootHash:sha256(process.platform==='win32'?path.resolve(c.sourceRoot).toLowerCase():path.resolve(c.sourceRoot))});
 const freshSource=c=>({binding:bindingFor(c),revision:0,published:{},plans:{},deletions:{},pendingCatalog:null});
@@ -16,7 +16,19 @@ const baseFor=(message,seq=0)=>({hash:messageHash(message),deleted:false,seq,met
 class SourceSync{
  static async verify(connection,state,send){
   const b=bindingFor(connection);
-  if(state?.source){if(stable(state.source.binding)!==stable(b))throw fail('SOURCE_BINDING_CHANGED');return state.source;}
+  if(state?.source){
+   if(stable(state.source.binding)===stable(b))return state.source;
+   const prior=state.source.binding,{scope:oldScope,...oldIdentity}=prior,{scope:newScope,...newIdentity}=b,t=connection.scopeTransition;
+   if(stable(oldIdentity)!==stable(newIdentity)||!t||t.expectedScopeHash!==scopeHash(oldScope))throw fail('SOURCE_BINDING_CHANGED');
+   const rootStat=await fs.lstat(connection.sourceRoot);if(!rootStat.isDirectory()||rootStat.isSymbolicLink())throw fail('SOURCE_PATH_ALIAS');
+   await assertHistoryPath(connection.sourceRoot,path.join(connection.sourceRoot,'UserData','_','topics','_','history.json'));
+   expansion(oldScope,connection.sourceScope);
+   for(const d of normalizeScope(connection.sourceScope)?.topics||[]){await assertHistoryPath(connection.sourceRoot,path.join(connection.sourceRoot,'UserData',d.ownerId,'topics',d.topicId,'history.json'));await assertHistoryPath(connection.sourceRoot,path.join(connection.sourceRoot,d.ownerType==='group'?'AgentGroups':'Agents',d.ownerId,'config.json'));}
+   if(state.outbox.length||state.inbox.length||state.pending||Object.keys(state.localCommits).length||Object.keys(state.drift).length||state.source.pendingCatalog||oldScope.topics.some(d=>!Object.values(state.source.plans).some(p=>p.stage==='complete'&&!p.error&&stable(wireTopic(p.descriptor))===stable(d))&&!Object.values(state.source.deletions).some(r=>r.stage==='published'&&r.targets.some(t=>stable(t)===stable(d))))||Object.values(state.source.deletions).some(r=>!['published','aborted'].includes(r.stage)))throw fail('SOURCE_SCOPE_NOT_SETTLED');
+   const localStateHash=sha256(stable(state)),r=await send(ROOT+'/scope-transition',{body:{...t,newScope:connection.sourceScope}});
+   if(r.approved!==true||r.opId!==t.opId||r.sourceId!==b.sourceId||r.deviceId!==b.deviceId||r.spaceId!==b.spaceId||r.fromScopeHash!==t.expectedScopeHash||r.toScopeHash!==scopeHash(newScope)||stable(r.scope)!==stable(normalizeScope(connection.sourceScope))||r.revision!==state.source.revision)throw fail('SOURCE_TRANSITION_ACK_MISMATCH');
+   return {...structuredClone(state.source),binding:b,scopeTransition:{...r,localStateHash}};
+  }
   const info=await send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));
   if(scopeHash(info.scope)!==scopeHash(connection.sourceScope))throw fail('SOURCE_SCOPE_MISMATCH');
   if(info.spaceId!==b.spaceId||info.sourceId!==b.sourceId||info.deviceId!==b.deviceId)throw fail('SOURCE_BINDING_CHANGED');

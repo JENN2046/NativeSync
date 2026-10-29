@@ -21,4 +21,11 @@ function permits(scope,d,owner=false){
  const s=scope===null?null:normalizeScope(scope);if(!s)return true;
  return s.topics.some(t=>t.ownerType===(d.ownerType||d.itemType||'agent')&&t.ownerId===(d.ownerId||d.itemId)&&(owner||t.topicId===d.topicId));
 }
-module.exports={normalizeScope,scopeHash,permits};
+function expansion(previous,next){
+ const a=normalizeScope(previous),b=normalizeScope(next);
+ if(a&&!b&&next?.mode==='full'&&Object.keys(next).length===1)return null;
+ if(!a||!b||b.topics.length<=a.topics.length||a.topics.some(t=>!b.topics.some(n=>stable(n)===stable(t))))throw fail('INVALID_SCOPE_EXPANSION');
+ if(new Set(b.topics.map(t=>JSON.stringify([t.ownerId,t.topicId]).toLowerCase())).size!==b.topics.length)throw fail('OWNER_PATH_CONFLICT');
+ return b;
+}
+module.exports={normalizeScope,scopeHash,permits,expansion};

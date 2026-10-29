@@ -1,3 +1,5 @@
+> Historical checkpoint before controlled conversion. See controlled-scope-transition.md for the new explicit same-source route; the original new-source counterexample remains valid.
+
 # Existing Capability Reuse Audit（Batch 1 内部）
 
 结论：多数功能已有可复用实现；真正范围升级缺口是显式授权状态转换，不是同步/任务/附件引擎缺失。

@@ -20,12 +20,13 @@ const sibling={itemType:'agent',itemId:'one',topicId:'excluded'},foreign={itemTy
 const message=(id,content=id)=>({id,role:'user',content,timestamp:1});
 const limited=topics=>({mode:'limited',topics:topics.map(wireTopic)});
 const waitFor=async(fn,label)=>{const until=Date.now()+5000;for(;;){if(await fn())return;if(Date.now()>until)throw Error('WAIT_TIMEOUT '+label);await new Promise(r=>setTimeout(r,5));}};
-async function fixture(t,{scope=limited([selected,older]),seedOwners=true}={}){
+async function fixture(t,{scope=limited([selected,older]),seedOwners=true,executionBindings=[]}={}){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'native-m2m3-')),app=path.join(root,'AppData');await fs.mkdir(app,{recursive:true});
  const store=new CentralStore(path.join(root,'central.sqlite')),staticTopic={key:'original',...wireTopic(selected),agentAlias:'synthetic-one'};
- const sourceCatalog=new SourceCatalog(store,{NativeSyncFullSources:JSON.stringify([{sourceId:'sourceA',deviceId:'deviceA',scope}]),NativeMobileTopics:JSON.stringify([staticTopic])});store.sourceCatalog=sourceCatalog;
+ const configuredTopics=[staticTopic,...executionBindings];
+ const sourceCatalog=new SourceCatalog(store,{NativeSyncFullSources:JSON.stringify([{sourceId:'sourceA',deviceId:'deviceA',scope}]),NativeMobileTopics:JSON.stringify(configuredTopics)});store.sourceCatalog=sourceCatalog;
  const syncService=createSyncHttpService(store);
- const portal=new MobilePortal({store,config:{NativeMobileOrigin:'https://synthetic-mobile.invalid',NativeMobileTopics:JSON.stringify([staticTopic]),NativeMobileConfigSync:true,NativeMobileMaxConcurrency:1,NativeSyncDataDir:root},agentManager:{isAgent:a=>a==='synthetic-one'}});
+ const portal=new MobilePortal({store,config:{NativeMobileOrigin:'https://synthetic-mobile.invalid',NativeMobileTopics:JSON.stringify(configuredTopics),NativeMobileConfigSync:true,NativeMobileMaxConcurrency:1,NativeSyncDataDir:root},agentManager:{isAgent:a=>a==='synthetic-one'||executionBindings.some(t=>t.agentAlias===a)}});
  store.onSourceChange=()=>portal.refreshDirectoryTopics();
  const appHttp=express();appHttp.set('trust proxy','loopback');appHttp.use(express.json({limit:'2mb'}));
  appHttp.use('/api/v1/sync',(req,res)=>{if(req.headers.authorization!=='Bearer synthetic-only')return res.status(401).json({});return syncService.handle(req,res);});
@@ -44,7 +45,7 @@ async function fixture(t,{scope=limited([selected,older]),seedOwners=true}={}){
  f.open=async({adopt=false,discover=true,fault}={})=>{
   f.queue=f.makeQueue();const file=path.join(app,'.native-sync/state.json'),state=JSON.parse(await fs.readFile(file,'utf8'));
   const source=await SourceSync.verify(connection,state,f.send);
-  f.adapter=await NativeSyncAdapter.open({queue:f.queue,statePath:file,...connection,topics:state.topics,source,sourceAdoptionVerified:adopt,request:f.send});
+  f.adapter=await NativeSyncAdapter.open({queue:f.queue,statePath:file,...connection,topics:state.topics,source,sourceAdoptionVerified:adopt,sourceTransitionVerified:Boolean(source.scopeTransition?.localStateHash),request:f.send});
   f.sync=await new SourceSync({adapter:f.adapter,connection,appDataRoot:app,readAgentConfig:f.readAgentConfig,readGroupConfig:f.readGroupConfig,send:f.send,fault}).open();if(discover)await f.sync.discover();return f;
  };
  f.adopt=async options=>{const cursor=f.adapter.state.cursor;await f.close();await f.open({adopt:true,...options});assert.equal(f.adapter.state.cursor,cursor,'Source adoption must not reset cursor');return f;};
@@ -58,13 +59,13 @@ async function fixture(t,{scope=limited([selected,older]),seedOwners=true}={}){
   const topics=(await call('/directory?kind=topics&limit=100')).topics;
   return {call,topics,status:async route=>(await fetch(connection.url+'/mobile/api'+route,{headers:{...headers,Cookie:cookie}})).status,read:async topic=>{const start=await call('/conversations/'+topic.key+'/baseline',{requestId:require('node:crypto').randomUUID()}),rows=[];let after=0;for(;;){const page=await call('/conversations/'+topic.key+'/baseline/'+start.id+'?after='+after+'&limit=100');rows.push(...page.events);if(!page.hasMore)return rows;after=page.next;}}};
  };
- t.after(async()=>{assert.equal(portal.engine.endpoint,null,'No model transport may be enabled');for(const close of f.cleanups)await close();await f.close();await portal.close();server.closeAllConnections();await new Promise(r=>server.close(r));await syncService.close();await fs.rm(root,{recursive:true,force:true});});
+ t.after(async()=>{if(portal.engine.endpoint)assert.equal(new URL(portal.engine.endpoint.url).hostname,'127.0.0.1','Synthetic endpoint must be loopback');for(const close of f.cleanups)await close();await f.close();await portal.close();server.closeAllConnections();await new Promise(r=>server.close(r));await syncService.close();await fs.rm(root,{recursive:true,force:true});});
  if(seedOwners){await f.owner('one',{topics:[{id:'selected',name:'selected'},{id:'old',name:'old'},{id:'excluded',name:'excluded'}]});await f.owner('other',{topics:[{id:'excluded',name:'excluded'}]});await f.history(selected,[]);await f.history(older,[message('old-1'),{...message('old-2'),role:'assistant'}]);await f.history(sibling,[message('outside-sibling')]);await f.history(foreign,[message('outside-owner')]);}
  await portal.engine.configs.publish({topics:[{...wireTopic(selected),expectedVersion:0,config:{name:'Synthetic',systemPrompt:'[[VCPToolUse=Forbidden]]\nSynthetic only',model:'synthetic-model',maxOutputTokens:1024}}]});
  let prior=null;for(let i=0;i<3;i++)prior=store.apply({...wireTopic(selected),msgId:'existing-desktop',deviceId:'deviceA',opId:'original-op-'+i,action:'upsert',baseHash:prior?.hash??null,message:message('existing-desktop','revision-'+i)});
  const job=portal.engine.accept('synthetic-session',{topicKey:'original',requestId:'seed-request',text:'synthetic accepted message'}),replyId='reply_'+job.id;
  store.apply({...wireTopic(selected),msgId:replyId,deviceId:'server:synthetic',opId:'reply:'+job.id,action:'upsert',baseHash:null,message:{...message(replyId,'synthetic reply'),role:'assistant'}});store.db.prepare("UPDATE mobile_executions SET state='completed',attempts=1,reply_message_id=? WHERE id=?").run(replyId,job.id);
- for(const topic of portal.topics)topic.agentAlias=null;for(const topic of portal.staticTopics)topic.agentAlias=null;
+ for(const topic of portal.topics)if(topic.key==='original')topic.agentAlias=null;for(const topic of portal.staticTopics)if(topic.key==='original')topic.agentAlias=null;
  f.oldJob=store.db.prepare('SELECT id,request_id,state,attempts,config_snapshot FROM mobile_executions').get();f.oldConfig=store.db.prepare('SELECT version,hash FROM owner_execution_configs').get();f.oldJournal=store.pull(0,500).events.map(e=>({seq:e.seq,msgId:e.msgId,hash:e.hash}));
  f.queue=f.makeQueue();f.adapter=await NativeSyncAdapter.open({queue:f.queue,statePath:path.join(app,'.native-sync/state.json'),url:connection.url,deviceId:'deviceA',token:'synthetic-only',topics:[selected],request:createSyncRequest({...connection,scopeMode:'selected',topics:[selected]})});await f.adapter.synchronize();assert.equal(f.adapter.state.cursor,5);assert.equal(store.metrics().liveMessages,3);return f;
 }

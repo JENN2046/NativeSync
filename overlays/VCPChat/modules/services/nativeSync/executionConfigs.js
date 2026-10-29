@@ -25,6 +25,14 @@ async function publishExecutionConfigs({ topics, readAgentConfig, readGroupConfi
         config.tavernRules=await readTavernRules();config.executionPolicy=await readExecutionPolicy();
         rows.push({ownerType:group?'group':'agent',ownerId:t.itemId,topicId:t.topicId,expectedVersion:prior.configVersion||0,config});
     }
-    return send('/api/plugins/NativeSync/mobile/execution-configs',{body:{topics:rows}});
+    const batches=[];let batch=[];
+    for(const row of rows){
+        if(batch.length&&Buffer.byteLength(JSON.stringify({topics:[...batch,row]}))>96000){batches.push(batch);batch=[];}
+        batch.push(row);
+    }
+    if(batch.length||!batches.length)batches.push(batch);
+    const result={topics:[]};
+    for(const topics of batches){const response=await send('/api/plugins/NativeSync/mobile/execution-configs',{body:{topics}});result.topics.push(...response.topics);}
+    return result;
 }
 module.exports = { publishExecutionConfigs };

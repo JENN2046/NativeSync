@@ -32,3 +32,11 @@ python3 tools/run_m2_m3.py --hosts /absolute/isolated/hosts --node /absolute/nod
 手机是实际MobilePortal的只读HTTP会话，使用本机可信代理的TLS终止语义，不是实际TLS、
 PWA渲染或真实手机；远端冲突写者通过真实CentralStore.apply注入合成事实。
 临时engine未设置模型endpoint，未调用provider、工具或AA。旧43项未重跑、未混入本批计数。
+
+## Current Batch1 combined runner
+
+Use tools/run_full_feature.py with matched public hosts, Node24 and locked Linux
+dependencies (better-sqlite3 12.4.1 must have its Node ABI137 native binding).
+It runs directly affected cases, not the whole old43/C1/C2/phone acceptance.
+The old known-gaps new-source transfer probe remains an unsupported alternative;
+same-source approval is positively tested in scope-transition.test.cjs.

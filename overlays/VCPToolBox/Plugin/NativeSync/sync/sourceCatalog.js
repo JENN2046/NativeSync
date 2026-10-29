@@ -1,5 +1,5 @@
 'use strict';
-const {normalizeScope,scopeHash,permits}=require('./sourceScope');
+const {normalizeScope,scopeHash,permits,expansion}=require('./sourceScope');
 const {randomUUID}=require('node:crypto');
 const {identity,stable,sha256}=require('./protocol');
 const fail=(code,status=409)=>Object.assign(Error(code),{code,status});
@@ -17,7 +17,7 @@ class SourceCatalog{
   const grants=JSON.parse(config.NativeSyncFullSources||'[]');
   if(!Array.isArray(grants)||grants.length>32)throw fail('INVALID_SOURCE_GRANTS',400);
   this.grants=new Map();
-  for(const grant of grants){fields(grant,['sourceId','deviceId','label','scope']);if(!opaque(grant.sourceId)||!opaque(grant.deviceId)||this.grants.has(grant.sourceId)||(grant.label!==undefined&&(typeof grant.label!=='string'||grant.label.length>100)))throw fail('INVALID_SOURCE_GRANTS',400);this.grants.set(grant.sourceId,{...grant,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{})});}
+  for(const grant of grants){fields(grant,['sourceId','deviceId','label','scope','approvedScope']);if(!opaque(grant.sourceId)||!opaque(grant.deviceId)||this.grants.has(grant.sourceId)||(grant.label!==undefined&&(typeof grant.label!=='string'||grant.label.length>100)))throw fail('INVALID_SOURCE_GRANTS',400);if(grant.approvedScope!==undefined)expansion(grant.scope,grant.approvedScope);this.grants.set(grant.sourceId,{...grant,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{})});}
   this.staticTopics=JSON.parse(config.NativeMobileTopics||'[]');if(!Array.isArray(this.staticTopics))throw fail('INVALID_SOURCE_GRANTS',400);
   this.db.exec('BEGIN IMMEDIATE');
   try{
@@ -35,20 +35,27 @@ class SourceCatalog{
     if(binding&&(binding.device_id!==grant.deviceId||binding.space_id!==this.spaceId))throw fail('SOURCE_BINDING_CHANGED');
     const scopeKey='sourceScope:'+sourceId,scopeValue=stable(normalizeScope(grant.scope));
     const savedScope=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get(scopeKey);
-    if((savedScope&&savedScope.value!==scopeValue)||(!savedScope&&binding&&normalizeScope(grant.scope)))throw fail('SOURCE_SCOPE_CHANGED');
+    if(savedScope&&savedScope.value!==scopeValue){
+     const proof=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceScopeApproved:'+sourceId);
+     const receipt=proof?JSON.parse(proof.value):null;
+     if(!receipt||!grant.approvedScope||savedScope.value!==stable(normalizeScope(grant.approvedScope))||receipt.fromScopeHash!==scopeHash(grant.scope)||receipt.toScopeHash!==scopeHash(grant.approvedScope)||receipt.deviceId!==grant.deviceId||receipt.spaceId!==this.spaceId)throw fail('SOURCE_SCOPE_CHANGED');
+     grant.scope=normalizeScope(grant.approvedScope)||undefined;
+    }else if(!savedScope&&binding&&normalizeScope(grant.scope))throw fail('SOURCE_SCOPE_CHANGED');
     this.db.prepare('INSERT OR IGNORE INTO native_sync_metadata(key,value) VALUES(?,?)').run(scopeKey,scopeValue);
     this.db.prepare('INSERT OR IGNORE INTO source_bindings VALUES(?,?,?)').run(sourceId,grant.deviceId,this.spaceId);
     this.db.prepare('INSERT OR IGNORE INTO source_catalog_versions(source_id,revision) VALUES(?,0)').run(sourceId);
    }
+   for(const t of this.staticTopics){const row=this.db.prepare('SELECT metadata FROM source_catalog_entities WHERE owner_type=? AND owner_id=? AND topic_id=?').get(...tuple(t));if(row&&JSON.parse(row.metadata).key!==t.key)throw fail('SOURCE_TOPIC_KEY_CHANGED');const keyOwner=this.db.prepare("SELECT owner_type,owner_id,topic_id FROM source_catalog_entities WHERE json_extract(metadata,'$.key')=?").get(t.key);if(keyOwner&&stable([keyOwner.owner_type,keyOwner.owner_id,keyOwner.topic_id])!==stable(tuple(t)))throw fail('SOURCE_IDENTITY_COLLISION');}
    this.db.exec('COMMIT');
   }catch(error){this.db.exec('ROLLBACK');throw error;}
  }
- binding(value){
+ binding(value,checkScope=true){
   if(!value||!opaque(value.sourceId)||!opaque(value.deviceId)||typeof value.spaceId!=='string')throw fail('INVALID_SOURCE_BINDING',400);
   const grant=this.grants.get(value.sourceId);if(!grant||grant.deviceId!==value.deviceId)throw fail('SOURCE_NOT_APPROVED',403);
   if(value.spaceId!==this.spaceId)throw fail('SOURCE_SPACE_MISMATCH',403);
   const saved=this.db.prepare('SELECT * FROM source_bindings WHERE source_id=?').get(value.sourceId);if(!saved||saved.device_id!==value.deviceId||saved.space_id!==value.spaceId)throw fail('SOURCE_BINDING_CHANGED',403);
-  if((value.scopeHash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);
+  const pin=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceScope:'+value.sourceId);if(!pin||pin.value!==stable(normalizeScope(grant.scope)))throw fail('SOURCE_SCOPE_CHANGED',403);
+  if(checkScope&&(value.scopeHash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);
   return grant;
  }
  assertScope(sourceId,d,owner=false){const grant=this.grants.get(sourceId);if(!grant||!permits(grant.scope,d,owner))throw fail('SOURCE_TOPIC_NOT_APPROVED',403);}
@@ -56,7 +63,39 @@ class SourceCatalog{
   if(binding){this.binding(binding);this.assertScope(binding.sourceId,op);}
   else if([...this.grants.values()].some(g=>g.deviceId===op?.deviceId&&normalizeScope(g.scope)))throw fail('SOURCE_BINDING_REQUIRED',403);
  }
- info(sourceId,deviceId,hash){const grant=this.grants.get(sourceId);if(!grant||grant.deviceId!==deviceId)throw fail('SOURCE_NOT_APPROVED',403);if((hash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);return {version:1,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{}),sourceId,deviceId,spaceId:this.spaceId,revision:this.revision(sourceId)};}
+ info(sourceId,deviceId,hash){const grant=this.grants.get(sourceId);if(!grant||grant.deviceId!==deviceId)throw fail('SOURCE_NOT_APPROVED',403);const pin=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceScope:'+sourceId);if(!pin||pin.value!==stable(normalizeScope(grant.scope)))throw fail('SOURCE_SCOPE_CHANGED',403);if((hash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);return {version:1,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{}),sourceId,deviceId,spaceId:this.spaceId,revision:this.revision(sourceId)};}
+ transition(value,body){
+  fields(body,['opId','expectedScopeHash','newScope']);
+  if(!opaque(body.opId)||!/^([a-f0-9]{64})$/.test(body.expectedScopeHash||''))throw fail('INVALID_SCOPE_TRANSITION',400);
+  const next=normalizeScope(body.newScope);if(!next&&!(body.newScope?.mode==='full'&&Object.keys(body.newScope).length===1))throw fail('INVALID_SCOPE_TRANSITION',400);
+  const requestHash=sha256(stable({...body,newScope:next})),key='sourceScopeTransition:'+value.sourceId+':'+body.opId;
+  this.db.exec('BEGIN IMMEDIATE');let grant,result;
+  try{
+   grant=this.binding(value,false);if(![body.expectedScopeHash,scopeHash(body.newScope)].includes(value.scopeHash||null))throw fail('SOURCE_SCOPE_MISMATCH',403);
+   const prior=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get(key);
+   if(prior){const receipt=JSON.parse(prior.value);if(receipt.requestHash!==requestHash)throw fail('IDEMPOTENCY_KEY_REUSED');this.db.exec('COMMIT');return {...receipt,replayed:true};}
+   if(scopeHash(grant.scope)!==body.expectedScopeHash)throw fail('SOURCE_SCOPE_CHANGED');
+   expansion(grant.scope,body.newScope);if(!grant.approvedScope||stable(normalizeScope(grant.approvedScope))!==stable(next))throw fail('SCOPE_NOT_APPROVED',403);
+   if(!next&&this.db.prepare('SELECT 1 FROM source_catalog_entities WHERE source_id<>? LIMIT 1').get(value.sourceId))throw fail('SOURCE_IDENTITY_COLLISION');
+   for(const t of next?.topics||[])for(const topicId of ['',t.topicId]){const owner=this.db.prepare('SELECT source_id FROM source_catalog_entities WHERE owner_type=? AND owner_id=? AND topic_id=?').get(t.ownerType,t.ownerId,topicId);if(owner&&owner.source_id!==value.sourceId)throw fail('SOURCE_IDENTITY_COLLISION');}
+   const keys=grant.scope.topics.map(t=>{const row=this.entity(value.sourceId,t.ownerType,t.ownerId,t.topicId);if(!row||(!row.ready&&!row.deleted))throw fail('SOURCE_SCOPE_NOT_SETTLED');return JSON.parse(row.metadata).key;});
+   if(new Set(keys).size!==keys.length||keys.some(k=>typeof k!=='string'||!opaque(k)))throw fail('SOURCE_SCOPE_NOT_SETTLED');
+   const freeze=table=>{
+    if(!this.db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table))return;
+    for(const row of this.db.prepare('SELECT rowid,scopes FROM '+table+(table==='mobile_pairings'?' WHERE used=0':'')).all()){
+     const scopes=JSON.parse(row.scopes);if(!Array.isArray(scopes)||scopes.some(s=>typeof s!=='string'))throw fail('INVALID_MOBILE_SCOPE');if(!scopes.includes('source:'+value.sourceId))continue;
+     const fixed=[...new Set(scopes.flatMap(s=>s==='source:'+value.sourceId?keys:[s]))];this.db.prepare('UPDATE '+table+' SET scopes=? WHERE rowid=?').run(JSON.stringify(fixed),row.rowid);
+    }
+   };
+   freeze('mobile_sessions');freeze('mobile_pairings');this.transitionFault?.('authority-frozen');
+   result={version:1,approved:true,opId:body.opId,sourceId:value.sourceId,deviceId:value.deviceId,spaceId:value.spaceId,fromScopeHash:body.expectedScopeHash,toScopeHash:scopeHash(body.newScope),scope:next,revision:this.revision(value.sourceId),requestHash};
+   this.db.prepare('UPDATE native_sync_metadata SET value=? WHERE key=?').run(stable(next),'sourceScope:'+value.sourceId);this.transitionFault?.('pin-updated');
+   for(const receiptKey of [key,'sourceScopeApproved:'+value.sourceId])this.db.prepare('INSERT INTO native_sync_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run(receiptKey,JSON.stringify(result));
+   for(const t of this.staticTopics){const row=this.db.prepare('SELECT metadata FROM source_catalog_entities WHERE owner_type=? AND owner_id=? AND topic_id=?').get(...tuple(t));if(row&&JSON.parse(row.metadata).key!==t.key)throw fail('SOURCE_TOPIC_KEY_CHANGED');const keyOwner=this.db.prepare("SELECT owner_type,owner_id,topic_id FROM source_catalog_entities WHERE json_extract(metadata,'$.key')=?").get(t.key);if(keyOwner&&stable([keyOwner.owner_type,keyOwner.owner_id,keyOwner.topic_id])!==stable(tuple(t)))throw fail('SOURCE_IDENTITY_COLLISION');}
+   this.db.exec('COMMIT');
+  }catch(error){this.db.exec('ROLLBACK');throw error;}
+  grant.scope=next||undefined;return {...result,replayed:false};
+ }
  revision(sourceId){return this.db.prepare('SELECT revision FROM source_catalog_versions WHERE source_id=?').get(sourceId)?.revision||0;}
  keyFor(sourceId,d){return this.staticTopics.find(t=>tuple(t).every((v,i)=>v===tuple(d)[i]))?.key||'full_'+sha256(stable([sourceId,...tuple(d)])).slice(0,40);}
  publish(binding,body){
@@ -78,7 +117,7 @@ class SourceCatalog{
     const collision=this.db.prepare('SELECT source_id,deleted FROM source_catalog_entities WHERE owner_type=? AND owner_id=? AND topic_id=?').get(...tuple(row));
     if(collision&&collision.source_id!==binding.sourceId)throw fail('SOURCE_IDENTITY_COLLISION');
     if(collision?.deleted)throw fail('SOURCE_ENTITY_DELETED');
-    if(row.topicId){const parent=agents.find(a=>a.ownerType===row.ownerType&&a.ownerId===row.ownerId)||this.entity(binding.sourceId,row.ownerType,row.ownerId,'');if(!parent||parent.deleted)throw fail('SOURCE_OWNER_UNAVAILABLE');}
+    if(row.topicId){const keyOwner=this.db.prepare("SELECT owner_type,owner_id,topic_id FROM source_catalog_entities WHERE json_extract(metadata,'$.key')=?").get(row.key);if(keyOwner&&stable([keyOwner.owner_type,keyOwner.owner_id,keyOwner.topic_id])!==stable(tuple(row)))throw fail('SOURCE_IDENTITY_COLLISION');const parent=agents.find(a=>a.ownerType===row.ownerType&&a.ownerId===row.ownerId)||this.entity(binding.sourceId,row.ownerType,row.ownerId,'');if(!parent||parent.deleted)throw fail('SOURCE_OWNER_UNAVAILABLE');}
     const old=this.entity(binding.sourceId,...tuple(row));
     const legacy=this.staticTopics.some(t=>tuple(t).every((v,i)=>v===tuple(row)[i]));
     const ready=old?.ready||(row.topicId&&legacy&&row.previouslyAttached===true?1:0);

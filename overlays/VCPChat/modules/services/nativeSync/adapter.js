@@ -46,6 +46,10 @@ class NativeSyncAdapter {
         catch (error) { if(error instanceof SyntaxError)throw fail('INVALID_SYNC_STATE_JSON');if (error.code !== 'ENOENT') throw error; }
         if (!adapter.state||typeof adapter.state!=='object'||adapter.state.deviceId !== adapter.deviceId || ![1,2].includes(adapter.state.version) || !Array.isArray(adapter.state.outbox) || !Number.isSafeInteger(adapter.state.cursor) || adapter.state.cursor < 0 || !adapter.state.acked) throw fail('INVALID_SYNC_STATE');
         if(!adapter.state.source&&options.source&&options.sourceAdoptionVerified===true)adapter.state.source=structuredClone(options.source);
+        if(adapter.state.source&&options.sourceTransitionVerified&&JSON.stringify(adapter.state.source.binding)!==JSON.stringify(adapter.source?.binding)){
+            const proof=adapter.source?.scopeTransition,scopes=require('./sourceScope'),prior=adapter.state.source.binding,next=adapter.source.binding,{scope:a,...x}=prior,{scope:b,...y}=next;
+            if(!proof||proof.localStateHash!==sha256(stable(adapter.state))||proof.fromScopeHash!==scopes.scopeHash(a)||proof.toScopeHash!==scopes.scopeHash(b)||stable(x)!==stable(y))throw fail('SOURCE_BINDING_CHANGED');scopes.expansion(a,b||{mode:'full'});adapter.state.source=structuredClone(adapter.source);
+        }
         if (JSON.stringify(adapter.state.source?.binding||null)!==JSON.stringify(adapter.source?.binding||null)) throw fail('SOURCE_BINDING_CHANGED');
         if(adapter.source&&adapter.state.topics.some(d=>!adapter.sourcePermits(d)))throw fail('SOURCE_SCOPE_MISMATCH');
         if (JSON.stringify(adapter.state.topics) !== JSON.stringify(adapter.topics)) throw fail('OWNER_BINDING_CHANGED');

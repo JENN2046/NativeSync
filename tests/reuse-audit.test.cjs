@@ -1,12 +1,12 @@
 
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict');
-const {fixture,message,selected,older,limited,SourceCatalog,wireTopic}=require('./fixtures/boundedSourceHarness.cjs');
+const {fixture,message,selected,older,limited,SourceCatalog,wireTopic,stable}=require('./fixtures/boundedSourceHarness.cjs');
 const b0={itemType:'agent',itemId:'two',topicId:'b0'},b1={itemType:'agent',itemId:'two',topicId:'b1'};
 async function bypassPinForRiskControl(f){
  // Deliberately bypass an internal invariant in a TEMP DB only, to test the
  // unsafe alternative "just remove the pin". Normal config cannot do this.
- const wider=limited([selected,older,b0,b1]);f.store.sourceCatalog.grants.set('sourceA',{sourceId:'sourceA',deviceId:'deviceA',scope:wider});f.connection.sourceScope=wider;
+ const wider=limited([selected,older,b0,b1]);f.store.sourceCatalog.grants.set('sourceA',{sourceId:'sourceA',deviceId:'deviceA',scope:wider});f.connection.sourceScope=wider;f.store.db.prepare('UPDATE native_sync_metadata SET value=? WHERE key=?').run(stable(require(process.env.VCP_R21_BOX_SOURCE+'/Plugin/NativeSync/sync/sourceScope').normalizeScope(wider)),'sourceScope:sourceA');
  await f.send('/api/v1/sync/source/catalog',{body:{opId:'unsafe-control-only',baseRevision:f.sync.state.revision,agents:[{ownerType:'agent',ownerId:'two',name:'two'}],topics:[b0,b1].map(d=>({...wireTopic(d),name:d.topicId})),removed:[]}});
 }
 test('Reuse audit: normal in-source widening remains refused; preapproved incremental discovery does not require handover',async t=>{
