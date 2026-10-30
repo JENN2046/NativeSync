@@ -1,0 +1,72 @@
+// Synthetic-only integration fixture. No provider or host-core entrypoint is loaded.
+'use strict';
+const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),http=require('node:http'),assert=require('node:assert/strict');
+const HOSTS=process.env.NATIVESYNC_TEST_HOSTS;if(!HOSTS)throw Error('NATIVESYNC_TEST_HOSTS_REQUIRED');
+const CHAT=path.join(HOSTS,'VCPChat'),BOX=path.join(HOSTS,'VCPToolBox'),repo=path.resolve(__dirname,'../..');
+const {HistoryMutationQueue}=require(CHAT+'/modules/services/historyMutationQueue');
+const {NativeSyncAdapter}=require(CHAT+'/modules/services/nativeSync/adapter');
+const {SourceSync}=require(CHAT+'/modules/services/nativeSync/sourceSync');
+const {createSyncRequest}=require(CHAT+'/modules/services/nativeSync/runtime');
+const {wireTopic,messageHash,stable}=require(CHAT+'/modules/services/nativeSync/protocol');
+const {SourceCatalog}=require(BOX+'/Plugin/NativeSync/sync/sourceCatalog');
+const {CentralStore}=require(BOX+'/Plugin/NativeSync/sync/centralStore');
+const {createSyncHttpService}=require(BOX+'/Plugin/NativeSync/sync/httpService');
+const {MobilePortal}=require(BOX+'/Plugin/NativeSync/mobile/portal');
+const originalFetch=globalThis.fetch;
+globalThis.fetch=(input,init)=>{const url=new URL(typeof input==='string'?input:input.url);if(url.hostname!=='127.0.0.1')throw Error('NON_LOOPBACK_TEST_NETWORK_FORBIDDEN');return originalFetch(input,init);};
+const express=require('node:module').createRequire(BOX+'/package.json')('express');
+const selected={itemType:'agent',itemId:'one',topicId:'selected'},older={itemType:'agent',itemId:'one',topicId:'old'};
+const sibling={itemType:'agent',itemId:'one',topicId:'excluded'},foreign={itemType:'agent',itemId:'other',topicId:'excluded'};
+const message=(id,content=id)=>({id,role:'user',content,timestamp:1});
+const limited=topics=>({mode:'limited',topics:topics.map(wireTopic)});
+const waitFor=async(fn,label)=>{const until=Date.now()+5000;for(;;){if(await fn())return;if(Date.now()>until)throw Error('WAIT_TIMEOUT '+label);await new Promise(r=>setTimeout(r,5));}};
+async function fixture(t,{scope=limited([selected,older]),seedOwners=true,executionBindings=[]}={}){
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'native-m2m3-')),app=path.join(root,'AppData');await fs.mkdir(app,{recursive:true});
+ const store=new CentralStore(path.join(root,'central.sqlite')),staticTopic={key:'original',...wireTopic(selected),agentAlias:'synthetic-one'};
+ const configuredTopics=[staticTopic,...executionBindings];
+ const sourceCatalog=new SourceCatalog(store,{NativeSyncFullSources:JSON.stringify([{sourceId:'sourceA',deviceId:'deviceA',scope}]),NativeMobileTopics:JSON.stringify(configuredTopics)});store.sourceCatalog=sourceCatalog;
+ const syncService=createSyncHttpService(store);
+ const portal=new MobilePortal({store,config:{NativeMobileOrigin:'https://synthetic-mobile.invalid',NativeMobileTopics:JSON.stringify(configuredTopics),NativeMobileConfigSync:true,NativeMobileMaxConcurrency:1,NativeSyncDataDir:root},agentManager:{isAgent:a=>a==='synthetic-one'||executionBindings.some(t=>t.agentAlias===a)}});
+ store.onSourceChange=()=>portal.refreshDirectoryTopics();
+ const appHttp=express();appHttp.set('trust proxy','loopback');appHttp.use(express.json({limit:'2mb'}));
+ appHttp.use('/api/v1/sync',(req,res)=>{if(req.headers.authorization!=='Bearer synthetic-only')return res.status(401).json({});return syncService.handle(req,res);});
+ appHttp.use('/mobile',portal.router);appHttp.use((e,req,res,next)=>res.status(e.status||400).json({error:{code:e.code||'TEST_HTTP_ERROR'}}));
+ const server=http.createServer(appHttp);await new Promise(r=>server.listen(0,'127.0.0.1',r));
+ const connection={scopeMode:'source',sourceId:'sourceA',deviceId:'deviceA',spaceId:sourceCatalog.spaceId,sourceRoot:app,sourceScope:scope,url:'http://127.0.0.1:'+server.address().port,token:'synthetic-only',topics:[]};
+ const f={root,app,store,portal,server,connection,cleanups:[],network:{offline:false,dropPush:0},reads:[],sent:[]};
+ f.owner=async(id,{topics=[],name=id,type='agent'}={})=>{const d=path.join(app,type==='group'?'AgentGroups':'Agents',id);await fs.mkdir(d,{recursive:true});await fs.writeFile(path.join(d,'config.json'),JSON.stringify({id,name,topics,systemPrompt:'SYNTHETIC_PRIVATE_PROMPT_NOT_PROJECTED'}));};
+ f.history=async(d,rows)=>{const file=path.join(app,'UserData',d.itemId,'topics',d.topicId,'history.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(rows));};
+ f.readAgentConfig=async id=>{f.reads.push({kind:'config',owner:id});return JSON.parse(await fs.readFile(path.join(app,'Agents',id,'config.json'),'utf8'));};
+ f.readGroupConfig=async id=>JSON.parse(await fs.readFile(path.join(app,'AgentGroups',id,'config.json'),'utf8'));
+ const rawSend=createSyncRequest(connection);
+ f.send=async(route,options={})=>{if(f.network.offline)throw Object.assign(Error('OFFLINE'),{code:'NETWORK_UNAVAILABLE'});f.sent.push({route,body:options.body?structuredClone(options.body):null});const value=await rawSend(route,options);if(/\/(?:source\/)?push$/.test(route)&&f.network.dropPush>0){f.network.dropPush--;throw Object.assign(Error('ACK_DROPPED'),{code:'NETWORK_UNAVAILABLE'});}return value;};
+ f.makeQueue=()=>{const q=new HistoryMutationQueue({userDataDir:path.join(app,'UserData'),logger:{warn(){}}}),read=q.read.bind(q);q.read=async(d,...args)=>{f.reads.push({kind:'history',owner:d.itemId,topic:d.topicId});return read(d,...args);};return q;};
+ f.close=async()=>{await f.adapter?.close();await f.queue?.dispose();f.adapter=null;};
+ f.open=async({adopt=false,discover=true,fault}={})=>{
+  f.queue=f.makeQueue();const file=path.join(app,'.native-sync/state.json'),state=JSON.parse(await fs.readFile(file,'utf8'));
+  const source=await SourceSync.verify(connection,state,f.send);
+  f.adapter=await NativeSyncAdapter.open({queue:f.queue,statePath:file,...connection,topics:state.topics,source,sourceAdoptionVerified:adopt,sourceTransitionVerified:Boolean(source.scopeTransition?.localStateHash),request:f.send});
+  f.sync=await new SourceSync({adapter:f.adapter,connection,appDataRoot:app,readAgentConfig:f.readAgentConfig,readGroupConfig:f.readGroupConfig,send:f.send,fault}).open();if(discover)await f.sync.discover();return f;
+ };
+ f.adopt=async options=>{const cursor=f.adapter.state.cursor;await f.close();await f.open({adopt:true,...options});assert.equal(f.adapter.state.cursor,cursor,'Source adoption must not reset cursor');return f;};
+ f.pump=async(n=60)=>{for(let i=0;i<n;i++){await f.sync.tick();await f.adapter.synchronize();if(Object.values(f.sync.state.plans).every(p=>p.stage==='complete')&&!f.sync.state.pendingCatalog&&!f.adapter.state.outbox.length&&!f.adapter.state.inbox.length)return;}throw Error('PUMP_INCOMPLETE '+JSON.stringify(f.sync.diagnostics()));};
+ f.cloudRows=d=>store.pull(0,500).events.filter(e=>e.ownerType===(d.itemType||'agent')&&e.ownerId===d.itemId&&e.topicId===d.topicId);
+ f.assertOldFacts=()=>{assert.deepEqual(store.pull(0,500).events.slice(0,5).map(e=>({seq:e.seq,msgId:e.msgId,hash:e.hash})),f.oldJournal);assert.deepEqual(store.db.prepare('SELECT id,request_id,state,attempts,config_snapshot FROM mobile_executions').get(),f.oldJob);assert.deepEqual(store.db.prepare('SELECT version,hash FROM owner_execution_configs').get(),f.oldConfig);assert.equal(f.adapter.deviceId,'deviceA');assert.equal(f.adapter.state.source.binding.spaceId,sourceCatalog.spaceId);};
+ f.phone=async(options={})=>{
+  const pairing=portal.createPairing({scopeMode:'source',sourceId:connection.sourceId,...options}),headers={'X-Forwarded-Proto':'https',Origin:'https://synthetic-mobile.invalid','Content-Type':'application/json'};
+  const response=await fetch(connection.url+'/mobile/api/pair',{method:'POST',headers,body:JSON.stringify({code:pairing.pairingCode})});assert.equal(response.status,200);const cookie=response.headers.get('set-cookie').split(';')[0];
+  const call=async(route,body)=>{const r=await fetch(connection.url+'/mobile/api'+route,{method:body?'POST':'GET',headers:{...headers,Cookie:cookie},body:body?JSON.stringify(body):undefined});const value=await r.json();assert.equal(r.status,200,JSON.stringify(value));return value;};
+  const topics=(await call('/directory?kind=topics&limit=100')).topics;
+  return {call,topics,status:async route=>(await fetch(connection.url+'/mobile/api'+route,{headers:{...headers,Cookie:cookie}})).status,read:async topic=>{const start=await call('/conversations/'+topic.key+'/baseline',{requestId:require('node:crypto').randomUUID()}),rows=[];let after=0;for(;;){const page=await call('/conversations/'+topic.key+'/baseline/'+start.id+'?after='+after+'&limit=100');rows.push(...page.events);if(!page.hasMore)return rows;after=page.next;}}};
+ };
+ t.after(async()=>{if(portal.engine.endpoint)assert.equal(new URL(portal.engine.endpoint.url).hostname,'127.0.0.1','Synthetic endpoint must be loopback');for(const close of f.cleanups)await close();await f.close();await portal.close();server.closeAllConnections();await new Promise(r=>server.close(r));await syncService.close();await fs.rm(root,{recursive:true,force:true});});
+ if(seedOwners){await f.owner('one',{topics:[{id:'selected',name:'selected'},{id:'old',name:'old'},{id:'excluded',name:'excluded'}]});await f.owner('other',{topics:[{id:'excluded',name:'excluded'}]});await f.history(selected,[]);await f.history(older,[message('old-1'),{...message('old-2'),role:'assistant'}]);await f.history(sibling,[message('outside-sibling')]);await f.history(foreign,[message('outside-owner')]);}
+ await portal.engine.configs.publish({topics:[{...wireTopic(selected),expectedVersion:0,config:{name:'Synthetic',systemPrompt:'[[VCPToolUse=Forbidden]]\nSynthetic only',model:'synthetic-model',maxOutputTokens:1024}}]});
+ let prior=null;for(let i=0;i<3;i++)prior=store.apply({...wireTopic(selected),msgId:'existing-desktop',deviceId:'deviceA',opId:'original-op-'+i,action:'upsert',baseHash:prior?.hash??null,message:message('existing-desktop','revision-'+i)});
+ const job=portal.engine.accept('synthetic-session',{topicKey:'original',requestId:'seed-request',text:'synthetic accepted message'}),replyId='reply_'+job.id;
+ store.apply({...wireTopic(selected),msgId:replyId,deviceId:'server:synthetic',opId:'reply:'+job.id,action:'upsert',baseHash:null,message:{...message(replyId,'synthetic reply'),role:'assistant'}});store.db.prepare("UPDATE mobile_executions SET state='completed',attempts=1,reply_message_id=? WHERE id=?").run(replyId,job.id);
+ for(const topic of portal.topics)if(topic.key==='original')topic.agentAlias=null;for(const topic of portal.staticTopics)if(topic.key==='original')topic.agentAlias=null;
+ f.oldJob=store.db.prepare('SELECT id,request_id,state,attempts,config_snapshot FROM mobile_executions').get();f.oldConfig=store.db.prepare('SELECT version,hash FROM owner_execution_configs').get();f.oldJournal=store.pull(0,500).events.map(e=>({seq:e.seq,msgId:e.msgId,hash:e.hash}));
+ f.queue=f.makeQueue();f.adapter=await NativeSyncAdapter.open({queue:f.queue,statePath:path.join(app,'.native-sync/state.json'),url:connection.url,deviceId:'deviceA',token:'synthetic-only',topics:[selected],request:createSyncRequest({...connection,scopeMode:'selected',topics:[selected]})});await f.adapter.synchronize();assert.equal(f.adapter.state.cursor,5);assert.equal(store.metrics().liveMessages,3);return f;
+}
+module.exports={fixture,message,selected,older,sibling,foreign,limited,waitFor,CHAT,BOX,repo,HistoryMutationQueue,NativeSyncAdapter,SourceSync,SourceCatalog,createSyncRequest,wireTopic,messageHash,stable};

@@ -11,7 +11,8 @@ async function attachLocalRecovery({ queue, statePath }) {
     const previousObserver = queue?.commitObserver;
     const key = file => process.platform === 'win32' ? file.toLowerCase() : file;
     let bindings = new Set();
-    let fullSource=false;
+    let fullSource=false,sourceScope=null;
+    const {normalizeScope,permits}=require('./sourceScope');
     const selected = d => topics === null || topics.some(t => t.itemId === d.itemId && t.itemType === (d.itemType || 'agent') && t.topicId === d.topicId);
     async function physicalPath(d) {
         const root = path.resolve(queue.userDataDir), file = queue.getHistoryPath(d.itemId, d.topicId);
@@ -23,7 +24,7 @@ async function attachLocalRecovery({ queue, statePath }) {
         }
     }
     async function deny(d) {
-        if (fullSource||selected(d)) throw fail(code);
+        if (fullSource||(sourceScope&&permits(sourceScope,d))||selected(d)) throw fail(code);
         if (bindings.has(key(queue.getHistoryPath(d.itemId,d.topicId)))) throw fail('OWNER_PATH_CONFLICT');
     }
     const fence = {
@@ -53,7 +54,8 @@ async function attachLocalRecovery({ queue, statePath }) {
             const file = queue?.getHistoryPath(t.itemId,t.topicId);
             if (file) { if (nextBindings.has(key(file))) throw fail('OWNER_PATH_CONFLICT'); nextBindings.add(key(file)); }
         }
-        if(state.source){const b=state.source.binding;if(!b||!['sourceId','spaceId','rootHash'].every(k=>typeof b[k]==='string'&&b[k])||b.deviceId!==state.deviceId)throw fail('INVALID_SOURCE_BINDING');fullSource=true;}
+        if(state.source){const b=state.source.binding;if(!b||!['sourceId','spaceId','rootHash'].every(k=>typeof b[k]==='string'&&b[k])||b.deviceId!==state.deviceId)throw fail('INVALID_SOURCE_BINDING');sourceScope=normalizeScope(b.scope);fullSource=!sourceScope;
+            if(sourceScope&&normalized.some(d=>!permits(sourceScope,d)))throw fail('SOURCE_SCOPE_MISMATCH');}
         topics = normalized; bindings = nextBindings;
         return {exists:true,state,fence,setError:error=>{code=error;}};
     } catch (error) {

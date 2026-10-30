@@ -39,6 +39,7 @@ function createSyncHttpService(store) {
                     }
                     op = JSON.parse(raw);
                 } else if (Buffer.byteLength(JSON.stringify(op)) > 1024 * 1024) throw new SyncError('BODY_TOO_LARGE', '1 MiB maximum', 413);
+                store.sourceCatalog?.authorizePush(req.nativeSyncSourceBinding,op);
                 if(req.nativeSyncTopics!==undefined&&!req.nativeSyncTopics.includes(JSON.stringify([op?.ownerType,op?.ownerId,op?.topicId])))throw new SyncError('TOPIC_NOT_ALLOWED','Operation is outside the selected source',403);
                 if(req.nativeSyncSourceBinding&&op?.deviceId!==req.nativeSyncSourceBinding.deviceId)throw new SyncError('SOURCE_DEVICE_MISMATCH','Operation device changed',403);
                 return send(res, 200, store.apply(op,{metadataPublisher:req.nativeSyncMetadataPublisher??(req.nativeSyncTopics===undefined),attachmentPrincipal:req.nativeSyncDeviceId?'desktop:'+req.nativeSyncDeviceId:'host-bearer'}));

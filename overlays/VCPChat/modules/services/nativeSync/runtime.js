@@ -14,7 +14,7 @@ function reserveOwner(queue, root) {
 }
 
 function syncHeaders(connection){
-    if(connection.scopeMode==='source')return {'X-NativeSync-Source':connection.sourceId,'X-NativeSync-Device':connection.deviceId,'X-NativeSync-Space':connection.spaceId};
+    if(connection.scopeMode==='source')return {'X-NativeSync-Source':connection.sourceId,'X-NativeSync-Device':connection.deviceId,'X-NativeSync-Space':connection.spaceId,...(require('./sourceScope').scopeHash(connection.sourceScope)?{'X-NativeSync-Scope':require('./sourceScope').scopeHash(connection.sourceScope)}:{})};
     return connection.topics?.length?{'X-NativeSync-Topics':Buffer.from(JSON.stringify(connection.topics.map(t=>[t.itemType||'agent',t.itemId,t.topicId]))).toString('base64url')}:{};
 }
 function createSyncRequest(connection,timeoutMs=8000) {
@@ -90,7 +90,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
     // Existing shared histories attach Queue policy locally before network work.
     // First attachment still requires the approved online comparison.
     if (!existingState) await prepare();
-    adapter = await NativeSyncAdapter.open({ queue, statePath,bootstrap, ...(full?{source,sourceAdoptionVerified:!local.state?.source}:{}), ...(connection || { url: option('native-sync-url'), deviceId: option('native-sync-device'), topics: JSON.parse(option('native-sync-topics') || '[]'), token: 'isolated-poc-token' }), ...((connection || request) ? { request: send } : {}), notify });
+    adapter = await NativeSyncAdapter.open({ queue, statePath,bootstrap, ...(full?{source,sourceAdoptionVerified:!local.state?.source,sourceTransitionVerified:Boolean(local.state?.source&&source.scopeTransition?.localStateHash)}:{}), ...(connection || { url: option('native-sync-url'), deviceId: option('native-sync-device'), topics: JSON.parse(option('native-sync-topics') || '[]'), token: 'isolated-poc-token' }), ...((connection || request) ? { request: send } : {}), notify });
     if(full){sourceSync=await new (require('./sourceSync').SourceSync)({adapter,connection,appDataRoot,readAgentConfig,readGroupConfig,send,fault:sourceFault}).open();
         sourceListener=()=>{sourceSync.dirty=true;};agentConfigEvents?.on?.('agent-config-updated',sourceListener);
         await sourceSync.discover();}

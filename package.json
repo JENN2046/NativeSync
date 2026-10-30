@@ -8,6 +8,8 @@
   },
   "scripts": {
     "test": "node --test --test-reporter=tap tests/snapshot-prompt.test.cjs",
-    "verify:source": "python3 tools/verify_source.py"
+    "verify:source": "python3 tools/verify_source.py",
+    "test:m2-m3": "python3 tools/run_m2_m3.py",
+    "test:integration": "python3 tools/run_full_feature.py"
   }
 }

@@ -4,8 +4,9 @@ const {durableJson}=require('./durableJson');
 const {sourceDirectory,sourceEntityKey,assertHistoryPath}=require('./sourceDirectory');
 const {wireTopic,descriptor,messageKey,messageHash,canonicalMessage,sha256,stable,fail,identity}=require('./protocol');
 const {fieldsFrom,emptyHash,envelopeFor,assertCompatibleBackfill}=require('./metadata');
+const {normalizeScope,scopeHash,permits,expansion}=require('./sourceScope');
 const ROOT='/api/v1/sync/source',PAGE=100,CATALOG_BYTES=96000,CATALOG_ITEMS=64;
-const bindingFor=c=>({sourceId:c.sourceId,spaceId:c.spaceId,deviceId:c.deviceId,rootHash:sha256(process.platform==='win32'?path.resolve(c.sourceRoot).toLowerCase():path.resolve(c.sourceRoot))});
+const bindingFor=c=>({...(normalizeScope(c.sourceScope)?{scope:normalizeScope(c.sourceScope)}:{}),sourceId:c.sourceId,spaceId:c.spaceId,deviceId:c.deviceId,rootHash:sha256(process.platform==='win32'?path.resolve(c.sourceRoot).toLowerCase():path.resolve(c.sourceRoot))});
 const freshSource=c=>({binding:bindingFor(c),revision:0,published:{},plans:{},deletions:{},pendingCatalog:null});
 const baseFor=(message,seq=0)=>({hash:messageHash(message),deleted:false,seq,metadataVersion:message._nativeSyncMetadata?.version||0,metadataHash:message._nativeSyncMetadata?.hash||sha256(stable(fieldsFrom(message))),...(message._nativeSyncMetadata?.fields.continuity?{continuity:message._nativeSyncMetadata.fields.continuity,continuityVerified:true}:{})});
 
@@ -15,8 +16,21 @@ const baseFor=(message,seq=0)=>({hash:messageHash(message),deleted:false,seq,met
 class SourceSync{
  static async verify(connection,state,send){
   const b=bindingFor(connection);
-  if(state?.source){if(stable(state.source.binding)!==stable(b))throw fail('SOURCE_BINDING_CHANGED');return state.source;}
+  if(state?.source){
+   if(stable(state.source.binding)===stable(b))return state.source;
+   const prior=state.source.binding,{scope:oldScope,...oldIdentity}=prior,{scope:newScope,...newIdentity}=b,t=connection.scopeTransition;
+   if(stable(oldIdentity)!==stable(newIdentity)||!t||t.expectedScopeHash!==scopeHash(oldScope))throw fail('SOURCE_BINDING_CHANGED');
+   const rootStat=await fs.lstat(connection.sourceRoot);if(!rootStat.isDirectory()||rootStat.isSymbolicLink())throw fail('SOURCE_PATH_ALIAS');
+   await assertHistoryPath(connection.sourceRoot,path.join(connection.sourceRoot,'UserData','_','topics','_','history.json'));
+   expansion(oldScope,connection.sourceScope);
+   for(const d of normalizeScope(connection.sourceScope)?.topics||[]){await assertHistoryPath(connection.sourceRoot,path.join(connection.sourceRoot,'UserData',d.ownerId,'topics',d.topicId,'history.json'));await assertHistoryPath(connection.sourceRoot,path.join(connection.sourceRoot,d.ownerType==='group'?'AgentGroups':'Agents',d.ownerId,'config.json'));}
+   if(state.outbox.length||state.inbox.length||state.pending||Object.keys(state.localCommits).length||Object.keys(state.drift).length||state.source.pendingCatalog||oldScope.topics.some(d=>!Object.values(state.source.plans).some(p=>p.stage==='complete'&&!p.error&&stable(wireTopic(p.descriptor))===stable(d))&&!Object.values(state.source.deletions).some(r=>r.stage==='published'&&r.targets.some(t=>stable(t)===stable(d))))||Object.values(state.source.deletions).some(r=>!['published','aborted'].includes(r.stage)))throw fail('SOURCE_SCOPE_NOT_SETTLED');
+   const localStateHash=sha256(stable(state)),r=await send(ROOT+'/scope-transition',{body:{...t,newScope:connection.sourceScope}});
+   if(r.approved!==true||r.opId!==t.opId||r.sourceId!==b.sourceId||r.deviceId!==b.deviceId||r.spaceId!==b.spaceId||r.fromScopeHash!==t.expectedScopeHash||r.toScopeHash!==scopeHash(newScope)||stable(r.scope)!==stable(normalizeScope(connection.sourceScope))||r.revision!==state.source.revision)throw fail('SOURCE_TRANSITION_ACK_MISMATCH');
+   return {...structuredClone(state.source),binding:b,scopeTransition:{...r,localStateHash}};
+  }
   const info=await send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));
+  if(scopeHash(info.scope)!==scopeHash(connection.sourceScope))throw fail('SOURCE_SCOPE_MISMATCH');
   if(info.spaceId!==b.spaceId||info.sourceId!==b.sourceId||info.deviceId!==b.deviceId)throw fail('SOURCE_BINDING_CHANGED');
   if(state?.source){if(stable(state.source.binding)!==stable(b))throw fail('SOURCE_BINDING_CHANGED');return state.source;}
   if(state){
@@ -34,13 +48,16 @@ class SourceSync{
   this.root=path.join(path.dirname(adapter.statePath),'backfill');this.snapshots=new Map();this.lastScan=0;this.dirty=true;this.offset=0;this.errors=[];
  }
  get state(){return this.adapter.state.source;}
+ assertBinding(){if(stable(this.state.binding)!==stable(bindingFor(this.connection)))throw fail('SOURCE_BINDING_CHANGED');}
+ get paused(){this.assertBinding();return Boolean(this.state.binding.scope&&this.connection.sourcePaused);}
+ assertScope(d,owner=false){this.assertBinding();if(!permits(this.state.binding.scope,d,owner))throw fail('SOURCE_TOPIC_NOT_APPROVED');}
  topicKey(d){return this.adapter.topicKey(d);}
  plan(d){return this.state.plans[this.topicKey(d)];}
  deleted(d){return Object.values(this.state.deletions).some(r=>r.targets.some(t=>t.ownerType===(d.itemType||'agent')&&t.ownerId===d.itemId&&(!t.topicId||t.topicId===d.topicId))&&r.stage!=='aborted');}
  async open(){
   const a=this.adapter;
   if(stable(this.state.binding)!==stable(bindingFor(this.connection)))throw fail('SOURCE_BINDING_CHANGED');
-  for(const [key,p]of Object.entries(this.state.plans))if(p.stage!=='capturing'&&p.stage!=='complete')await this.loadSnapshot(key,p);
+  for(const [key,p]of Object.entries(this.state.plans)){this.assertScope(p.descriptor);if(p.stage!=='capturing'&&p.stage!=='complete')await this.loadSnapshot(key,p);}
   a.ensureSourceTopic=d=>this.ensureTopic(d);a.ensureSourceSnapshot=d=>this.ensureSnapshot(d);
   a.sourceBase=(d,id)=>this.snapshots.get(this.topicKey(d))?.get(id)?.base;
   a.sourceExpected=d=>[...(this.snapshots.get(this.topicKey(d))||[])].map(([id,row])=>[messageKey({...wireTopic(d),msgId:id}),row.base]);
@@ -65,12 +82,14 @@ class SourceSync{
   if(rows.size!==manifest.count)throw fail('BACKFILL_COUNT_MISMATCH');this.snapshots.set(key,rows);return rows;
  }
  async ensureTopic(d){
+  this.assertScope(d);if(this.paused)throw fail('SOURCE_IMPORT_PAUSED');
   const found=await sourceDirectory(this);const tuple=wireTopic(d);
   if(!found.topics.some(t=>sourceEntityKey(t)===sourceEntityKey(tuple)))throw fail('SOURCE_TOPIC_NOT_IN_NATIVE_DIRECTORY');
   await this.adapter.addSourceTopic(d);this.dirty=true;
  }
  // Caller holds this Topic's existing Queue. No network is awaited here.
  async ensureSnapshot(d){
+  this.assertScope(d);if(this.paused&&(!this.plan(d)||this.plan(d).stage==='capturing'))throw fail('SOURCE_IMPORT_PAUSED');
   if(this.deleted(d))throw fail('SOURCE_DIRECTORY_DELETED');
   const key=this.topicKey(d);let p=this.plan(d);if(p&&p.stage!=='capturing')return;
   if(!p){
@@ -98,6 +117,7 @@ class SourceSync{
   await this.fault('plan-durable',{id:p.id,topic:wireTopic(d)});
  }
  async discover(){
+  this.assertBinding();if(this.paused)return;
   const result=await sourceDirectory(this);this.errors=result.errors;this.lastScan=Date.now();this.dirty=false;
   this.directory=result;
   for(const t of result.topics){const d=descriptor(t);if(this.deleted(d))continue;try{await this.adapter.addSourceTopic(d);
@@ -108,6 +128,7 @@ class SourceSync{
   this.connection.topics.splice(0,this.connection.topics.length,...this.adapter.topics.filter(d=>!this.deleted(d)&&this.plan(d)?.stage==='complete'));
  }
  async publish(){
+  this.assertBinding();if(this.paused)return;
   if(!this.state.pendingCatalog){
    const body={opId:randomUUID(),baseRevision:this.state.revision,agents:[],topics:[],removed:[]};
    const directory=this.directory||{agents:[],topics:[]};
@@ -184,6 +205,7 @@ class SourceSync{
   await a.applyRemote(event,false,false,true);
  }
  async step(d){
+  this.assertScope(d);if(this.paused)return;
   const key=this.topicKey(d);let p=this.plan(d);if(!p||p.stage==='capturing'||p.stage==='complete'||this.deleted(d)||!this.state.published[sourceEntityKey(wireTopic(d))])return;
   if(!this.snapshots.has(key))await this.loadSnapshot(key,p);
   if(!p.remote){const remote=await this.send(ROOT+'/baselines',{body:{planId:p.id,...wireTopic(d)}});if(remote.planId!==p.id||stable(remote.topic)!==stable(wireTopic(d))||!Number.isSafeInteger(remote.watermark))throw fail('BACKFILL_REMOTE_IDENTITY');await this.adapter.transaction(n=>{n.source.plans[key].remote=remote;});p=this.plan(d);}
@@ -213,6 +235,7 @@ class SourceSync{
   }
  }
  async tick(){
+  this.assertBinding();if(this.paused)return;
   await this.recoverDeletes();
   if(this.dirty||Date.now()-this.lastScan>5000)try{await this.discover();}catch(e){if(e.syncStatePersistenceFailure)throw e;this.errors=[{code:e.code||'SOURCE_DIRECTORY_READ_FAILED'}];this.lastScan=Date.now();}
   try{await this.publish();this.directoryPublicationError=null;}
@@ -243,9 +266,11 @@ class SourceSync{
    await this.adapter.transaction(n=>{n.source.plans[key].releasePage=next;n.source.plans[key].payloadReleased=next>p.pages;});
   }
  }
- diagnostics(){const plans=Object.values(this.state.plans).filter(p=>!this.deleted(p.descriptor));return {mode:'source',directoryPublicationError:this.directoryPublicationError||null,cleanupError:this.cleanupError||null,directoryErrors:this.errors,agents:this.directory?.agents.length??null,topics:this.directory?.topics.length??null,pendingImports:plans.filter(p=>p.stage!=='complete').length,completedImports:plans.filter(p=>p.stage==='complete').length,conflicts:plans.filter(p=>p.error).map(p=>({topic:wireTopic(p.descriptor),code:p.error.code})),pendingDirectory:Boolean(this.state.pendingCatalog),pendingDeletes:Object.values(this.state.deletions).filter(r=>!['published','aborted'].includes(r.stage)).length};}
+ diagnostics(){const plans=Object.values(this.state.plans).filter(p=>!this.deleted(p.descriptor));return {mode:'source',scopeMode:this.state.binding.scope?'limited':'full',importsPaused:this.paused,directoryPublicationError:this.directoryPublicationError||null,cleanupError:this.cleanupError||null,directoryErrors:this.errors,agents:this.directory?.agents.length??null,topics:this.directory?.topics.length??null,pendingImports:plans.filter(p=>p.stage!=='complete').length,completedImports:plans.filter(p=>p.stage==='complete').length,conflicts:plans.filter(p=>p.error).map(p=>({topic:wireTopic(p.descriptor),code:p.error.code})),pendingDirectory:Boolean(this.state.pendingCatalog),pendingDeletes:Object.values(this.state.deletions).filter(r=>!['published','aborted'].includes(r.stage)).length};}
  async report(){const d=this.diagnostics();await this.send(ROOT+'/progress',{body:{pendingImports:d.pendingImports,pendingOperations:this.adapter.state.outbox.length,conflicts:d.conflicts.length+this.adapter.state.outbox.filter(o=>o.status).length,directoryErrors:(this.directoryPublicationError?1:0)+this.errors.length+(this.directory?.topics.filter(t=>t.sourceState!=='available').length||0),attachmentsPending:this.adapter.attachmentError?null:(this.adapter.attachmentSkipped??null)}});}
  async beginDelete(target){
+  if(!permits(this.state.binding.scope,target,!target.topicId))return null;
+  this.assertScope(target,!target.topicId);if(this.state.binding.scope&&!target.topicId)throw fail('LIMITED_SOURCE_OWNER_DELETE_REQUIRES_TOPIC');if(this.paused)throw fail('SOURCE_IMPORT_PAUSED');
   const t={ownerType:target.ownerType,ownerId:target.ownerId,...(target.topicId?{topicId:target.topicId}:{})};identity({...t,topicId:t.topicId||'_',msgId:'_'});
   const matches=d=>d.itemType===t.ownerType&&d.itemId===t.ownerId&&(!t.topicId||d.topicId===t.topicId);
   const existing=Object.values(this.state.deletions).find(r=>r.stage!=='aborted'&&r.targets.some(x=>sourceEntityKey(x)===sourceEntityKey(t)));
