@@ -29,7 +29,7 @@
     {
       "path": "overlays/VCPChat/modules/services/nativeSync/queries.js",
       "baselineSha256": "e21c2f18228e545f7043b2508a72d935bbf90e67618f7b0ba03a6db385fdb669",
-      "candidateSha256": "4c2ebb43871dede5f20678c6256536a4c70ef992921f79805c9afff02a41db50"
+      "candidateSha256": "489a4db686f809037677a773b643890f206c19a00ca6a41c7c850b49a0c7941b"
     },
     {
       "path": "overlays/VCPChat/modules/services/nativeSync/runtime.js",
