@@ -4,6 +4,8 @@
 
 > 第二轮已验证纯执行决策、耐久确认和真实崩溃边界，并确认毒丸Journal隔离仍有缺口，详见[深入验证报告](docs/experiments/execution-boundary-20261031.md)。
 
+> 第三轮已逐项验证外部架构意见，纠正性能归因与预设隔离路线，并复现旧版本重发布的回退风险；详见[意见验证报告](docs/experiments/critique-validation-20261031.md)。
+
 NativeSync 独立源码仓库。服务端插件、Windows Bridge、PWA与宿主兼容补丁分开管理；仍复用VCPToolBox/VCPChat的原生History、CDS、工具和AgentAssistant能力。
 
 ## 当前边界

@@ -55,7 +55,7 @@ async function fixture(t,{scope=limited([selected,older]),seedOwners=true,execut
  f.phone=async(options={})=>{
   const pairing=portal.createPairing({scopeMode:'source',sourceId:connection.sourceId,...options}),headers={'X-Forwarded-Proto':'https',Origin:'https://synthetic-mobile.invalid','Content-Type':'application/json'};
   const response=await fetch(connection.url+'/mobile/api/pair',{method:'POST',headers,body:JSON.stringify({code:pairing.pairingCode})});assert.equal(response.status,200);const cookie=response.headers.get('set-cookie').split(';')[0];
-  const call=async(route,body)=>{const r=await fetch(connection.url+'/mobile/api'+route,{method:body?'POST':'GET',headers:{...headers,Cookie:cookie},body:body?JSON.stringify(body):undefined});const value=await r.json();assert.equal(r.status,200,JSON.stringify(value));return value;};
+  const call=async(route,body,expectedStatus=200)=>{const r=await fetch(connection.url+'/mobile/api'+route,{method:body?'POST':'GET',headers:{...headers,Cookie:cookie},body:body?JSON.stringify(body):undefined});const value=await r.json();assert.equal(r.status,expectedStatus,JSON.stringify(value));return value;};
   const topics=(await call('/directory?kind=topics&limit=100')).topics;
   return {call,topics,status:async route=>(await fetch(connection.url+'/mobile/api'+route,{headers:{...headers,Cookie:cookie}})).status,read:async topic=>{const start=await call('/conversations/'+topic.key+'/baseline',{requestId:require('node:crypto').randomUUID()}),rows=[];let after=0;for(;;){const page=await call('/conversations/'+topic.key+'/baseline/'+start.id+'?after='+after+'&limit=100');rows.push(...page.events);if(!page.hasMore)return rows;after=page.next;}}};
  };
