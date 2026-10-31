@@ -13,6 +13,9 @@
     "test:integration": "python3 tools/run_full_feature.py",
     "contracts:check": "node tools/build_contracts.mjs --check",
     "contracts:build": "node tools/build_contracts.mjs --write",
-    "test:contracts": "node --test --test-reporter=tap tests/contracts-equivalence.test.cjs"
+    "test:contracts": "node --test --test-reporter=tap tests/contracts-equivalence.test.cjs",
+    "release:assemble": "python3 tools/assemble_release.py",
+    "release:validate": "python3 tools/validate_release.py",
+    "release:verify": "python3 tools/install_release.py verify"
   }
 }

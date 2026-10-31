@@ -1,6 +1,6 @@
 import argparse,pathlib,subprocess,os,shutil,json,re,hashlib
 parser=argparse.ArgumentParser(description='Isolated NativeSync targeted regressions, zero provider calls')
-parser.add_argument('--hosts',required=True);parser.add_argument('--node',required=True);parser.add_argument('--output',required=True)
+parser.add_argument('--hosts',required=True);parser.add_argument('--node',required=True);parser.add_argument('--output',required=True);parser.add_argument('--pwa-dependencies',required=True)
 a=parser.parse_args();repo=pathlib.Path(__file__).resolve().parents[1];hosts=pathlib.Path(a.hosts).resolve();out=pathlib.Path(a.output).resolve()
 assert (hosts/'.nativesync-isolated-test-root').read_text().strip()=='public-fixture-only','Require an explicitly prepared public-only test host root'
 assert not any(x in hosts.parts for x in ['runtime','runtime-data','AppData','UserData','state-private']), 'Never overlay production or real data'
@@ -11,9 +11,10 @@ node=str(pathlib.Path(a.node).resolve());version=subprocess.check_output([node,'
 products=list((repo/'overlays').rglob('*'))
 def fingerprints():return {str(f.relative_to(repo)):hashlib.sha256(f.read_bytes()).hexdigest() for f in products if f.is_file()}
 before=fingerprints()
-for f in products:
+subprocess.run(['python3',str(repo/'tools/assemble_release.py'),'--out',str(out/'assembly'),'--node',node,'--pwa-dependencies',a.pwa_dependencies,'--skip-pwa'],check=True)
+for f in (out/'assembly/assembled').rglob('*'):
  if f.is_file():
-  target=hosts/f.relative_to(repo/'overlays');target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(f,target)
+  target=hosts/f.relative_to(out/'assembly/assembled');target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(f,target)
 env={'PATH':str(pathlib.Path(node).parent)+':/usr/bin:/bin','HOME':str(out),'LANG':'C.UTF-8','TZ':'UTC','NODE_V8_COVERAGE':str(out/'module-coverage'),'NATIVESYNC_TEST_HOSTS':str(hosts),'VCP_R21_BOX_SOURCE':str(hosts/'VCPToolBox')}
 tests=[repo/'tests/known-gaps/first-batch-existing-protocol.test.cjs',hosts/'VCPChat/tests/native-sync-full-source.test.cjs',hosts/'VCPChat/tests/native-sync-full-source-crash.test.cjs',repo/'tests/snapshot-prompt.test.cjs']
 rows=[]

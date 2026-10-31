@@ -1,12 +1,8 @@
 # NativeSync R2.1
 
-> 当前检出是基于9dc099b的独立契约抽取实验。主开发副本未合并此实验；边界、证据及代价见[实验报告](docs/experiments/contracts-boundary-20261031.md)。
+> 当前检出是独立的本地试装候选：包含架构修复、共享契约与存储完整性修复，纯执行适配器保留为测试原型。统一构建、包清单和代码回退见[发布组装说明](docs/release-assembly-20261031.md)。尚未合并、推送或安装生产。
 
-> 第二轮已验证纯执行决策、耐久确认和真实崩溃边界，并确认毒丸Journal隔离仍有缺口，详见[深入验证报告](docs/experiments/execution-boundary-20261031.md)。
-
-> 第三轮已逐项验证外部架构意见，纠正性能归因与预设隔离路线，并复现旧版本重发布的回退风险；详见[意见验证报告](docs/experiments/critique-validation-20261031.md)。
-
-> 路线第一阶段已实现服务端存储完整性核验、JSON写入约束、错误归类和只读检查工具，详见[本地修复说明](docs/storage-integrity-recovery-20261031.md)。尚未合并或安装。
+> 先前实验及意见验证记录保留在[实验目录](docs/experiments/critique-validation-20261031.md)，其阶段性结论以当前候选范围说明为准。
 
 NativeSync 独立源码仓库。服务端插件、Windows Bridge、PWA与宿主兼容补丁分开管理；仍复用VCPToolBox/VCPChat的原生History、CDS、工具和AgentAssistant能力。
 

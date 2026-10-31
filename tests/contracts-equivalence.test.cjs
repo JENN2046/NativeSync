@@ -1,7 +1,8 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),Module=require('node:module'),{pathToFileURL}=require('node:url'),{execFileSync,spawnSync}=require('node:child_process');
 const root=path.resolve(__dirname,'..'),hosts=process.env.NATIVESYNC_TEST_HOSTS,baseline='9dc099b6007e018a9743d72048d5e6fbb43b94e7';
-if(!hosts)throw Error('MATCHED_TEST_HOSTS_REQUIRED');
+if(!hosts||!process.env.NATIVESYNC_ASSEMBLY)throw Error('MATCHED_TEST_HOSTS_AND_ASSEMBLY_REQUIRED');
+const assembly=process.env.NATIVESYNC_ASSEMBLY,buildArgs=['--out',assembly,'--dependencies',process.env.NATIVESYNC_PWA_DEPENDENCIES];
 const oracleCache=new Map();
 function source(host,relative){return execFileSync('git',['show',baseline+':overlays/'+host+'/'+relative],{cwd:root,encoding:'utf8'});}
 // The original module bodies are read from the fixed Git object. Only require
@@ -27,7 +28,7 @@ const original={};for(const host of ['VCPChat','VCPToolBox']){
  original[host]={protocol:oracle(host,prefix+'protocol.js'),metadata:oracle(host,prefix+'metadata.js'),scope:oracle(host,prefix+'sourceScope.js')};
 }
 test('generated contracts match the only maintained source, which has no IO/runtime-global dependencies',()=>{
- const result=spawnSync(process.execPath,[path.join(root,'tools/build_contracts.mjs'),'--check'],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
+ const result=spawnSync(process.execPath,[path.join(root,'tools/build_contracts.mjs'),...buildArgs,'--mode','check'],{encoding:'utf8'});assert.equal(result.status,0,result.stderr);
  const acorn=Module.createRequire(path.join(process.env.VCP_R21_AA_DEPENDENCIES,'contracts-test.cjs'))('acorn');
  const forbidden=new Set(['require','process','Buffer','window','document','fetch','Date','localStorage']);
  const walk=node=>{if(!node||typeof node!=='object')return;if(['ImportDeclaration','AwaitExpression','ImportExpression'].includes(node.type)||node.async===true)assert.fail('Impure contract syntax: '+node.type);if(node.type==='Identifier')assert.ok(!forbidden.has(node.name),'Impure contract global: '+node.name);for(const value of Object.values(node))if(Array.isArray(value))value.forEach(walk);else if(value&&typeof value==='object')walk(value);};for(const name of ['packages/sync-contracts/src/contracts.mjs','packages/execution-decisions/src/lifecycle.mjs'])walk(acorn.parse(fs.readFileSync(path.join(root,name),'utf8'),{ecmaVersion:'latest',sourceType:'module'}));
@@ -59,7 +60,7 @@ test('control envelopes, canonical messages and invalid metadata preserve existi
 test('Node and browser submission hashing match original implementations for Unicode and ordered attachments',async()=>{
  const node=require(path.join(hosts,'VCPToolBox/Plugin/NativeSync/mobile/submissionRecovery'));
  const beforeNode=oracle('VCPToolBox','Plugin/NativeSync/mobile/submissionRecovery.js');
- const web=await import(pathToFileURL(path.join(root,'overlays/VCPToolBox/apps/mobile/src/submissionRecovery.js')));
+ const web=await import(pathToFileURL(path.join(assembly,'VCPToolBox/apps/mobile/src/submissionRecovery.js')));
  const beforeWeb=await import('data:text/javascript;base64,'+Buffer.from(source('VCPToolBox','apps/mobile/src/submissionRecovery.js')).toString('base64'));
  for(let i=0;i<128;i++)for(const kind of ['message','invitation']){
   const payload=kind==='message'?{requestId:'request_'+i,text:['中文','👋','e\u0301','é','\ud800','x\0y'][i%6]+i,...(i%3?{attachments:['upload_'+i,'second_'+i]}:{})}:{requestId:'request_'+i,agentId:'agent_'+i};const input={topicKey:'topic_'+i,kind,payload};
@@ -69,13 +70,13 @@ test('Node and browser submission hashing match original implementations for Uni
  same(()=>node.payloadHash(invalid),()=>beforeNode.payloadHash(invalid),'Server validation remains separate');assert.equal(await web.submissionPayloadHash(invalid,crypto.webcrypto),await beforeWeb.submissionPayloadHash(invalid,crypto.webcrypto));
 });
 test('one hand-edited generated copy is detected and recovered from the maintained source',()=>{
- const target=path.join(root,'overlays/VCPChat/modules/services/nativeSync/contracts.generated.cjs'),before=fs.readFileSync(target);
- try{fs.appendFileSync(target,'\n// synthetic drift\n');const bad=spawnSync(process.execPath,[path.join(root,'tools/build_contracts.mjs'),'--check'],{encoding:'utf8'});assert.equal(bad.status,1);assert.match(bad.stderr,/GENERATED_CONTRACT_DRIFT/);
-  const fixed=spawnSync(process.execPath,[path.join(root,'tools/build_contracts.mjs'),'--write'],{encoding:'utf8'});assert.equal(fixed.status,0,fixed.stderr);assert.deepEqual(fs.readFileSync(target),before);
+ const target=path.join(assembly,'VCPChat/modules/services/nativeSync/contracts.generated.cjs'),before=fs.readFileSync(target);
+ try{fs.appendFileSync(target,'\n// synthetic drift\n');const bad=spawnSync(process.execPath,[path.join(root,'tools/build_contracts.mjs'),...buildArgs,'--mode','check'],{encoding:'utf8'});assert.equal(bad.status,1);assert.match(bad.stderr,/GENERATED_CONTRACT_DRIFT/);
+  const fixed=spawnSync(process.execPath,[path.join(root,'tools/build_contracts.mjs'),...buildArgs,'--mode','write'],{encoding:'utf8'});assert.equal(fixed.status,0,fixed.stderr);assert.equal(crypto.createHash('sha256').update(fs.readFileSync(target)).digest('hex'),crypto.createHash('sha256').update(before).digest('hex'));
  }finally{fs.writeFileSync(target,before);}
 });
 test('frozen baseline vectors detect transitive canonical drift in addition to shared-contract drift',async()=>{
- const vectors=require('./fixtures/contracts-golden.json'),web=await import(pathToFileURL(path.join(root,'overlays/VCPToolBox/apps/mobile/src/submissionRecovery.js')));
+ const vectors=require('./fixtures/contracts-golden.json'),web=await import(pathToFileURL(path.join(assembly,'VCPToolBox/apps/mobile/src/submissionRecovery.js')));
  for(const host of ['VCPChat','VCPToolBox']){
   const p=current(host,'protocol'),m=current(host,'metadata'),s=current(host,'sourceScope');
   for(const v of vectors.serialization)assert.equal(p.stable(v.input),v.expected);

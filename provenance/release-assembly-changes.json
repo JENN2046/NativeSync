@@ -1,0 +1,36 @@
+{
+  "baseline": "07bf9207e07ada7aadc4cb346365113f69db0731",
+  "scope": "generated contracts move to release assembly; execution prototype excluded, original bulk execution restored",
+  "files": [
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/contracts.generated.cjs",
+      "baselineSha256": "46361d523d606b9d53ff88095a0aa9e2ab441f7baaf7be4ae9ee7091c1cd3fc1",
+      "candidateSha256": null
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "baselineSha256": "6a87f87be0b07d26e3385fe6528560206c3fc1982305da6849cb70576dec8a8d",
+      "candidateSha256": "13afe4ce6e5c71a69c4b09e5136a16b861ec7879755a808ed555b44989530eb1"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/executionDecisions.generated.cjs",
+      "baselineSha256": "d81aeb50fb5ecec32c63df8ffdbf4bcebc24b807e2b2ca5a0c8d74b49a436163",
+      "candidateSha256": null
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/executionLifecycle.js",
+      "baselineSha256": "56c2f78e2b68d9b6cc6f9028ceffe32be7d69522742e91ae886c47e545409f72",
+      "candidateSha256": null
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/contracts.generated.cjs",
+      "baselineSha256": "46361d523d606b9d53ff88095a0aa9e2ab441f7baaf7be4ae9ee7091c1cd3fc1",
+      "candidateSha256": null
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/contracts.generated.js",
+      "baselineSha256": "02b40259eb47f422644b11cd0ea87ef4586a138364820085b3d0409c424f6dcd",
+      "candidateSha256": null
+    }
+  ]
+}

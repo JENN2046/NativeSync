@@ -1,0 +1,10 @@
+{
+  "profile": "native-sync-r21-local-candidate",
+  "includes": ["architecture recovery", "shared deterministic contracts", "server storage integrity"],
+  "excludes": ["pure execution lifecycle adapter", "predicate batching prototype", "poison-row skipping or republication", "production configuration and data"],
+  "executionSource": "bulk SQL recovery, equal to 0c5cf07 execution.js",
+  "codeRollbackBaseline": "9dc099b6007e018a9743d72048d5e6fbb43b94e7",
+  "rollbackStateCompatibility": "v3/native-message-intents-v2 only; never restore old state, inbox pages or SQLite",
+  "runtimePrefixes": ["VCPChat/modules/services/nativeSync/", "VCPToolBox/Plugin/NativeSync/"],
+  "integrationModules": ["VCPToolBox/modules/requestExecutionContext.js", "VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js"]
+}

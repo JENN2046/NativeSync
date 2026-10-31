@@ -1,7 +1,7 @@
 // Synthetic local benchmark. Does not replace the deployed adapter.
 'use strict';
 const fs=require('node:fs/promises'),os=require('node:os'),path=require('node:path'),{performance}=require('node:perf_hooks'),{DatabaseSync}=require('node:sqlite'),{execFileSync}=require('node:child_process');
-const root=path.resolve(__dirname,'..'),{step}=require(root+'/overlays/VCPToolBox/Plugin/NativeSync/mobile/executionDecisions.generated.cjs'),{recoverInterrupted}=require(root+'/overlays/VCPToolBox/Plugin/NativeSync/mobile/executionLifecycle'),{groupPlans,applyGroups}=require(root+'/tests/fixtures/predicateBatchPrototype.cjs');
+const root=path.resolve(__dirname,'..'),{step}=require(root+'/packages/execution-decisions/src/lifecycle.mjs'),{recoverInterrupted}=require(root+'/tests/fixtures/executionLifecyclePrototype.cjs'),{groupPlans,applyGroups}=require(root+'/tests/fixtures/predicateBatchPrototype.cjs');
 const original=execFileSync('git',['show','0c5cf07:overlays/VCPToolBox/Plugin/NativeSync/mobile/execution.js'],{cwd:root,encoding:'utf8'}).match(/this\.db\.prepare\("(UPDATE mobile_executions SET state=CASE[^\n]+)"\)\.run\(Date\.now\(\)\);/)[1];
 const select="SELECT id,state,kind,cancel_requested,request_dispatched,tool_started,pending_operation FROM mobile_executions WHERE state IN ('running','cancelling','waiting_approval') AND coalesce(kind,'') NOT IN ('group_message','group_invitation')";
 const median=a=>[...a].sort((a,b)=>a-b)[Math.floor(a.length/2)];

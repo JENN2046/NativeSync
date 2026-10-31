@@ -24,13 +24,18 @@ for row in (json.loads(executionBoundaryFile.read_text())['files'] if executionB
 storageFile=ROOT/'provenance/storage-integrity-changes.json'
 for row in (json.loads(storageFile.read_text())['files'] if storageFile.exists() else []):
  assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
-for name,digest in expected.items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest,name
+releaseFile=ROOT/'provenance/release-assembly-changes.json'
+for row in (json.loads(releaseFile.read_text())['files'] if releaseFile.exists() else []):
+ assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
+for name,digest in expected.items():
+ if digest is None:assert not (ROOT/name).exists(),name
+ else:assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest,name
 tracked=subprocess.run(['git','ls-files','-z'],cwd=ROOT,capture_output=True,check=True).stdout.decode().split(chr(0))
 if not any(tracked):
  files=[p for p in ROOT.rglob('*') if p.is_file() and not any(x in p.relative_to(ROOT).parts for x in ['.git','node_modules','dist','.local','.artifacts','__pycache__'])]
 else:
  extra=subprocess.run(['git','ls-files','--others','--exclude-standard','-z'],cwd=ROOT,capture_output=True,check=True).stdout.decode().split(chr(0))
- files=[ROOT/p for p in sorted(set(tracked+extra)) if p]
+ files=[ROOT/p for p in sorted(set(tracked+extra)) if p and (ROOT/p).is_file()]
 bad=[]
 patterns=[r'gh[pousr]_[A-Za-z0-9]{24,}',r'github_pat_[A-Za-z0-9_]{24,}',r'sk-(?:proj-)?[A-Za-z0-9_-]{24,}',r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',r'nswin_[0-9a-f]{8}-[0-9a-f-]{27,}']
 for f in files:

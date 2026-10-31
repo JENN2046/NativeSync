@@ -1,5 +1,7 @@
 # 测试边界
 
+当前完整验证入口是`tools/validate_release.py`：先对真实组装包试装/代码回退，再在已安装载荷上运行联合集成；需要候选包、前一包、公共宿主、Node24及锁定依赖的显式路径。完整调用见`docs/release-assembly-20261031.md`。`run_full_feature.py`不再覆盖源码，必须提供`--release`、`--assembly`、`--pwa-dependencies`。旧限域/M2-M3定向runner也要求`--pwa-dependencies`，先经过统一组装。
+
 存储完整性第一阶段新增11项定向回归，与此前209项联合运行220/220，25文件；其中覆盖SQLite触发器兼容、服务端500、读取摘要/身份核验、授权过滤、回执重放和只读检查。具体范围及首次失败证据见`docs/storage-integrity-recovery-20261031.md`，不将本地结果视为生产或设备验收。
 
 架构修复候选在原119项之上增加16项架构回归及50项直接相关宿主回归，完整选中集185项、21文件。涉及v3收件格式、停止受理、任务查询分页与空写；详见 `docs/architecture-recovery-closeout-20261031.md`。旧夹具中版本和停机语义的适配明确保留业务断言；旧v2 Adapter通过固定Git对象取得，用于实际验证拒读v3。

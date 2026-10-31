@@ -1,14 +1,16 @@
 """Targeted synthetic M2/M3 runner. Exit 2 means the explicitly preserved M3 upgrade gap."""
 import argparse,pathlib,subprocess,json,hashlib,re,shutil
-ap=argparse.ArgumentParser();ap.add_argument('--hosts',required=True);ap.add_argument('--node',required=True);ap.add_argument('--output',required=True);a=ap.parse_args()
+ap=argparse.ArgumentParser();ap.add_argument('--hosts',required=True);ap.add_argument('--node',required=True);ap.add_argument('--output',required=True);ap.add_argument('--pwa-dependencies',required=True);a=ap.parse_args()
 repo=pathlib.Path(__file__).resolve().parents[1];hosts=pathlib.Path(a.hosts).resolve();out=pathlib.Path(a.output).resolve()
 assert (hosts/'.nativesync-isolated-test-root').read_text().strip()=='public-fixture-only'
 assert not any(x in hosts.parts for x in ['runtime','runtime-data','AppData','UserData','state-private']);assert not (hosts/'VCPChat/AppData').exists();assert not out.exists();out.mkdir(parents=True)
 node=str(pathlib.Path(a.node).resolve());version=subprocess.check_output([node,'--version'],text=True).strip();assert version.startswith('v24.')
 def fingerprints():return {str(f.relative_to(repo)):hashlib.sha256(f.read_bytes()).hexdigest() for f in (repo/'overlays').rglob('*') if f.is_file()}
 before=fingerprints()
-for f in (repo/'overlays').rglob('*'):
- if f.is_file():target=hosts/f.relative_to(repo/'overlays');target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(f,target)
+subprocess.run(['python3',str(repo/'tools/assemble_release.py'),'--out',str(out/'assembly'),'--node',node,'--pwa-dependencies',a.pwa_dependencies,'--skip-pwa'],check=True)
+for f in (out/'assembly/assembled').rglob('*'):
+ if f.is_file():
+  target=hosts/f.relative_to(out/'assembly/assembled');target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(f,target)
 env={'PATH':str(pathlib.Path(node).parent)+':/usr/bin:/bin','HOME':str(out),'LANG':'C.UTF-8','TZ':'UTC','NATIVESYNC_TEST_HOSTS':str(hosts),'VCP_R21_BOX_SOURCE':str(hosts/'VCPToolBox'),'NODE_V8_COVERAGE':str(out/'module-coverage')}
 files=['m2-continuity.test.cjs','m2-process-recovery.test.cjs','m3-multi-agent.test.cjs','known-gaps/m3-existing-source-expansion.test.cjs'];results=[]
 for i,name in enumerate(files):

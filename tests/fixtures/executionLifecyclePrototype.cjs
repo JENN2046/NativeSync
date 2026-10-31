@@ -1,5 +1,6 @@
+// Test-only prototype. Not installed or imported by the release candidate.
 'use strict';
-const {step}=require('./executionDecisions.generated.cjs');
+const {step}=require('../../packages/execution-decisions/src/lifecycle.mjs');
 const allowed=new Set(['state','error_code','updated_at','user_seq','reply_message_id','pending_operation']);
 const guarded=['state','kind','cancel_requested','request_dispatched','tool_started','pending_operation'];
 const prepared=new WeakMap();

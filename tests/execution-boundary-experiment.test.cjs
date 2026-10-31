@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),{execFileSync,spawnSync}=require('node:child_process'),{pathToFileURL}=require('node:url'),{DatabaseSync}=require('node:sqlite');
 const {fixture,older,wireTopic,BOX}=require('./fixtures/boundedSourceHarness.cjs');
-const lifecycle=require(BOX+'/Plugin/NativeSync/mobile/executionLifecycle'),nativeContext=require(BOX+'/modules/requestExecutionContext');
+const lifecycle=require('./fixtures/executionLifecyclePrototype.cjs'),nativeContext=require(BOX+'/modules/requestExecutionContext');
 async function prepared(t){
  const f=await fixture(t,{executionBindings:[{key:'boundary-topic',...wireTopic(older),agentAlias:'synthetic-one'}]});await f.adopt();await f.pump();
  await f.portal.engine.configs.publish({topics:[{...wireTopic(older),expectedVersion:0,config:{name:'Synthetic boundary',systemPrompt:'[[VCPToolUse=Forbidden]]\nSynthetic only',model:'synthetic-model',maxOutputTokens:32}}]});

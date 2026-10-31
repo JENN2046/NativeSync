@@ -1,11 +1,11 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),{spawnSync}=require('node:child_process'),{DatabaseSync}=require('node:sqlite'),{createHash}=require('node:crypto');
 const {fixture,selected,older,wireTopic,message,BOX}=require('./fixtures/boundedSourceHarness.cjs');
-const context=require(BOX+'/modules/requestExecutionContext'),lifecycle=require(BOX+'/Plugin/NativeSync/mobile/executionLifecycle'),batch=require('./fixtures/predicateBatchPrototype.cjs');
+const context=require(BOX+'/modules/requestExecutionContext'),lifecycle=require('./fixtures/executionLifecyclePrototype.cjs'),batch=require('./fixtures/predicateBatchPrototype.cjs');
 const schema='CREATE TABLE mobile_executions(id TEXT PRIMARY KEY,state TEXT,kind TEXT,cancel_requested INTEGER,request_dispatched INTEGER,tool_started INTEGER,pending_operation TEXT,error_code TEXT,updated_at INTEGER)';
 const row=(id,change={})=>({id,state:'running',kind:null,cancel_requested:0,request_dispatched:1,tool_started:0,pending_operation:null,error_code:null,updated_at:1,...change});
 function insert(db,r){const keys=Object.keys(r);db.prepare('INSERT INTO mobile_executions('+keys.join(',')+') VALUES('+keys.map(()=>'?').join(',')+')').run(...keys.map(k=>r[k]));}
-const step=r=>require('../overlays/VCPToolBox/Plugin/NativeSync/mobile/executionDecisions.generated.cjs').step(r,{type:'restart',observedAt:12345});
+const step=r=>require('../packages/execution-decisions/src/lifecycle.mjs').step(r,{type:'restart',observedAt:12345});
 test('JSON CHECK rejects syntax but cannot establish message identity or hash integrity',()=>{
  const db=new DatabaseSync(':memory:');try{
   db.exec('CREATE TABLE guarded(seq INTEGER PRIMARY KEY AUTOINCREMENT,message_json TEXT CHECK(message_json IS NULL OR json_valid(message_json)),hash TEXT)');

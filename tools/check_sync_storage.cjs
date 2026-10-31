@@ -2,8 +2,9 @@
 // CentralStore here: its constructor installs schema/guards and changes WAL.
 'use strict';
 const {DatabaseSync}=require('node:sqlite');
-const {projectStoredMessage,readStoredReceipt}=require('../overlays/VCPToolBox/Plugin/NativeSync/sync/centralStore');
-function checkStorage(file){
+const path=require('node:path');
+function checkStorage(file,toolbox=path.resolve(__dirname,'../payload/VCPToolBox')){
+ const {projectStoredMessage,readStoredReceipt}=require(path.join(toolbox,'Plugin/NativeSync/sync/centralStore'));
  const db=new DatabaseSync(file,{readOnly:true}),result={mode:'read-only',scope:'messages, journal, applied_ops; SQLite quick_check and record/reference validation',checked:{messages:0,journal:0,applied_ops:0},issues:0,samples:[],sampleLimit:20};
  const issue=(table,rowid,kind)=>{result.issues++;if(result.samples.length<result.sampleLimit)result.samples.push({table,rowid,kind});};
  try{
@@ -44,8 +45,8 @@ function checkStorage(file){
  }finally{if(db.isTransaction)db.exec('ROLLBACK');db.close();}
 }
 if(require.main===module){
- if(process.argv.length!==4||process.argv[2]!=='--db'){process.stderr.write('Usage: node tools/check_sync_storage.cjs --db /absolute/path/central.sqlite\n');process.exitCode=2;}
- else try{const result=checkStorage(process.argv[3]);process.stdout.write(JSON.stringify(result,null,2)+'\n');process.exitCode=result.ok?0:1;}
+ if(![4,6].includes(process.argv.length)||process.argv[2]!=='--db'||process.argv.length===6&&process.argv[4]!=='--toolbox'){process.stderr.write('Usage: node tools/check_sync_storage.cjs --db /absolute/path/central.sqlite [--toolbox /assembled/VCPToolBox]\n');process.exitCode=2;}
+ else try{const result=checkStorage(process.argv[3],process.argv[5]);process.stdout.write(JSON.stringify(result,null,2)+'\n');process.exitCode=result.ok?0:1;}
  catch{process.stderr.write('SYNC_STORAGE_CHECK_FAILED: database unavailable or unsupported; no repair attempted\n');process.exitCode=2;}
 }
 module.exports={checkStorage};

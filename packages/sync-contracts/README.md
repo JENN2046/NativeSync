@@ -25,24 +25,15 @@ The source uses no filesystem, clock, randomness or browser storage globals.
 The experiment does not move the author's canonicalization implementation into
 this package; its host compatibility remains explicit and tested.
 
-Generate deployment-local CJS/CJS/ESM artifacts with:
-
-```sh
-npm run contracts:build
-npm run contracts:check
-```
-
-The copies in overlays are generated deployment outputs. They must be shipped
-alongside the adapters and must not be edited manually. No runtime npm package
-installation, package registry, new protocol version or database migration is
-introduced. The PWA uses only the submission serializer; unused factories are
-removed by its existing build.
+Deployment CJS/CJS/ESM files are assembled from this source by the existing
+locked rolldown compiler. They are not stored in overlays. Use
+`tools/assemble_release.py --out ... --node ... --pwa-dependencies ...`; see
+`docs/release-assembly-20261031.md`. The build uses existing PWA lockfile versions,
+with no runtime package installation or new registry dependency.
 
 `tests/contracts-equivalence.test.cjs` compares original fixed Git module bodies,
-frozen vectors and browser Web Crypto output with the extracted implementation.
-It requires the same isolated public host fixtures as integration tests. Run
-`npm run test:contracts` with `NATIVESYNC_TEST_HOSTS` and
-`VCP_R21_AA_DEPENDENCIES` explicitly supplied, or use the full integration runner.
+frozen vectors and browser Web Crypto output from the assembled modules. The
+release validator supplies matching hosts, assembly and dependencies explicitly.
 
 This validates contract extraction only. Native execution authority, filesystem
 durability, task recovery, scope commits and frontend state ownership stay with
