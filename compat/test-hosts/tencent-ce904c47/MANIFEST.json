@@ -1,0 +1,23 @@
+{
+  "targetSource": "ce904c476f58e0857aa9ee828619158a82d75e7e",
+  "patchSha256": "523a6d5478b43d7e28b2993b3dccc655649a7ec9ac43d2973d4246e937fb81c3",
+  "changes": "existing NativeSync hooks ported to current listenArgs and tool execution context; all existing authorization/stdio changes retained",
+  "files": [
+    {
+      "path": "server.js",
+      "beforeSha256": "2456df402cd97549fed94512e3a6ac4bab08fe1f7229ac5d84d6f10ff16139e9",
+      "afterSha256": "03fab2eb8f2414f9ee571ef5ba3affbb95e4a1b711e3d03e800d90ffaba67955"
+    },
+    {
+      "path": "Plugin.js",
+      "beforeSha256": "84cd9330af93b969bc8b83b74762389932f28ea55433b3e02abc15f0ed540c9b",
+      "afterSha256": "8bff84d935f9d8d31175b9e9d1365430b293e2a7f385dff52d0f11537f09d991"
+    },
+    {
+      "path": "Plugin/AgentAssistant/AgentAssistant.js",
+      "beforeSha256": "0b99d2582eb94d33de10a196884055d84ad5277bd321a78b6f6f91c0ae2cd146",
+      "afterSha256": "9d6c94b166054762849126330861fa468a6aeca8e03f652f029ff114ccb23e08"
+    }
+  ],
+  "appliedToLiveService": false
+}
