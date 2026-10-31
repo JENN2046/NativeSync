@@ -6,6 +6,8 @@
 
 > 第三轮已逐项验证外部架构意见，纠正性能归因与预设隔离路线，并复现旧版本重发布的回退风险；详见[意见验证报告](docs/experiments/critique-validation-20261031.md)。
 
+> 路线第一阶段已实现服务端存储完整性核验、JSON写入约束、错误归类和只读检查工具，详见[本地修复说明](docs/storage-integrity-recovery-20261031.md)。尚未合并或安装。
+
 NativeSync 独立源码仓库。服务端插件、Windows Bridge、PWA与宿主兼容补丁分开管理；仍复用VCPToolBox/VCPChat的原生History、CDS、工具和AgentAssistant能力。
 
 ## 当前边界

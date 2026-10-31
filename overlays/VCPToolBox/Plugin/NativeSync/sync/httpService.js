@@ -38,7 +38,7 @@ function createSyncHttpService(store) {
                         raw += chunk;
                         if (Buffer.byteLength(raw) > 1024 * 1024) throw new SyncError('BODY_TOO_LARGE', '1 MiB maximum', 413);
                     }
-                    op = JSON.parse(raw);
+                    try { op = JSON.parse(raw); } catch { throw new SyncError('INVALID_OPERATION','Invalid JSON request'); }
                 } else if (Buffer.byteLength(JSON.stringify(op)) > 1024 * 1024) throw new SyncError('BODY_TOO_LARGE', '1 MiB maximum', 413);
                 store.sourceCatalog?.authorizePush(req.nativeSyncSourceBinding,op);
                 if(req.nativeSyncTopics!==undefined&&!req.nativeSyncTopics.includes(JSON.stringify([op?.ownerType,op?.ownerId,op?.topicId])))throw new SyncError('TOPIC_NOT_ALLOWED','Operation is outside the selected source',403);
@@ -47,7 +47,14 @@ function createSyncHttpService(store) {
             }
             return send(res, 404, { error: { code: 'NOT_FOUND', message: 'Unknown route' } });
         } catch (error) {
-            return send(res, error.status || 400, { error: { code: error.code || 'BAD_REQUEST', message: error.message } });
+            // Request validation has explicit statuses. An unclassified server
+            // exception must neither blame the client nor expose row contents.
+            if (Number.isInteger(error.status) && error.status >= 400 && error.status < 500)
+                return send(res,error.status,{error:{code:error.code||'BAD_REQUEST',message:error.message}});
+            const corrupt = error.code === 'SYNC_STORAGE_CORRUPT' || ['ERR_SQLITE_CORRUPT','ERR_SQLITE_NOTADB'].includes(error.code) || [11,26].includes(error.errcode & 255);
+            const status = Number.isInteger(error.status) && error.status >= 500 && error.status <= 599 ? error.status : 500;
+            const code = corrupt ? 'SYNC_STORAGE_CORRUPT' : status === 503 && /^[A-Z][A-Z0-9_]{0,79}$/.test(error.code||'') ? error.code : 'SYNC_INTERNAL_ERROR';
+            return send(res,status,{error:{code,message:corrupt?'Stored sync data failed integrity validation':'Sync service failed'}});
         } finally { active--; if (closing && active === 0) drain(); }
     }
     return { handle, beginDrain(){quiescing=true;}, snapshot(){return {accepting:!quiescing,active};}, async close() { closing = true; if (active > 0) await drained; store.close(); } };

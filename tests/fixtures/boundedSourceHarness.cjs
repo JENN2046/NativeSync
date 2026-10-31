@@ -34,6 +34,9 @@ async function fixture(t,{scope=limited([selected,older]),seedOwners=true,execut
  const server=http.createServer(appHttp);await new Promise(r=>server.listen(0,'127.0.0.1',r));
  const connection={scopeMode:'source',sourceId:'sourceA',deviceId:'deviceA',spaceId:sourceCatalog.spaceId,sourceRoot:app,sourceScope:scope,url:'http://127.0.0.1:'+server.address().port,token:'synthetic-only',topics:[]};
  const f={root,app,store,portal,server,connection,cleanups:[],network:{offline:false,dropPush:0},reads:[],sent:[]};
+ // Corruption injection only in this fixture's disposable database: simulate
+ // old dirty rows before the current write guards were installed.
+ f.injectLegacyStorageFault=(table,mutate)=>{assert.ok(['journal','messages','applied_ops'].includes(table));const guard=store.db.prepare('SELECT name,sql FROM sqlite_master WHERE type=\'trigger\' AND name=?').get('nativesync_json_'+table+'_update');if(guard)store.db.exec('DROP TRIGGER '+guard.name);try{return mutate();}finally{if(guard)store.db.exec(guard.sql);}};
  f.owner=async(id,{topics=[],name=id,type='agent'}={})=>{const d=path.join(app,type==='group'?'AgentGroups':'Agents',id);await fs.mkdir(d,{recursive:true});await fs.writeFile(path.join(d,'config.json'),JSON.stringify({id,name,topics,systemPrompt:'SYNTHETIC_PRIVATE_PROMPT_NOT_PROJECTED'}));};
  f.history=async(d,rows)=>{const file=path.join(app,'UserData',d.itemId,'topics',d.topicId,'history.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(rows));};
  f.readAgentConfig=async id=>{f.reads.push({kind:'config',owner:id});return JSON.parse(await fs.readFile(path.join(app,'Agents',id,'config.json'),'utf8'));};

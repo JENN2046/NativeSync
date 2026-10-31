@@ -5,7 +5,8 @@ const {identity,stable,sha256}=require('./protocol');
 const fail=(code,status=409)=>Object.assign(Error(code),{code,status});
 const opaque=value=>typeof value==='string'&&/^[a-zA-Z0-9_-]{1,96}$/.test(value);
 const tuple=d=>[d.ownerType,d.ownerId,d.topicId||''];
-function validateIdentity(d,owner=false){identity({...d,topicId:owner?'_owner':d.topicId,msgId:'_catalog'});return d;}
+function requestIdentity(d){try{return identity(d);}catch{throw fail('INVALID_IDENTITY',400);}}
+function validateIdentity(d,owner=false){requestIdentity({...d,topicId:owner?'_owner':d.topicId,msgId:'_catalog'});return d;}
 function avatar(value){if(value!=null&&(typeof value!=='string'||value.length>24000||!/^data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/.test(value)))throw fail('INVALID_AVATAR',400);return value||null;}
 function fields(value,allowed){if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!allowed.includes(k)))throw fail('INVALID_SOURCE_CATALOG',400);}
 
@@ -133,7 +134,7 @@ class SourceCatalog{
  activeTopic(sourceId,d){if(!permits(this.grants.get(sourceId)?.scope,d))return null;const row=this.entity(sourceId,...tuple(d)),owner=this.entity(sourceId,d.ownerType,d.ownerId,'');return row&&!row.deleted&&owner&&!owner.deleted?row:null;}
  topicKeys(sourceId){return this.entities(sourceId,'topics').filter(t=>this.activeTopic(sourceId,t)).map(t=>JSON.stringify(tuple(t)));}
  hasFullEntries(){return Boolean(this.db.prepare('SELECT 1 FROM source_catalog_entities LIMIT 1').get());}
- verifyLegacy(binding,body){this.binding(binding);fields(body,['cursor','records']);if(!Number.isSafeInteger(body.cursor)||body.cursor<0||!Array.isArray(body.records)||body.records.length>128)throw fail('INVALID_SOURCE_PROOF',400);if(body.cursor>Number(this.store.headStmt.get().seq))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');for(const item of body.records){fields(item,['ownerType','ownerId','topicId','msgId','seq','hash','metadataHash']);identity(item);this.assertScope(binding.sourceId,item);const row=this.db.prepare('SELECT * FROM journal WHERE seq=?').get(item.seq);if(!row||row.owner_type!==item.ownerType||row.owner_id!==item.ownerId||row.topic_id!==item.topicId||row.msg_id!==item.msgId||row.hash!==item.hash||(item.metadataHash&&item.metadataHash!==(row.metadata_hash||sha256(stable({})))))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');}return {verified:true};}
+ verifyLegacy(binding,body){this.binding(binding);fields(body,['cursor','records']);if(!Number.isSafeInteger(body.cursor)||body.cursor<0||!Array.isArray(body.records)||body.records.length>128)throw fail('INVALID_SOURCE_PROOF',400);if(body.cursor>Number(this.store.headStmt.get().seq))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');for(const item of body.records){fields(item,['ownerType','ownerId','topicId','msgId','seq','hash','metadataHash']);requestIdentity(item);this.assertScope(binding.sourceId,item);const row=this.db.prepare('SELECT * FROM journal WHERE seq=?').get(item.seq);if(!row||row.owner_type!==item.ownerType||row.owner_id!==item.ownerId||row.topic_id!==item.topicId||row.msg_id!==item.msgId||row.hash!==item.hash||(item.metadataHash&&item.metadataHash!==(row.metadata_hash||sha256(stable({})))))throw fail('SOURCE_HISTORY_DOMAIN_MISMATCH');}return {verified:true};}
  beginBaseline(binding,body){
   this.binding(binding);fields(body,['planId','ownerType','ownerId','topicId']);validateIdentity(body);if(!opaque(body.planId)||!this.activeTopic(binding.sourceId,body))throw fail('SOURCE_TOPIC_UNAVAILABLE',403);
   const prior=this.db.prepare('SELECT * FROM source_baselines WHERE source_id=? AND plan_id=?').get(binding.sourceId,body.planId);

@@ -29,7 +29,7 @@ test('stale digest, unapproved set and wrong binding leave every database table 
 });
 for(const boundary of ['authority-frozen','pin-updated'])test('transaction fault at '+boundary+' rolls back pin, sessions, unused pairings and all receipts',async t=>{
  const f=await fixture(t);await f.adopt();await f.pump();await f.phone();f.portal.createPairing({scopeMode:'source',sourceId:'sourceA'});const catalog=approve(f),before=digest(f);catalog.transitionFault=stage=>{if(stage===boundary)throw Object.assign(Error('injected transition failure'),{code:'INJECTED_SCOPE_FAILURE'});};
- await assert.rejects(()=>f.send('/api/v1/sync/source/scope-transition',{body:body()}),e=>e.code==='INJECTED_SCOPE_FAILURE');assert.equal(digest(f),before);assert.equal(scopeHash(catalog.grants.get('sourceA').scope),scopeHash(oldScope));
+ await assert.rejects(()=>f.send('/api/v1/sync/source/scope-transition',{body:body()}),e=>e.code==='SYNC_INTERNAL_ERROR'&&e.status===500);assert.equal(digest(f),before);assert.equal(scopeHash(catalog.grants.get('sourceA').scope),scopeHash(oldScope));
 });
 test('concurrent/repeated transition applies once; reused op with different payload and stale new op are refused',async t=>{
  const f=await fixture(t);await f.adopt();await f.pump();approve(f);const replies=await Promise.all([f.send('/api/v1/sync/source/scope-transition',{body:body()}),f.send('/api/v1/sync/source/scope-transition',{body:body()})]);assert.equal(replies.filter(r=>r.replayed).length,1);assert.equal(replies[0].requestHash,replies[1].requestHash);const before=digest(f);

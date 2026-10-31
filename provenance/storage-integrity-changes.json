@@ -1,0 +1,26 @@
+{
+  "baseline": "ededbcb5df2b4e99844e7f70952f23cbc2e8596c",
+  "scope": "server ledger read validation, JSON write guards and error classification; no wire/state identity changes; no data repair",
+  "files": [
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "baselineSha256": "94b58cdbfcde31f169d39370edb19a3a64f9536ee7523d8cc2cba2c548547749",
+      "candidateSha256": "10efc03a954faba78ffa7b64674ca7c33b37400cf5e409e8c117fdbef5b7f608"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/centralStore.js",
+      "baselineSha256": "7300ed7af9970e05bc561895aed74e7031712329aab038b6db09bc279317e660",
+      "candidateSha256": "cc61d0ab2a274dd23f9c46df0ba96ec2ddb293110d5273bd25d64a8351c3f9e6"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "baselineSha256": "1a790414a96b05880113d38eb4a647b9abc2efcab28ab5738aed2805a37055ba",
+      "candidateSha256": "92309b48a14225db971d5fe31fe2c68fbfe82bbee7dc82d50e001cb0307e04a1"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "baselineSha256": "df4b2330a85c0d80b3636cbd0170d4c81008bea8e8fa4243f4701a00ff8fe20c",
+      "candidateSha256": "ad96dd1fcccd25072f378fe7cf648ee0a12676040c99c6fd6dbe16a09dc0655e"
+    }
+  ]
+}

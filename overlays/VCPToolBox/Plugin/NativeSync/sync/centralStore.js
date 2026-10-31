@@ -11,6 +11,49 @@ class SyncError extends Error {
     this.status = status;
   }
 }
+const digest = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
+function storageCorrupt(cause) {
+  const error = new SyncError('SYNC_STORAGE_CORRUPT', 'Stored sync data failed integrity validation', 500);
+  error.cause = cause;
+  return error;
+}
+// Validate persisted facts before projecting them. A valid JSON document alone
+// does not prove its identity, content digest, deletion or metadata authority.
+function projectStoredMessage(row) {
+  try {
+    const id = identity({ownerType:row.owner_type,ownerId:row.owner_id,topicId:row.topic_id,msgId:row.msg_id});
+    const seq = row.seq ?? row.last_seq;
+    const action = Object.hasOwn(row,'action') ? row.action : row.deleted === 0 ? 'upsert' : row.deleted === 1 ? 'delete' : null;
+    if (!Number.isSafeInteger(seq) || seq < 1 || !['upsert','delete'].includes(action) || !digest(row.hash) ||
+        !Number.isSafeInteger(row.metadata_version) || row.metadata_version < 0 ||
+        (row.metadata_version === 0 ? row.metadata_hash !== null : !digest(row.metadata_hash))) throw Error('Invalid stored columns');
+    if (action === 'delete') {
+      if (row.message_json !== null || row.metadata_version !== 0 || row.hash !== tombstoneHash(id)) throw Error('Invalid stored deletion');
+      return null;
+    }
+    if (typeof row.message_json !== 'string') throw Error('Missing stored message');
+    const message = JSON.parse(row.message_json);
+    if (!message || Array.isArray(message) || typeof message !== 'object' || message.id !== id.msgId || messageHash(message) !== row.hash) throw Error('Invalid stored message');
+    if (!row.metadata_version) {
+      for (const key of ['_nativeSyncMetadata',...controlFields]) delete message[key];
+      return message;
+    }
+    const envelope = validateEnvelope(message,message._nativeSyncMetadata);
+    if (envelope.version !== row.metadata_version || envelope.hash !== row.metadata_hash) throw Error('Invalid stored metadata authority');
+    return withFields(message,envelope);
+  } catch (error) { throw storageCorrupt(error); }
+}
+function readStoredReceipt(json, expected) {
+  try {
+    const result = JSON.parse(json);
+    if (!result || Array.isArray(result) || Object.keys(result).some(k=>!['seq','hash','deleted','metadataVersion','metadataHash'].includes(k)) ||
+        !Number.isSafeInteger(result.seq) || result.seq < 1 || !digest(result.hash) || typeof result.deleted !== 'boolean' ||
+        (result.metadataVersion !== undefined || result.metadataHash !== undefined) &&
+          (result.deleted || !Number.isSafeInteger(result.metadataVersion) || result.metadataVersion < 1 || !digest(result.metadataHash)) ||
+        expected && (result.hash !== expected.hash || result.deleted !== expected.deleted)) throw Error('Invalid stored receipt');
+    return result;
+  } catch (error) { throw storageCorrupt(error); }
+}
 class CentralStore {
   constructor(filePath) {
     this.db = new DatabaseSync(filePath);
@@ -44,8 +87,16 @@ class CentralStore {
       if(!columns.some(c=>c.name==='metadata_version'))this.db.exec('ALTER TABLE '+table+' ADD COLUMN metadata_version INTEGER NOT NULL DEFAULT 0');
       if(!columns.some(c=>c.name==='metadata_hash'))this.db.exec('ALTER TABLE '+table+' ADD COLUMN metadata_hash TEXT');
     }
+    // Triggers enforce JSON syntax for both existing and fresh tables without
+    // rebuilding a live ledger or changing old rows/sequence numbers. Semantic
+    // validation remains in apply/projectStoredMessage; NULL is a tombstone.
+    for (const [table,column,nullable] of [['messages','message_json',true],['journal','message_json',true],['applied_ops','result_json',false]]) {
+      for (const event of ['INSERT','UPDATE']) this.db.exec(`CREATE TRIGGER IF NOT EXISTS nativesync_json_${table}_${event.toLowerCase()}
+        BEFORE ${event} ON ${table} WHEN ${nullable ? `NEW.${column} IS NOT NULL AND` : ''} NOT json_valid(NEW.${column})
+        BEGIN SELECT RAISE(ABORT,'NATIVESYNC_INVALID_JSON'); END;`);
+    }
     this.findOp = this.db.prepare('SELECT request_hash, result_json FROM applied_ops WHERE device_id=? AND op_id=?');
-    this.findMessage = this.db.prepare('SELECT hash, deleted, last_seq, message_json,metadata_version,metadata_hash FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND msg_id=?');
+    this.findMessage = this.db.prepare('SELECT * FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND msg_id=?');
     this.insertJournal = this.db.prepare('INSERT INTO journal(owner_type,owner_id,topic_id,msg_id,action,hash,message_json,device_id,metadata_version,metadata_hash) VALUES (?,?,?,?,?,?,?,?,?,?)');
     this.upsertMessage = this.db.prepare(`INSERT INTO messages(owner_type,owner_id,topic_id,msg_id,hash,deleted,message_json,last_seq,metadata_version,metadata_hash)
       VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(owner_type,owner_id,topic_id,msg_id) DO UPDATE SET
@@ -55,7 +106,8 @@ class CentralStore {
     this.headStmt = this.db.prepare('SELECT COALESCE(MAX(seq),0) AS seq FROM journal');
   }
   apply(raw, authority = {}) {
-    const id = identity(raw);
+    let id;
+    try { id = identity(raw); } catch { throw new SyncError('INVALID_IDENTITY','Invalid message identity'); }
     if (!raw || typeof raw.deviceId !== 'string' || !raw.deviceId ||
         typeof raw.opId !== 'string' || !raw.opId ||
         !['upsert','delete'].includes(raw.action) ||
@@ -67,7 +119,7 @@ class CentralStore {
       if (!raw.message || raw.message.id !== id.msgId) {
         throw new SyncError('INVALID_MESSAGE', 'message.id must match msgId');
       }
-      messageHash(raw.message);
+      try { messageHash(raw.message); } catch (error) { throw new SyncError(error.code || 'INVALID_MESSAGE','Invalid message content'); }
       message = raw.message;
     }
     if(raw.metadata!==undefined&&!authority.metadataPublisher)throw new SyncError('METADATA_PUBLISHER_REQUIRED','Trusted metadata publisher required',403);
@@ -78,6 +130,7 @@ class CentralStore {
       action: raw.action, baseHash: raw.baseHash, message, ...(incoming?{metadata:incoming}:{}) };
     const requestHash = sha256(stable(normalized));
     const args = [id.ownerType, id.ownerId, id.topicId, id.msgId];
+    const hash = raw.action === 'delete' ? tombstoneHash(id) : messageHash(message);
     this.db.exec('BEGIN IMMEDIATE');
     try {
       const previousOp = this.findOp.get(raw.deviceId, raw.opId);
@@ -85,13 +138,13 @@ class CentralStore {
         if (previousOp.request_hash !== requestHash) {
           throw new SyncError('IDEMPOTENCY_KEY_REUSED', 'opId reused for different content', 409);
         }
-        const result = JSON.parse(previousOp.result_json);
+        const result = readStoredReceipt(previousOp.result_json,{hash,deleted:raw.action==='delete'});
         this.db.exec('COMMIT');
         return { ...result, replayed: true };
       }
       const previous = this.findMessage.get(...args);
-      const hash = raw.action === 'delete' ? tombstoneHash(id) : messageHash(message);
-      let priorMetadata=previous?.metadata_version?this.projectMessage(previous)._nativeSyncMetadata:null;
+      const projected = previous ? this.projectMessage(previous) : null;
+      let priorMetadata=previous?.metadata_version?projected._nativeSyncMetadata:null;
       let metadata=priorMetadata;
       if(incoming){
         if(previous?.deleted)throw new SyncError('METADATA_TOMBSTONED','Metadata cannot resurrect a deleted message',409);
@@ -105,6 +158,8 @@ class CentralStore {
         if(!priorMetadata)throw new SyncError('VERSIONED_METADATA_REQUIRED','Control metadata requires a versioned envelope',409);
       }
       if(message&&metadata){message=withFields(message,metadata);validateEnvelope(message,metadata);}
+      // Serialize once: Journal and current projection receive the same bytes.
+      const messageJson = message ? JSON.stringify(message) : null;
       const metadataChanged=(metadata?.hash||null)!==(priorMetadata?.hash||null);
       let seq;
       if (previous && previous.hash === hash && Boolean(previous.deleted) === (raw.action === 'delete') && !metadataChanged) {
@@ -115,9 +170,9 @@ class CentralStore {
           throw new SyncError('MESSAGE_CONFLICT', 'Expected message hash differs from central state', 409);
         }
         seq = Number(this.insertJournal.run(...args, raw.action, hash,
-          message ? JSON.stringify(message) : null, raw.deviceId,message&&metadata?metadata.version:0,message&&metadata?metadata.hash:null).lastInsertRowid);
+          messageJson, raw.deviceId,message&&metadata?metadata.version:0,message&&metadata?metadata.hash:null).lastInsertRowid);
         this.upsertMessage.run(...args, hash, raw.action === 'delete' ? 1 : 0,
-          message ? JSON.stringify(message) : null, seq,message&&metadata?metadata.version:0,message&&metadata?metadata.hash:null);
+          messageJson, seq,message&&metadata?metadata.version:0,message&&metadata?metadata.hash:null);
       }
       if(message)this.attachments?.associate(id,message,authority.attachmentPrincipal);
       const result = { seq, hash, deleted: raw.action === 'delete', ...(metadata&&raw.action!=='delete'?{metadataVersion:metadata.version,metadataHash:metadata.hash}:{}) };
@@ -151,12 +206,7 @@ class CentralStore {
     return { events, headSeq, nextSeq, hasMore: nextSeq < headSeq };
   }
   projectMessage(row) {
-    if(!row.message_json)return null;
-    const message=JSON.parse(row.message_json);
-    if(!row.metadata_version){for(const key of ['_nativeSyncMetadata',...controlFields])delete message[key];return message;}
-    const envelope=validateEnvelope(message,message._nativeSyncMetadata);
-    if(envelope.version!==row.metadata_version||envelope.hash!==row.metadata_hash)throw new SyncError('METADATA_PROJECTION_CORRUPT','Metadata authority columns disagree',409);
-    return withFields(message,envelope);
+    return projectStoredMessage(row);
   }
   metrics() {
     return {
@@ -168,4 +218,4 @@ class CentralStore {
   }
   close() { this.db.close(); }
 }
-module.exports = { CentralStore, SyncError };
+module.exports = { CentralStore, SyncError, projectStoredMessage, readStoredReceipt };

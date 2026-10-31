@@ -60,8 +60,8 @@ test('native AA acceptance must be acknowledged before its launch continuation c
 test('poisoned Journal blocks a healthy later topic; naive skipping falsely reports complete catch-up',async t=>{
  const {selected,message}=require('./fixtures/boundedSourceHarness.cjs');const f=await fixture(t);await f.adopt();await f.pump();const cursor=f.adapter.state.cursor;
  const poison=f.store.apply({...wireTopic(selected),msgId:'poison-record',deviceId:'synthetic-peer',opId:'poison-record',action:'upsert',baseHash:null,message:message('poison-record')}),healthy=f.store.apply({...wireTopic(older),msgId:'healthy-after-poison',deviceId:'synthetic-peer',opId:'healthy-after-poison',action:'upsert',baseHash:null,message:message('healthy-after-poison')});
- const originalJson=f.store.db.prepare('SELECT message_json FROM journal WHERE seq=?').get(poison.seq).message_json;f.store.db.prepare('UPDATE journal SET message_json=? WHERE seq=?').run('{',poison.seq);
- await assert.rejects(()=>f.adapter.pull(),e=>e.code==='BAD_REQUEST');assert.equal(f.adapter.state.cursor,cursor);assert.equal((await f.queue.read(older)).some(m=>m.id==='healthy-after-poison'),false);
+ const originalJson=f.store.db.prepare('SELECT message_json FROM journal WHERE seq=?').get(poison.seq).message_json;f.injectLegacyStorageFault('journal',()=>f.store.db.prepare('UPDATE journal SET message_json=? WHERE seq=?').run('{',poison.seq));
+ await assert.rejects(()=>f.adapter.pull(),e=>e.code==='SYNC_STORAGE_CORRUPT');assert.equal(f.adapter.state.cursor,cursor);assert.equal((await f.queue.read(older)).some(m=>m.id==='healthy-after-poison'),false);
  const originalPull=f.store.pull.bind(f.store);
  // Deliberately unsafe alternative: retain the scan watermark but silently
  // discard malformed authorized rows. This is not a production implementation.

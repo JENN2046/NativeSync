@@ -35,9 +35,9 @@ test('counterexample: appending an old repaired version at a new sequence rolls 
 test('server repair before resuming the unchanged cursor recovers both topics without a new protocol',async t=>{
  const f=await fixture(t);await f.adopt();await f.pump();const cursor=f.adapter.state.cursor;
  const op={...wireTopic(selected),msgId:'repair-in-place',deviceId:'synthetic-peer',opId:'repair-in-place',action:'upsert',baseHash:null,message:message('repair-in-place')},bad=f.store.apply(op),good=f.store.apply({...op,...wireTopic(older),msgId:'healthy-repair',opId:'healthy-repair',message:message('healthy-repair')});
- const json=f.store.db.prepare('SELECT message_json FROM journal WHERE seq=?').get(bad.seq).message_json;f.store.db.prepare('UPDATE journal SET message_json=? WHERE seq=?').run('{',bad.seq);
- // The real adapter/HTTP path exposes current BAD_REQUEST; no request is malformed.
- await assert.rejects(()=>f.adapter.pull(),e=>e.code==='BAD_REQUEST'&&e.status===400);assert.equal(f.adapter.state.cursor,cursor);
+ const json=f.store.db.prepare('SELECT message_json FROM journal WHERE seq=?').get(bad.seq).message_json;f.injectLegacyStorageFault('journal',()=>f.store.db.prepare('UPDATE journal SET message_json=? WHERE seq=?').run('{',bad.seq));
+ // The real adapter/HTTP path exposes the repaired storage error; no request is malformed.
+ await assert.rejects(()=>f.adapter.pull(),e=>e.code==='SYNC_STORAGE_CORRUPT'&&e.status===500);assert.equal(f.adapter.state.cursor,cursor);
  const request=f.sent.at(-1);assert.ok(request.route.includes('pull'));
  f.store.db.prepare('UPDATE journal SET message_json=? WHERE seq=?').run(json,bad.seq);await f.adapter.pull();
  assert.equal(f.adapter.state.cursor,good.seq);assert.ok((await f.queue.read(selected)).some(m=>m.id===op.msgId));assert.ok((await f.queue.read(older)).some(m=>m.id==='healthy-repair'));
