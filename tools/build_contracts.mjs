@@ -15,6 +15,9 @@ const outputs=new Map([
  ['overlays/VCPToolBox/Plugin/NativeSync/sync/contracts.generated.cjs',cjs],
  ['overlays/VCPToolBox/apps/mobile/src/contracts.generated.js',header+source],
 ]);
+const lifecycle=await fs.readFile(path.join(root,'packages/execution-decisions/src/lifecycle.mjs'),'utf8');
+const lifecycleHash=createHash('sha256').update(lifecycle).digest('hex');
+outputs.set('overlays/VCPToolBox/Plugin/NativeSync/mobile/executionDecisions.generated.cjs',`// GENERATED from packages/execution-decisions/src/lifecycle.mjs; source SHA256 ${lifecycleHash}\n`+"'use strict';\n"+lifecycle.replace(/^export /gm,'')+'\nmodule.exports={step};\n');
 let failed=false;
 for(const [name,content]of outputs){
  const target=path.join(root,name);

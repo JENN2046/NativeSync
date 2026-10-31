@@ -52,7 +52,7 @@ class ConversationExecution {
         for (const row of this.db.prepare("SELECT * FROM mobile_executions WHERE state IN ('preparing','publishing') ORDER BY created_at").all()) this.completeIntent(row);
         // A lost in-flight result may already have executed external tools.
         // Resume queued work, but never automatically repeat uncertain execution.
-        this.db.prepare("UPDATE mobile_executions SET state=CASE WHEN cancel_requested=1 AND request_dispatched=0 AND tool_started=0 THEN 'cancelled' ELSE 'review_required' END,error_code=CASE WHEN cancel_requested=1 AND request_dispatched=0 AND tool_started=0 THEN 'EXECUTION_CANCELLED_BEFORE_DISPATCH' ELSE 'EXECUTION_INTERRUPTED_REVIEW_REQUIRED' END,updated_at=? WHERE state IN ('running','cancelling','waiting_approval') AND coalesce(kind,'') NOT IN ('group_message','group_invitation')").run(Date.now());
+        require('./executionLifecycle').recoverInterrupted(this.db,Date.now());
         for (const task of this.db.prepare("SELECT * FROM mobile_native_tasks WHERE state NOT IN ('completed','failed','cancelled','stopped')").all()) this.nativeTasks.markUnknown(task, 'NATIVE_TASK_RECONCILIATION_REQUIRED');
         require('./groupTurn').recover(this);
     }
@@ -110,8 +110,8 @@ class ConversationExecution {
         const op = JSON.parse(row.pending_operation);
         const result = this.store.apply(op,{metadataPublisher:Boolean(op.metadata),attachmentPrincipal:'mobile:'+row.session_id});
         this.fault(row.state === 'preparing' ? 'user-applied' : 'reply-applied');
-        if (row.state === 'preparing') this.db.prepare("UPDATE mobile_executions SET state='queued',user_seq=?,pending_operation=NULL,updated_at=? WHERE id=?").run(result.seq, Date.now(), row.id);
-        else this.db.prepare("UPDATE mobile_executions SET state=?,reply_message_id=?,pending_operation=NULL,updated_at=? WHERE id=?").run(row.terminal_state||'completed',op.msgId, Date.now(), row.id);
+        const plan=require('./executionDecisions.generated.cjs').step(row,{type:'journal-applied',operation:op,receipt:result,observedAt:Date.now()});
+        require('./executionLifecycle').applyDecision(this.db,plan);
         if(row.state==='preparing'&&require('./groupTurn').isGroup(row)&&JSON.parse(row.group_plan).length===0)this.db.prepare("UPDATE mobile_executions SET state='completed' WHERE id=?").run(row.id);
         this.wake();
     }

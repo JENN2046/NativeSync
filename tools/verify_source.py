@@ -18,6 +18,9 @@ for row in (json.loads(architectureFile.read_text())['files'] if architectureFil
 contractsFile=ROOT/'provenance/contracts-experiment-changes.json'
 for row in (json.loads(contractsFile.read_text())['files'] if contractsFile.exists() else []):
  assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
+executionBoundaryFile=ROOT/'provenance/execution-boundary-experiment-changes.json'
+for row in (json.loads(executionBoundaryFile.read_text())['files'] if executionBoundaryFile.exists() else []):
+ assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
 for name,digest in expected.items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest,name
 tracked=subprocess.run(['git','ls-files','-z'],cwd=ROOT,capture_output=True,check=True).stdout.decode().split(chr(0))
 if not any(tracked):

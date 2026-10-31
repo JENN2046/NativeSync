@@ -1,0 +1,21 @@
+{
+  "baseline": "0c5cf07b7c3c4de16cea44b1d05415f859b4b43d",
+  "scope": "pure execution decisions with guarded SQLite application; no schema/wire change",
+  "files": [
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "baselineSha256": "13afe4ce6e5c71a69c4b09e5136a16b861ec7879755a808ed555b44989530eb1",
+      "candidateSha256": "6a87f87be0b07d26e3385fe6528560206c3fc1982305da6849cb70576dec8a8d"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/executionDecisions.generated.cjs",
+      "baselineSha256": null,
+      "candidateSha256": "d81aeb50fb5ecec32c63df8ffdbf4bcebc24b807e2b2ca5a0c8d74b49a436163"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/executionLifecycle.js",
+      "baselineSha256": null,
+      "candidateSha256": "56c2f78e2b68d9b6cc6f9028ceffe32be7d69522742e91ae886c47e545409f72"
+    }
+  ]
+}
