@@ -10,6 +10,9 @@
     "test": "node --test --test-reporter=tap tests/snapshot-prompt.test.cjs",
     "verify:source": "python3 tools/verify_source.py",
     "test:m2-m3": "python3 tools/run_m2_m3.py",
-    "test:integration": "python3 tools/run_full_feature.py"
+    "test:integration": "python3 tools/run_full_feature.py",
+    "contracts:check": "node tools/build_contracts.mjs --check",
+    "contracts:build": "node tools/build_contracts.mjs --write",
+    "test:contracts": "node --test --test-reporter=tap tests/contracts-equivalence.test.cjs"
   }
 }

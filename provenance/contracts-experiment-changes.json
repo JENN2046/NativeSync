@@ -1,0 +1,61 @@
+{
+  "baseline": "9dc099b6007e018a9743d72048d5e6fbb43b94e7",
+  "scope": "deterministic contract extraction only; no wire/state/schema change",
+  "files": [
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/contracts.generated.cjs",
+      "baselineSha256": null,
+      "candidateSha256": "46361d523d606b9d53ff88095a0aa9e2ab441f7baaf7be4ae9ee7091c1cd3fc1"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/metadata.js",
+      "baselineSha256": "8048264b72ef3689a667f6dee1096849c534cdd0a0db8295eb2485ad0113d577",
+      "candidateSha256": "27e2b3602d7512b90d7823c6ec55f10515c419b901b8b49893c8e2d5d6261f08"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/protocol.js",
+      "baselineSha256": "69477661d4688d4c715046452bb3191023deffacf23b1f021fb15e99bdde33f1",
+      "candidateSha256": "f44c702ee4caccbb5951f777bb1bb9251863e62fc1ed6f20f2359cee4f017783"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceScope.js",
+      "baselineSha256": "eb347c9622b57e8c4b14a196046f4bb2b81a595a5d77a5fd111bade6d7db0e29",
+      "candidateSha256": "2632ec09959e689671373328092d7227fa4a4f0bcc99775a96455cad32e731b4"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/submissionRecovery.js",
+      "baselineSha256": "e2ae8d70b7af64301a5ea68ce1e7422599f95925869107bb6d950f4454eb18d4",
+      "candidateSha256": "0b718827b383e385f73bdec22140d55ef42ef41b513e710abf099ba8f0f193e2"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/contracts.generated.cjs",
+      "baselineSha256": null,
+      "candidateSha256": "46361d523d606b9d53ff88095a0aa9e2ab441f7baaf7be4ae9ee7091c1cd3fc1"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/metadata.js",
+      "baselineSha256": "3f9ec708152f0f856c86cbd060eec707cc5b868000f82c0c03836710ae809cec",
+      "candidateSha256": "d63f9549e47139cf3b01eb9686e1726d31ab52990d56eb7d9dc1a0ccefcbfdbd"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/protocol.js",
+      "baselineSha256": "d3e522948d2676a3b4f6e3d931ec0435fd1387bd62fd2c6f422f75569df25b0f",
+      "candidateSha256": "d3af5e76cb85bcd6130674d6519684edaa2391e24e6fbf070ef15c2fde4b8126"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/sourceScope.js",
+      "baselineSha256": "eb347c9622b57e8c4b14a196046f4bb2b81a595a5d77a5fd111bade6d7db0e29",
+      "candidateSha256": "2632ec09959e689671373328092d7227fa4a4f0bcc99775a96455cad32e731b4"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/contracts.generated.js",
+      "baselineSha256": null,
+      "candidateSha256": "02b40259eb47f422644b11cd0ea87ef4586a138364820085b3d0409c424f6dcd"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/submissionRecovery.js",
+      "baselineSha256": "5e4852dca74e4121ae56749c39f55e35b822a26004a5f1fbd3b130b56afa1e36",
+      "candidateSha256": "cf86300a70bdbeec9a61e66ab6a1c8f064dc8797ddaabf058c25f4d988ad6a6b"
+    }
+  ]
+}

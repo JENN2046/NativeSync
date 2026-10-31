@@ -1,5 +1,6 @@
 'use strict';
-const { sha256, stable } = require('../sync/protocol');
+const { sha256 } = require('../sync/protocol');
+const {submissionText}=require('../sync/contracts.generated.cjs');
 
 // These hashes describe an authenticated observation. They are never accepted
 // as credentials and do not replace the existing session-scoped idempotency key.
@@ -23,7 +24,7 @@ function normalizeSubmission({ topicKey, kind, payload }) {
     invalid();
 }
 
-const payloadHash = submission => sha256(stable(normalizeSubmission(submission)));
+const payloadHash = submission => sha256(submissionText(normalizeSubmission(submission)));
 
 function executionRecovery(row) {
     // An old row without the original durable payload cannot prove a match.

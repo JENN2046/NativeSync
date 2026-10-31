@@ -1,5 +1,7 @@
 # NativeSync R2.1
 
+> 当前检出是基于9dc099b的独立契约抽取实验。主开发副本未合并此实验；边界、证据及代价见[实验报告](docs/experiments/contracts-boundary-20261031.md)。
+
 NativeSync 独立源码仓库。服务端插件、Windows Bridge、PWA与宿主兼容补丁分开管理；仍复用VCPToolBox/VCPChat的原生History、CDS、工具和AgentAssistant能力。
 
 ## 当前边界

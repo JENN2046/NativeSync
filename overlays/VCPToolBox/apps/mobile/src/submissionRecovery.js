@@ -1,3 +1,4 @@
+import {submissionText} from './contracts.generated.js';
 // This store contains only unconfirmed submissions. It is not a chat cache or
 // an execution queue: reconnecting can check records, but cannot send them.
 export const SUBMISSION_STORAGE_KEY = 'vcp.nativeSync.submissions.v1';
@@ -41,7 +42,7 @@ export async function submissionPayloadHash({topicKey, kind, payload}, cryptoApi
   const original = clonePayload(kind, payload);
   const canonical = kind === 'message' ? {...original, attachments:original.attachments || []} : original;
   if (!cryptoApi?.subtle) fail('SUBMISSION_CRYPTO_UNAVAILABLE');
-  const bytes = await cryptoApi.subtle.digest('SHA-256', new TextEncoder().encode(stable({topicKey, kind, payload:canonical})));
+  const bytes = await cryptoApi.subtle.digest('SHA-256', new TextEncoder().encode(submissionText({topicKey, kind, payload:canonical})));
   return [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 

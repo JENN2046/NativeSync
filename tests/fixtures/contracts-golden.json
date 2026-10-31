@@ -1,0 +1,272 @@
+{
+  "baseline": "9dc099b6007e018a9743d72048d5e6fbb43b94e7",
+  "serialization": [
+    {
+      "input": {
+        "temperature": 1,
+        "𐀀": "a",
+        "": "b"
+      },
+      "expected": "{\"temperature\":1.0,\"\":\"b\",\"𐀀\":\"a\"}"
+    }
+  ],
+  "messages": [
+    {
+      "input": {
+        "id": "m",
+        "role": "user",
+        "content": "中文 👋",
+        "timestamp": 1
+      },
+      "canonical": {
+        "id": "m",
+        "role": "user",
+        "content": "中文 👋",
+        "timestamp": 1
+      },
+      "messageHash": "01ae1ac7a3f621021fa5e46844d8600f17cb147cb06e220f08d81049fe714396",
+      "metadataHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "input": {
+        "id": "m",
+        "role": "user",
+        "content": "checkpoint",
+        "timestamp": 1,
+        "contextCompaction": {
+          "kind": "vchat-context-checkpoint",
+          "version": 1,
+          "checkpoint": "checkpoint",
+          "fidelity": {
+            "𐀀": "a",
+            "": "b"
+          }
+        }
+      },
+      "canonical": {
+        "id": "m",
+        "role": "user",
+        "content": "checkpoint",
+        "timestamp": 1,
+        "contextCompaction": {
+          "kind": "vchat-context-checkpoint",
+          "version": 1,
+          "checkpoint": "checkpoint",
+          "fidelity": {
+            "𐀀": "a",
+            "": "b"
+          }
+        }
+      },
+      "messageHash": "72e9e9872418bb18ff0a203c466209e65b83753d5bce5c2c1c1689ea7aa269b5",
+      "metadataHash": "bfa417cff0e2f4dac32510f7269bea4d7bf53d30976fe949ea4d9eb62d5b90fa"
+    },
+    {
+      "input": {
+        "id": "m",
+        "role": "assistant",
+        "content": "tool",
+        "timestamp": 2,
+        "tool_calls": [
+          {
+            "id": "call",
+            "type": "function",
+            "function": {
+              "name": "read",
+              "arguments": "{\"a\":1}"
+            }
+          }
+        ]
+      },
+      "canonical": {
+        "id": "m",
+        "role": "assistant",
+        "content": "tool",
+        "timestamp": 2,
+        "tool_calls": [
+          {
+            "id": "call",
+            "type": "function",
+            "function": {
+              "name": "read",
+              "arguments": "{\"a\":1}"
+            }
+          }
+        ]
+      },
+      "messageHash": "a5b1cf61b83997471d801ec2812b90101c9dba5bbd3549fbd3cf98ae84ec66c9",
+      "metadataHash": "65e24fac0ed5cfb911a3e526d41e67d7c9497396e11ad2173c8a2b71c7beebd9"
+    },
+    {
+      "input": {
+        "id": "m",
+        "role": "user",
+        "content": "file",
+        "timestamp": 3,
+        "attachments": [
+          {
+            "id": "a",
+            "name": "a.txt",
+            "type": "text/plain",
+            "size": 1,
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "extractedText": "中"
+          }
+        ]
+      },
+      "canonical": {
+        "id": "m",
+        "role": "user",
+        "content": "file",
+        "timestamp": 3,
+        "attachments": [
+          {
+            "type": "text/plain",
+            "name": "a.txt",
+            "size": 1,
+            "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "id": "a",
+            "extractedText": "中"
+          }
+        ]
+      },
+      "messageHash": "e03346f51e3d500a90e1a4d80aca52b1e67a16eb006fcf7252185db8706c4082",
+      "metadataHash": "d66ad47bd0d7fa3088edc239f6f6b9e69328754d5f6787184c7af8a177b9f7cf"
+    }
+  ],
+  "scopes": [
+    {
+      "input": {
+        "mode": "limited",
+        "topics": [
+          {
+            "ownerType": "agent",
+            "ownerId": "one",
+            "topicId": "t"
+          }
+        ]
+      },
+      "normalized": {
+        "mode": "limited",
+        "topics": [
+          {
+            "ownerType": "agent",
+            "ownerId": "one",
+            "topicId": "t"
+          }
+        ]
+      },
+      "hash": "373663e39e605e1b190688c543ee3119f6b629c73852c2dd4562660876a47882"
+    },
+    {
+      "input": {
+        "mode": "limited",
+        "topics": [
+          {
+            "ownerType": "group",
+            "ownerId": "g",
+            "topicId": "u"
+          },
+          {
+            "ownerType": "agent",
+            "ownerId": "one",
+            "topicId": "t"
+          }
+        ]
+      },
+      "normalized": {
+        "mode": "limited",
+        "topics": [
+          {
+            "ownerType": "group",
+            "ownerId": "g",
+            "topicId": "u"
+          },
+          {
+            "ownerType": "agent",
+            "ownerId": "one",
+            "topicId": "t"
+          }
+        ]
+      },
+      "hash": "e1f3c22f6f23552baf7d2b55d4940c57bab1b2f3e6ea1cd7857c84e235b11f2d"
+    }
+  ],
+  "submissions": [
+    {
+      "input": {
+        "topicKey": "topic",
+        "kind": "message",
+        "payload": {
+          "requestId": "request_01",
+          "text": "中文",
+          "attachments": [
+            "upload-a",
+            "upload-b"
+          ]
+        }
+      },
+      "hash": "12d9ab5e9f08c1d9d9f5fa3084746e82adacec9373d9df73326ca4d4683b8d05"
+    },
+    {
+      "input": {
+        "topicKey": "topic",
+        "kind": "message",
+        "payload": {
+          "requestId": "request_01",
+          "text": "👋",
+          "attachments": [
+            "upload-a",
+            "upload-b"
+          ]
+        }
+      },
+      "hash": "52a3f63e5722ff57f62ebb39a84b52dae011387d254b28c83472bee39a618074"
+    },
+    {
+      "input": {
+        "topicKey": "topic",
+        "kind": "message",
+        "payload": {
+          "requestId": "request_01",
+          "text": "é",
+          "attachments": [
+            "upload-a",
+            "upload-b"
+          ]
+        }
+      },
+      "hash": "d1b9819cba023555d6fc63566b4a3f95a10ce37990df6a23f1ced987f2a30082"
+    },
+    {
+      "input": {
+        "topicKey": "topic",
+        "kind": "message",
+        "payload": {
+          "requestId": "request_01",
+          "text": "é",
+          "attachments": [
+            "upload-a",
+            "upload-b"
+          ]
+        }
+      },
+      "hash": "2155487c177cb0d773018e8bbc803946c235fb6fdae9aabc0426b1fe51c7c660"
+    },
+    {
+      "input": {
+        "topicKey": "topic",
+        "kind": "message",
+        "payload": {
+          "requestId": "request_01",
+          "text": "\ud800",
+          "attachments": [
+            "upload-a",
+            "upload-b"
+          ]
+        }
+      },
+      "hash": "2c2c9b352985c6da03a3c95a39b4f1527abee0445a367db5695aba355c1f93ca"
+    }
+  ]
+}
