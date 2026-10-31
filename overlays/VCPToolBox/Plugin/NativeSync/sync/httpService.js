@@ -3,7 +3,7 @@
 // belong to VCPToolBox; the plugin opens no second server or authentication lane.
 const { SyncError } = require('./centralStore');
 function createSyncHttpService(store) {
-    let closing = false, active = 0, drain;
+    let closing = false, quiescing = false, active = 0, drain;
     const drained = new Promise(resolve => { drain = resolve; });
     const send = (res, code, body) => {
         res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -11,6 +11,7 @@ function createSyncHttpService(store) {
     };
     async function handle(req, res) {
         if (closing) return send(res, 503, { error: { code: 'SYNC_SERVICE_STOPPED', message: 'Native sync service is stopping' } });
+        if(quiescing&&req.method!=='GET')return send(res,503,{error:{code:'HOST_DRAINING'}});
         active++;
         try {
             const url = new URL(req.url, 'http://localhost');
@@ -49,6 +50,6 @@ function createSyncHttpService(store) {
             return send(res, error.status || 400, { error: { code: error.code || 'BAD_REQUEST', message: error.message } });
         } finally { active--; if (closing && active === 0) drain(); }
     }
-    return { handle, async close() { closing = true; if (active > 0) await drained; store.close(); } };
+    return { handle, beginDrain(){quiescing=true;}, snapshot(){return {accepting:!quiescing,active};}, async close() { closing = true; if (active > 0) await drained; store.close(); } };
 }
 module.exports = { createSyncHttpService };

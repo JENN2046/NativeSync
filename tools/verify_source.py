@@ -12,6 +12,9 @@ for row in (json.loads(auditFile.read_text())['files'] if auditFile.exists() els
 controlFile=ROOT/'provenance/controlled-scope-changes.json'
 for row in (json.loads(controlFile.read_text())['files'] if controlFile.exists() else []):
  assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
+architectureFile=ROOT/'provenance/architecture-recovery-changes.json'
+for row in (json.loads(architectureFile.read_text())['files'] if architectureFile.exists() else []):
+ assert expected.get(row['path'])==row['baselineSha256'],row['path'];expected[row['path']]=row['candidateSha256']
 for name,digest in expected.items():assert hashlib.sha256((ROOT/name).read_bytes()).hexdigest()==digest,name
 tracked=subprocess.run(['git','ls-files','-z'],cwd=ROOT,capture_output=True,check=True).stdout.decode().split(chr(0))
 if not any(tracked):

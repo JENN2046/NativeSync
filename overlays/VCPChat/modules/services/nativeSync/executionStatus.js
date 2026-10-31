@@ -2,7 +2,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { durableJson } = require('./durableJson');
-const { identity, sha256, fail } = require('./protocol');
+const { identity, sha256, stable, fail } = require('./protocol');
 const { projectNativeWork, verifyNativeResult } = require('./nativeTasks');
 
 const MAX_EXECUTIONS = 128;
@@ -44,6 +44,12 @@ function projectResponse(value, topic) {
     return { topic, observedAt: value.observedAt, executions: rows.slice(0, MAX_EXECUTIONS), total: rows.length, truncated: rows.length > MAX_EXECUTIONS };
 }
 
+function projectPage(value,topic){
+    if(value?.version!==2||topicKey(value.topic||{})!==topicKey(topic)||!['attention','recent'].includes(value.mode)||!Number.isSafeInteger(value.total)||value.total<0||typeof value.hasMore!=='boolean'||(value.hasMore&&(typeof value.next!=='string'||!value.next))||!Array.isArray(value.executions)||value.executions.length>128||!Number.isSafeInteger(value.observedAt)||value.observedAt<0||!Number.isSafeInteger(value.watermark)||value.watermark<0||(!value.hasMore&&value.next!==null)||(value.hasMore&&(!value.executions.length||value.next.length>4096)))throw fail('INVALID_EXECUTION_STATUS');
+    const rows=value.executions.map(projectExecution);if(new Set(rows.map(r=>r.id)).size!==rows.length||rows.length>value.total)throw fail('INVALID_EXECUTION_STATUS');
+    return {version:2,topic,mode:value.mode,watermark:value.watermark,observedAt:value.observedAt,executions:rows,total:value.total,hasMore:value.hasMore,next:value.next};
+}
+
 // A bounded read-only view of the existing execution table. This cache has no
 // History/Outbox authority and has a separate persistence queue and failure path.
 class NativeExecutionStatus {
@@ -60,7 +66,7 @@ class NativeExecutionStatus {
                 const topic = service.topics.find(t => topicKey(t) === key);
                 if (!topic || rows.has(key) || !Array.isArray(row.executions) || row.executions.length > MAX_EXECUTIONS || !Number.isSafeInteger(row.total) || row.total < row.executions.length || row.truncated !== (row.total > row.executions.length)) throw fail('INVALID_EXECUTION_CACHE');
                 const projected = projectResponse({ ...row, version: 1 }, topic);
-                rows.set(key, { ...projected, total: row.total, truncated: row.truncated });
+                rows.set(key, { ...projected, total: row.total, truncated: row.truncated,attentionTotal:row.attentionTotal??0,attentionTruncated:row.attentionTruncated===true,persistedObservedAt:row.observedAt });
             }
             service.records = rows;
         } catch (error) {
@@ -94,22 +100,43 @@ class NativeExecutionStatus {
     read(d) {
         const topic = this.assertTopic(d), key = topicKey(topic), row = this.records.get(key);
         const error = this.errors.get(key) || (this.loadError ? { code: this.loadError } : null);
-        return structuredClone({ version: 1, enabled: true, topic, freshness: row ? 'last-known' : 'unavailable', connection: error ? (error.code === 'NETWORK_UNAVAILABLE' ? 'offline' : 'error') : 'unverified', observedAt: row?.observedAt ?? null, executions: row?.executions || [], total: row?.total || 0, truncated: row?.truncated || false, error });
+        return structuredClone({ version: 1, enabled: true, topic, freshness: row ? 'last-known' : 'unavailable', connection: error ? (error.code === 'NETWORK_UNAVAILABLE' ? 'offline' : 'error') : 'unverified', observedAt: row?.observedAt ?? null, executions: row?.executions || [], total: row?.total || 0, truncated: row?.truncated || false,attentionTotal:row?.attentionTotal??0,attentionTruncated:row?.attentionTruncated===true,persistedObservedAt:row?.persistedObservedAt??null, error });
+    }
+    async page(d,options={}) {
+        const topic=this.assertTopic(d);
+        if(!options||typeof options!=='object'||Array.isArray(options)||Object.keys(options).some(k=>!['mode','limit','cursor'].includes(k)))throw fail('INVALID_EXECUTION_QUERY');
+        const query=new URLSearchParams({...topic,version:'2',...options});
+        const page=projectPage(await this.request('/api/plugins/NativeSync/mobile/executions?'+query),topic);
+        if(page.mode!==(options.mode||'recent'))throw fail('INVALID_EXECUTION_STATUS');return page;
     }
     async refresh(d) {
         const topic = this.assertTopic(d), key = topicKey(topic);
         if (this.pending.has(key)) return this.pending.get(key);
         const run = (async () => {
             try {
-                const query = new URLSearchParams(topic).toString();
-                const row = projectResponse(await this.request('/api/plugins/NativeSync/mobile/executions?' + query), topic);
+                const route='/api/plugins/NativeSync/mobile/executions?';
+                let first;
+                try{first=await this.request(route+new URLSearchParams({...topic,version:'2',mode:'attention',limit:'64'}));}
+                catch(e){if(e.code!=='INVALID_EXECUTION_QUERY')throw e;first=await this.request(route+new URLSearchParams(topic));}
+                let row;
+                if(first.version===1)row=projectResponse(first,topic);
+                else {
+                    const attention=projectPage(first,topic);if(attention.mode!=='attention')throw fail('INVALID_EXECUTION_STATUS');const recent=await this.page(d,{mode:'recent',limit:128});
+                    const merged=new Map([...attention.executions,...recent.executions].map(r=>[r.id,r]));
+                    row={topic,observedAt:Math.max(attention.observedAt,recent.observedAt),executions:[...merged.values()].slice(0,MAX_EXECUTIONS),total:recent.total,truncated:recent.total>Math.min(merged.size,MAX_EXECUTIONS),attentionTotal:attention.total,attentionTruncated:attention.hasMore};
+                }
                 const save = this.tail.then(async () => {
                     const next = new Map(this.records); next.set(key, row);
                     await this.assertCachePath();
                     const cache = { version: 2, binding: this.binding, topics: [...next.values()] };
                     if (Buffer.byteLength(JSON.stringify(cache)) > MAX_CACHE_BYTES) throw fail('EXECUTION_CACHE_BUDGET');
-                    await this.persist(this.file, cache);
-                    this.records = next;
+                    const prior=this.records.get(key),content=r=>stable({executions:r.executions,total:r.total,truncated:r.truncated,attentionTotal:r.attentionTotal??0,attentionTruncated:r.attentionTruncated===true});
+                    if(!prior||content(prior)!==content(row)||Date.now()-(this.lastPersistedAt||0)>=30000){
+                        cache.topics=cache.topics.map(r=>({...r,persistedObservedAt:r.observedAt}));
+                        if(Buffer.byteLength(JSON.stringify(cache))>MAX_CACHE_BYTES)throw fail('EXECUTION_CACHE_BUDGET');
+                        await this.persist(this.file,cache);this.lastPersistedAt=Date.now();
+                        this.records=new Map(cache.topics.map(r=>[topicKey(r.topic),r]));
+                    }else {row.persistedObservedAt=prior.persistedObservedAt??prior.observedAt;this.records=next;}
                 });
                 this.tail = save.catch(() => {});
                 await save;

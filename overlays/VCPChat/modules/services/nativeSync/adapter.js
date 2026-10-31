@@ -9,6 +9,7 @@ const { identity, canonicalMessage, messageKey, messageHash, tombstoneHash, desc
 const verifiedContinuity=message=>message?._nativeSyncMetadata?validateEnvelope(message,message._nativeSyncMetadata).fields.continuity:undefined;
 // Older v2 receipts may have copied a raw top-level field even when their
 // envelope covered some other control. Version alone does not attest causality.
+const eventContinuity=e=>e?.payloadRef?e.causality:verifiedContinuity(e?.message);
 const acknowledgedContinuity=value=>value?.continuityVerified===true?value.continuity:undefined;
 
 function validatePullPage(result, cursor, limit) {
@@ -44,7 +45,8 @@ class NativeSyncAdapter {
         let loaded=false;
         try { adapter.state = JSON.parse(await fs.readFile(adapter.statePath, 'utf8'));loaded=true; }
         catch (error) { if(error instanceof SyntaxError)throw fail('INVALID_SYNC_STATE_JSON');if (error.code !== 'ENOENT') throw error; }
-        if (!adapter.state||typeof adapter.state!=='object'||adapter.state.deviceId !== adapter.deviceId || ![1,2].includes(adapter.state.version) || !Array.isArray(adapter.state.outbox) || !Number.isSafeInteger(adapter.state.cursor) || adapter.state.cursor < 0 || !adapter.state.acked) throw fail('INVALID_SYNC_STATE');
+        const loadedState=loaded?stable(adapter.state):null;
+        if (!adapter.state||typeof adapter.state!=='object'||adapter.state.deviceId !== adapter.deviceId || ![1,2,3].includes(adapter.state.version) || !Array.isArray(adapter.state.outbox) || !Number.isSafeInteger(adapter.state.cursor) || adapter.state.cursor < 0 || !adapter.state.acked) throw fail('INVALID_SYNC_STATE');
         if(!adapter.state.source&&options.source&&options.sourceAdoptionVerified===true)adapter.state.source=structuredClone(options.source);
         if(adapter.state.source&&options.sourceTransitionVerified&&JSON.stringify(adapter.state.source.binding)!==JSON.stringify(adapter.source?.binding)){
             const proof=adapter.source?.scopeTransition,scopes=require('./sourceScope'),prior=adapter.state.source.binding,next=adapter.source.binding,{scope:a,...x}=prior,{scope:b,...y}=next;
@@ -59,9 +61,19 @@ class NativeSyncAdapter {
             adapter.state={...adapter.state,version:2,format:'native-message-intents-v1',migration:{from:1,backup},localCommits:{},receipts:{},inbox:[],drift:{}};
             for(const op of adapter.state.outbox)if(op.action==='delete'){op.status='legacy-unverified';op.error={code:'LEGACY_DELETE_INTENT_UNVERIFIED'};}
         }
-        if(adapter.state.format!=='native-message-intents-v1'||!adapter.state.localCommits||!adapter.state.receipts||!Array.isArray(adapter.state.inbox)||adapter.state.inbox.length>1000||!adapter.state.drift)throw fail('INVALID_SYNC_STATE');
+        if(adapter.state.format!==(adapter.state.version===3?'native-message-intents-v2':'native-message-intents-v1')||!adapter.state.localCommits||!adapter.state.receipts||!Array.isArray(adapter.state.inbox)||!adapter.state.drift)throw fail('INVALID_SYNC_STATE');
         if(!loaded&&options.bootstrap)adapter.state.initialImport={id:randomUUID(),...structuredClone(options.bootstrap),preparedTopics:[]};
-        await adapter.persist(adapter.statePath,adapter.state);
+        if(adapter.state.version!==3){
+            const prior=structuredClone(adapter.state);
+            if(loaded&&JSON.parse(loadedState).version===2)await durableJson(adapter.statePath+'.v2-backup.'+sha256(loadedState).slice(0,16),JSON.parse(loadedState));
+            for(const row of prior.inbox){if(row.event.payloadRef)throw fail('INVALID_SYNC_STATE');adapter.validateEvent(row.event);}
+            if(prior.pending)adapter.validateEvent(prior.pending.event);
+            await adapter.pages.prepare(prior);prior.version=3;prior.format='native-message-intents-v2';
+            await adapter.persist(adapter.statePath,prior);adapter.state=prior;
+        }
+        await adapter.pages.validate(adapter.state);
+        if(loadedState!==null&&adapter.state.version===3&&stable(adapter.state)!==loadedState)await adapter.persist(adapter.statePath,adapter.state);
+        await adapter.pages.collect(adapter.state);
         adapter.queue.configureSync(adapter, event => adapter.observe(event));
         try { await adapter.recover(); }
         catch (error) { await adapter.recordDegradation(error); }
@@ -78,6 +90,7 @@ class NativeSyncAdapter {
         this.queue = queue; this.statePath = statePath; this.deviceId = deviceId;
         this.url = endpoint.origin; this.token = token; this.notify = notify; this.persist = persist;
         this.requestOverride = request; this.tail = Promise.resolve(); this.busy = false;
+        this.pages=new (require('./inboxPages').InboxPages)(statePath);
         this.degraded = null; this.notificationPending = new Map();
         this.topics = topics.map(d => ({ itemId: d.itemId, itemType: d.itemType || 'agent', topicId: d.topicId }));
         this.bindings = new Map();
@@ -219,15 +232,18 @@ class NativeSyncAdapter {
         const current = this.tail.catch(() => {}).then(async () => {
             const next = structuredClone(this.state);
             const result = await fn(next);
+            await this.pages.prepare(next);
+            const previous=this.state;
             try { await this.persist(this.statePath, next); }
             catch(error) {
                 // A rename may have succeeded before a later fsync failed.
                 // Reconcile the authoritative JSON before another transaction.
-                try { const disk=JSON.parse(await fs.readFile(this.statePath,'utf8'));if(disk.version===2&&disk.deviceId===this.deviceId&&JSON.stringify(disk.topics)===JSON.stringify(this.topics))this.state=disk; } catch {}
+                try { const disk=JSON.parse(await fs.readFile(this.statePath,'utf8'));if(disk.version===3&&disk.deviceId===this.deviceId&&JSON.stringify(disk.topics)===JSON.stringify(this.topics))this.state=disk; } catch {}
                 error.syncStatePersistenceFailure=true;
                 throw error;
             }
             this.state = next;
+            try{await this.pages.collect(next,previous);this.inboxCleanupError=null;}catch(e){this.inboxCleanupError=e.code||'INBOX_CLEANUP_FAILED';}
             return result;
         });
         this.tail = current;
@@ -341,7 +357,7 @@ class NativeSyncAdapter {
                 const event = d.syncEvent;
                 await this.transaction(next => {
                     const key = messageKey(event);
-                    const continuity=verifiedContinuity(event.message)||(event.action==='delete'?acknowledgedContinuity(next.acked[key]):undefined);
+                    const continuity=eventContinuity(event)||(event.action==='delete'?acknowledgedContinuity(next.acked[key]):undefined);
                     if (!next.acked[key] || next.acked[key].seq < event.seq) next.acked[key] = { hash: event.hash, deleted: event.action === 'delete', seq: event.seq,metadataVersion:event.message?._nativeSyncMetadata?.version||0,metadataHash:event.message?._nativeSyncMetadata?.hash||emptyHash(),continuity,continuityVerified:Boolean(continuity) };
                     if(d.syncAdvanceCursor!==false)next.cursor = Math.max(next.cursor, event.seq);
                     next.pending = null;
@@ -505,7 +521,7 @@ class NativeSyncAdapter {
         if(this.sourceBaselineBlocked(sourceDescriptor)||this.sourceInboundBlocked?.(sourceDescriptor)){
             if(this.sourceDeletionActive(sourceDescriptor)||!sourceProof?.initialImport||!this.sameEvent(sourceProof.event,event))return true;
         }
-        const key=messageKey(event),d=descriptor(event),relation=verifiedContinuity(event.message)||(event.action==='delete'?acknowledgedContinuity(this.state.acked[key]):undefined);
+        const key=messageKey(event),d=descriptor(event),relation=eventContinuity(event)||(event.action==='delete'?acknowledgedContinuity(this.state.acked[key]):undefined);
         const recovery=this.projectionRecoveryFor(d);
         if(recovery&&!this.sameEvent(recovery.event,event))return true;
         if(this.state.acked[key]?.seq>=event.seq)return false;
@@ -516,7 +532,7 @@ class NativeSyncAdapter {
         if(this.state.outbox.some(op=>messageKey(op)===key)||prior.some(x=>messageKey(x.event)===key))return true;
         if(relation?.dependsOnMessageIds?.some(id=>this.state.outbox.some(op=>this.sameTopic(op,d)&&op.msgId===id)||this.state.inbox.some(x=>x.event.seq<event.seq&&this.sameTopic(x.event,d)&&x.event.msgId===id)))return true;
         if(!relation?.known&&prior.length)return true;
-        if(this.state.inbox.some(x=>x.event.seq<event.seq&&related(verifiedContinuity(x.event.message))))return true;
+        if(this.state.inbox.some(x=>x.event.seq<event.seq&&related(eventContinuity(x.event))))return true;
         return false;
     }
     sameEvent(left,right) {
@@ -550,7 +566,7 @@ class NativeSyncAdapter {
         }
     }
     async applyRemote(event, recovering = false, advanceCursor = true, initialImport = false) {
-        event=this.validateEvent(event);
+        event=this.validateEvent(await this.pages.hydrate(event));
         const id = identity(event), d = descriptor(id);
         this.assertTopic(d);
         if (!Number.isSafeInteger(event.seq) || event.seq < 1 || !['upsert', 'delete'].includes(event.action)) throw fail('CORRUPT_EVENT');
@@ -598,8 +614,7 @@ class NativeSyncAdapter {
                 const result=await this.request(`/api/v1/sync/pull?after_seq=${this.state.cursor}&limit=${limit}`);
                 validatePullPage(result,this.state.cursor,limit);
                 result.events=result.events.map(event=>this.validateEvent(event));
-                await this.transaction(next=>{
-                    if(next.inbox.length+result.events.length>1000)throw fail('INBOUND_BUFFER_FULL');
+                if(result.events.length||result.nextSeq!==this.state.cursor)await this.transaction(next=>{
                     next.inbox.push(...result.events.map(event=>({event})));next.cursor=result.nextSeq;
                 });
                 await this.drainInbox();
@@ -609,7 +624,7 @@ class NativeSyncAdapter {
         }finally{this.busy=false;}
     }
     async synchronize() { await this.flush(); await this.pull(); }
-    diagnostics() { return { ...(this.sourceDiagnostics?{source:this.sourceDiagnostics()}:{}), degraded: this.degraded,lastTransportError:this.lastTransportError||null, configurationError:this.configurationError||null, attachmentError:this.attachmentError||null, cursor: this.state.cursor,receivedCursor:this.state.cursor,materializedThrough:this.state.inbox.length?Math.min(...this.state.inbox.map(x=>x.event.seq))-1:this.state.cursor,inboundBuffered:this.state.inbox.length,conflicts:this.state.outbox.filter(op=>op.status).map(op=>({opId:op.opId,msgId:op.msgId,code:op.error?.code,status:op.error?.status})),localCommits:Object.values(this.state.localCommits).map(c=>({id:c.id,source:c.source,stage:c.stage,code:c.error?.code})),receipts:Object.values(this.state.receipts),drift:this.state.drift,pending: Boolean(this.state.pending), outboxSize: this.state.outbox.length }; }
+    diagnostics() { return { ...(this.sourceDiagnostics?{source:this.sourceDiagnostics()}:{}), degraded: this.degraded,lastTransportError:this.lastTransportError||null, configurationError:this.configurationError||null, attachmentError:this.attachmentError||null, cursor: this.state.cursor,receivedCursor:this.state.cursor,materializedThrough:this.state.inbox.length?Math.min(...this.state.inbox.map(x=>x.event.seq))-1:this.state.cursor,inboundBuffered:this.state.inbox.length,conflicts:this.state.outbox.filter(op=>op.status).map(op=>({opId:op.opId,msgId:op.msgId,code:op.error?.code,status:op.error?.status})),localCommits:Object.values(this.state.localCommits).map(c=>({id:c.id,source:c.source,stage:c.stage,code:c.error?.code})),receipts:Object.values(this.state.receipts),drift:this.state.drift,pending: Boolean(this.state.pending),inboxCleanupError:this.inboxCleanupError||null, outboxSize: this.state.outbox.length }; }
     close() {
         if(this.closing)return this.closing;
         this.closing=(async()=>{

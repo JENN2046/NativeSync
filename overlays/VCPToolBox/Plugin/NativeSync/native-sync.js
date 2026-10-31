@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 let service = null, store = null, dataDir = null;
-let mobile = null;
+let mobile = null, quiescing = false;
 let mobileHostAuthority = null;
 const lifecycle = { initialized: 0, namespacedRegistrations: 0, compatibilityRegistrations: 0, shutdowns: 0 };
 const mounted = new WeakSet();
@@ -27,6 +27,7 @@ async function initialize(config = {}) {
     fs.mkdirSync(target, { recursive: true, mode: 0o700 });
     const dbPath = path.join(target, 'central.sqlite');
     if (fs.existsSync(dbPath) && (fs.lstatSync(dbPath).isSymbolicLink() || fs.statSync(dbPath).nlink > 1)) throw new Error('NATIVE_SYNC_DB_ALIAS');
+    quiescing=false;
     store = new CentralStore(dbPath); dataDir = target;
     service = createSyncHttpService(store); lifecycle.initialized++;
     try {
@@ -47,6 +48,7 @@ function dispatch(req, res) {
 }
 function registerApiRoutes(router) {
     router.use((req,res,next)=>{
+        if(quiescing&&req.method!=='GET')return res.status(503).json({error:{code:'HOST_DRAINING'}});
         if(req.url.startsWith('/source/')){
             if(!req.headers['x-nativesync-source'])return res.status(403).json({error:{code:'SOURCE_BINDING_REQUIRED'}});
             req.url=req.url.slice('/source'.length);
@@ -78,7 +80,8 @@ function registerApiRoutes(router) {
         if (!mobile) return res.status(503).json({error:{code:'MOBILE_DISABLED'}});
         if (!mobile.engine || typeof mobile.engine.list !== 'function' || !Array.isArray(mobile.topics)) return res.status(503).json({error:{code:'MOBILE_EXECUTION_UNAVAILABLE'}});
         const query = req.query, fields = ['ownerType','ownerId','topicId'];
-        if (!query || Object.keys(query).length !== fields.length || Object.keys(query).some(k=>!fields.includes(k)) || fields.some(k=>typeof query[k]!=='string')) return res.status(400).json({error:{code:'INVALID_EXECUTION_QUERY'}});
+        const paging=query?.version==='2',allowed=paging?[...fields,'version','mode','limit','cursor']:fields;
+        if (!query || (!paging&&Object.keys(query).length !== fields.length) || Object.keys(query).some(k=>!allowed.includes(k)) || fields.some(k=>typeof query[k]!=='string')) return res.status(400).json({error:{code:'INVALID_EXECUTION_QUERY'}});
         const requested = {ownerType:query.ownerType,ownerId:query.ownerId,topicId:query.topicId};
         try { require('./sync/protocol').identity({...requested,msgId:'_'}); }
         catch { return res.status(400).json({error:{code:'INVALID_EXECUTION_QUERY'}}); }
@@ -88,8 +91,9 @@ function registerApiRoutes(router) {
         try {
             // A desktop observation grants no mobile ownership and cannot
             // resume, cancel, or synthesize a native AgentAssistant task.
+            if(paging){const {ownerType,ownerId,topicId,...options}=query;return res.json({...mobile.engine.page(topic.key,null,options),topic:requested});}
             res.json({version:1,topic:requested,observedAt:Date.now(),executions:mobile.engine.list(topic.key,null)});
-        } catch { res.status(503).json({error:{code:'MOBILE_EXECUTION_UNAVAILABLE'}}); }
+        } catch(e) { res.status(e.status||503).json({error:{code:e.code||'MOBILE_EXECUTION_UNAVAILABLE'}}); }
     });
     router.get('/mobile/executions/:id/native-tasks/:nativeTaskId/result', async(req,res) => {
         res.set('Cache-Control','no-store');
@@ -117,6 +121,7 @@ function registerRoutes(app, _adminApiRouter, _config, _projectBasePath) {
 }
 async function shutdown() {
     if (!service) return;
+    beginDrain();
     const closing = service;
     service = null;
     await mobile?.close(); mobile = null;
@@ -127,11 +132,12 @@ function snapshot() {
 }
 function handleMobile(req,res) { if(!mobile)return res.status(503).json({error:{code:'MOBILE_DISABLED'}});return mobile.router(req,res,()=>res.status(404).end()); }
 function setExecutionEndpoint(value) { mobile?.engine.setEndpoint(value); }
-function beginDrain() { mobile?.beginDrain(); }
+function beginDrain() { quiescing=true;service?.beginDrain();mobile?.beginDrain(); }
+function drainStatus(){return {quiescing,sync:service?.snapshot(),execution:mobile?.engine.drainStatus()};}
 function setMobileHostAuthority(value) {
     if(!value?.agentManager||typeof value.agentManager.isAgent!=='function'||typeof value.agentManager.getAgentPrompt!=='function'||typeof value.verifyKey!=='function')throw new Error('INVALID_MOBILE_HOST_AUTHORITY');
     mobileHostAuthority=value;
     if(mobile){mobile.agentManager=value.agentManager;mobile.engine.agentManager=value.agentManager;mobile.connection.verifyKey=value.verifyKey;}
 }
 function mobileConnectionInfo(){return mobile?.connection.information() || {credentialExchangeAllowed:false};}
-module.exports = { initialize, registerApiRoutes, registerRoutes, shutdown, snapshot, handleMobile, setExecutionEndpoint, beginDrain, setMobileHostAuthority, mobileConnectionInfo };
+module.exports = { initialize, registerApiRoutes, registerRoutes, shutdown, snapshot, handleMobile, setExecutionEndpoint, beginDrain, drainStatus, setMobileHostAuthority, mobileConnectionInfo };

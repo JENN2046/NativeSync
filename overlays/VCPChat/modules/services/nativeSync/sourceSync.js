@@ -267,7 +267,11 @@ class SourceSync{
   }
  }
  diagnostics(){const plans=Object.values(this.state.plans).filter(p=>!this.deleted(p.descriptor));return {mode:'source',scopeMode:this.state.binding.scope?'limited':'full',importsPaused:this.paused,directoryPublicationError:this.directoryPublicationError||null,cleanupError:this.cleanupError||null,directoryErrors:this.errors,agents:this.directory?.agents.length??null,topics:this.directory?.topics.length??null,pendingImports:plans.filter(p=>p.stage!=='complete').length,completedImports:plans.filter(p=>p.stage==='complete').length,conflicts:plans.filter(p=>p.error).map(p=>({topic:wireTopic(p.descriptor),code:p.error.code})),pendingDirectory:Boolean(this.state.pendingCatalog),pendingDeletes:Object.values(this.state.deletions).filter(r=>!['published','aborted'].includes(r.stage)).length};}
- async report(){const d=this.diagnostics();await this.send(ROOT+'/progress',{body:{pendingImports:d.pendingImports,pendingOperations:this.adapter.state.outbox.length,conflicts:d.conflicts.length+this.adapter.state.outbox.filter(o=>o.status).length,directoryErrors:(this.directoryPublicationError?1:0)+this.errors.length+(this.directory?.topics.filter(t=>t.sourceState!=='available').length||0),attachmentsPending:this.adapter.attachmentError?null:(this.adapter.attachmentSkipped??null)}});}
+ async report(){
+  const d=this.diagnostics(),body={pendingImports:d.pendingImports,pendingOperations:this.adapter.state.outbox.length,conflicts:d.conflicts.length+this.adapter.state.outbox.filter(o=>o.status).length,directoryErrors:(this.directoryPublicationError?1:0)+this.errors.length+(this.directory?.topics.filter(t=>t.sourceState!=='available').length||0),attachmentsPending:this.adapter.attachmentError?null:(this.adapter.attachmentSkipped??null)};
+  const hash=sha256(stable(body)),now=Date.now();if(this.reportHash===hash&&now-this.reportedAt<30000)return;
+  await this.send(ROOT+'/progress',{body});this.reportHash=hash;this.reportedAt=now;
+ }
  async beginDelete(target){
   if(!permits(this.state.binding.scope,target,!target.topicId))return null;
   this.assertScope(target,!target.topicId);if(this.state.binding.scope&&!target.topicId)throw fail('LIMITED_SOURCE_OWNER_DELETE_REQUIRES_TOPIC');if(this.paused)throw fail('SOURCE_IMPORT_PAUSED');

@@ -18,6 +18,10 @@ function registerNativeSyncQueries({ipcMain,getRuntime}) {
     };
     try {
         register('native-sync:executions',async (_event,itemId,itemType,topicId,refresh=true)=>{
+            if(refresh&&typeof refresh==='object'&&!Array.isArray(refresh)){
+                const runtime=getRuntime();if(!runtime?.getExecutionPage)throw Object.assign(Error(),{code:'EXECUTION_PAGINATION_UNAVAILABLE'});
+                return {success:true,...await runtime.getExecutionPage({itemId,itemType,topicId},refresh)};
+            }
             if (typeof refresh !== 'boolean') throw Object.assign(Error('INVALID_EXECUTION_QUERY'),{code:'INVALID_EXECUTION_QUERY'});
             const runtime=getRuntime();
             if (!runtime) return {success:true,enabled:false};

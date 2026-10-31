@@ -1,11 +1,13 @@
 <script setup>
 import {ref,computed,onMounted,onUnmounted,nextTick} from 'vue';
+import {createExecutionPager} from './executionPages.js';
 import {readDirectoryPages,readHistoryBaseline} from './directoryHistory.js';
 import {createAttachmentStatusPager} from './attachmentStatus.js';
 import {uploadAttachment} from './attachmentUpload.js';
 import {createSubmissionRecovery,validSessionRecovery,SUBMISSION_STORAGE_KEY} from './submissionRecovery.js';
 import {projectNativeWork,verifyNativeResult,nativeTaskLabels,toolLabels,resultHash} from './nativeTasks.js';
 const attachmentPager=createAttachmentStatusPager();
+const executionPager=createExecutionPager(),jobsInfo=ref(null),jobsError=ref('');
 const attachmentStates=ref({}),reviewChecks=ref({}),invitedAgent=ref('');
 // Unsent drafts belong to this page and one entry/owner/topic. They never enter
 // the durable submission store until the existing explicit send path is used.
@@ -62,7 +64,7 @@ async function api(route,body,requestHeaders={}){
  const r=await fetch('/mobile/api/'+route,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',redirect:'error',headers:body?{'Content-Type':'application/json',...requestHeaders}:{},body:body?JSON.stringify(body):undefined});
  const result=await r.json();if(!r.ok){if(r.status===401&&result.error?.code==='PAIR_REQUIRED'&&requestEpoch===authEpoch){paired.value=false;invalidateSession();notice.value=errors.PAIR_REQUIRED+'；本地待确认提交继续保留。';}throw Object.assign(Error(errors[result.error?.code]||'请求未完成，请检查连接'),{code:result.error?.code,status:r.status});}return result;
 }
-function resetHistory(){attachmentPager.reset();baselineReady=false;baselineRequestId='';switchDraft();closeNativeResult();invitedAgent.value='';reviewChecks.value={};attachmentStates.value={};generation++;submissionNoticeHeld=false;historyKey='';cursor=0;historyRows=new Map();messages.value=[];jobs.value=[];recoveryDetail.value='';acceptedReceipt.value=null;loadRecovery();}
+function resetHistory(){executionPager.reset();jobsInfo.value=null;jobsError.value='';attachmentPager.reset();baselineReady=false;baselineRequestId='';switchDraft();closeNativeResult();invitedAgent.value='';reviewChecks.value={};attachmentStates.value={};generation++;submissionNoticeHeld=false;historyKey='';cursor=0;historyRows=new Map();messages.value=[];jobs.value=[];recoveryDetail.value='';acceptedReceipt.value=null;loadRecovery();}
 async function setDirectory(result,{initial=false,selectedTopic=null,adjustSelection=true}={}){
  const previous=selected.value,previousAgent=agentId.value;
  topics.value=result.topics;directoryAgents.value=Array.isArray(result.agents)?result.agents:null;sourceProgress.value=result.sourceProgress||[];
@@ -111,18 +113,21 @@ async function refresh(){
   const current=()=>selected.value===key&&epoch===generation&&sessionEpoch===authEpoch;
   if(currentTopic.value?.historyProtocol===2){
    if(!baselineReady){baselineRequestId ||= crypto.randomUUID();const baseline=await readHistoryBaseline(api,key,baselineRequestId,current);if(!baseline||!current())return;historyRows=baseline.rows;cursor=baseline.cursor;baselineReady=true;}
-   do{result=await api('conversations/'+encodeURIComponent(key)+'/events?after='+cursor+'&limit=100');if(!current())return;
+   do{result=await api('conversations/'+encodeURIComponent(key)+'/events?after='+cursor+'&limit=100'+(currentTopic.value?.executionProtocol===2?'&executions=paged':''));if(!current())return;
     if(!Array.isArray(result.events)||!Number.isSafeInteger(result.nextSeq)||result.nextSeq<cursor||result.nextSeq>result.headSeq||(result.hasMore&&result.nextSeq===cursor))throw Error('历史增量游标无效');
     let last=cursor;for(const e of result.events){if(!Number.isSafeInteger(e.seq)||e.seq<=last||e.seq>result.nextSeq)throw Error('历史增量顺序无效');last=e.seq;if(e.action==='delete')historyRows.delete(e.msgId);else if(e.action==='upsert'&&e.message?.id===e.msgId)historyRows.set(e.msgId,e.message);else throw Error('历史增量身份无效');}cursor=result.nextSeq;
    }while(result.hasMore);
-  }else do{result=await api('conversations/'+encodeURIComponent(key)+'?after='+cursor);if(!current())return;for(const row of result.messages){if(row.deleted)historyRows.delete(row.id);else historyRows.set(row.id,row.message);}cursor=result.next;}while(result.hasMore);
-  messages.value=[...historyRows.values()].sort((a,b)=>a.timestamp-b.timestamp);jobs.value=result.executions;online.value=true;if(currentTopic.value){currentTopic.value.messageCount=messages.value.length;if(result.topicState)Object.assign(currentTopic.value,result.topicState);}
-  if(context&&loadRecovery()){const pending=submissionStore.current({entryId:context.recovery.entryId,topicKey:key});if(pending)await reconcileSubmission(pending,result.executions,context);}
+  }else do{result=await api('conversations/'+encodeURIComponent(key)+'?after='+cursor+(currentTopic.value?.executionProtocol===2?'&executions=paged':''));if(!current())return;for(const row of result.messages){if(row.deleted)historyRows.delete(row.id);else historyRows.set(row.id,row.message);}cursor=result.next;}while(result.hasMore);
+  messages.value=[...historyRows.values()].sort((a,b)=>a.timestamp-b.timestamp);jobs.value=result.executions||jobs.value;online.value=true;if(currentTopic.value){currentTopic.value.messageCount=messages.value.length;if(result.topicState)Object.assign(currentTopic.value,result.topicState);}
+  if(currentTopic.value?.executionProtocol===2){try{const page=await executionPager.refresh(api,key,current);if(!page||!current())return;result.executions=page.rows;jobs.value=page.rows;jobsInfo.value=page;jobsError.value='';}catch(e){jobsError.value='执行状态暂未更新，保留最近结果：'+e.message;}}
+  if(context&&loadRecovery()){const pending=submissionStore.current({entryId:context.recovery.entryId,topicKey:key});if(pending){const exact=currentTopic.value?.executionProtocol===2?await api('conversations/'+encodeURIComponent(key)+'/execution-request?'+new URLSearchParams({requestId:pending.requestId})):result;await reconcileSubmission(pending,exact.executions,context);}}
   if(selected.value!==key||epoch!==generation||sessionEpoch!==authEpoch)return;
   if(currentTopic.value?.attachmentsEnabled){const batch=attachmentPager.select(messages.value);attachmentStates.value=batch.retained;if(batch.ids.length){const status=await api('conversations/'+encodeURIComponent(key)+'/attachments/status',{messageIds:batch.ids});if(selected.value!==key||epoch!==generation||sessionEpoch!==authEpoch)return;attachmentStates.value=attachmentPager.merge(batch,status.attachments,messages.value);}}
   if(!busy.value&&!submissionNoticeHeld)notice.value=recoveryBlocker.value||(pendingSubmission.value?'本地提交仍待核对，未发起新请求。':'中央会话已更新');await nextTick();if(stick&&history.value&&selected.value===key&&epoch===generation)history.value.scrollTop=history.value.scrollHeight;
  }catch(e){if(selected.value===key&&epoch===generation&&sessionEpoch===authEpoch){online.value=false;if(!submissionNoticeHeld){notice.value=recoveryMessage(e);if(e.code?.startsWith('SUBMISSION_'))submissionNoticeHeld=true;}}}finally{refreshing=false;}
 }
+async function nextExecutions(mode){executionPager.next(mode);await refresh();}
+async function latestExecutions(){executionPager.reset();await refresh();}
 async function reconcileSubmission(record,executions,context){
  const result=await submissionStore.inspect(record,executions,context.recovery);
  if(result.state==='confirmed'){
@@ -191,7 +196,7 @@ async function retry(){
   await submissionStore.verify(record);
   // Executions are not paginated by the history cursor. Always query the
   // authorized topic; cached jobs and the latest own job cannot identify it.
-  const response=await api('conversations/'+encodeURIComponent(record.topicKey)+'?after=0');
+  const response=await api('conversations/'+encodeURIComponent(record.topicKey)+(currentTopic.value?.executionProtocol===2?'/execution-request?'+new URLSearchParams({requestId:record.requestId}):'?after=0'));
   if(!sameView(context))return;
   const result=await reconcileSubmission(record,response.executions,context);
   if(result.state==='confirmed'){if(sameView(context)){notice.value='已核对云端接受记录，未重新发送。';await refresh();}return;}
@@ -251,6 +256,8 @@ onUnmounted(()=>{clearInterval(timer);window.removeEventListener('pagehide',clea
    <section ref="history" id="history" aria-label="聊天历史"><div class="start">会话 · 服务端持久保存</div><article v-for="m in messages" :key="m.id" class="message" :class="m.role" :data-message-id="m.id"><small>{{m.role==='user'?'你':(m.name||currentTopic?.agentName||'Agent')}}</small><div class="bubble">{{typeof m.content==='string'?m.content:'此消息包含非文本内容，请在桌面查看'}}</div><div v-if="m.attachments?.length" class="attachments"><div v-for="a in m.attachments" :key="a.id" class="attachment"><template v-if="attachmentStates[m.id+'/'+a.id]?.state==='available'"><img v-if="attachmentStates[m.id+'/'+a.id]?.type?.startsWith('image/')" :src="attachmentUrl(m,a)" :alt="a.name||'图片附件'" loading="lazy"><a :href="attachmentUrl(m,a)" target="_blank" rel="noopener">{{a.name||'查看附件'}}</a><details v-if="a.extractedText"><summary>查看文本</summary><pre>{{a.extractedText}}</pre></details></template><span v-else>{{a.name||'附件'}} · {{attachmentStates[m.id+'/'+a.id]?.state==='corrupt'?'完整性校验失败':'附件暂未同步或正在确认'}}</span></div></div></article><p v-if="!messages.length" class="empty">{{currentTopic?.historyReady===false?'正在等待电脑同步所选历史，完成后即可接续。':'还没有消息，发送一条开始会话。'}}</p></section>
    <section v-if="recoveryBlocker||pendingSubmission||acceptedReceipt||recoveryRecords.length" id="submission-recovery" class="submission-recovery" aria-label="提交确认状态" aria-live="polite"><p v-if="recoveryBlocker" role="alert">{{recoveryBlocker}}</p><div v-if="pendingSubmission" id="pending-submission" :data-request-id="pendingSubmission.requestId"><strong>本地已保存 · 云端接受尚待确认</strong><p>{{pendingSubmission.kind==='invitation'?'邀请成员：'+pendingSubmission.payload.agentId:pendingSubmission.payload.text.slice(0,120)||'附件消息'}}</p><small>提交 {{pendingSubmission.requestId}}<template v-if="pendingSubmission.payload.attachments?.length"> · {{pendingSubmission.payload.attachments.length}} 个附件</template></small><p id="submission-recovery-detail">{{recoveryDetail||'原提交已保留。刷新或重连只核对云端记录，不会自动发送。'}}</p></div><p v-else-if="acceptedReceipt" id="accepted-submission" :data-request-id="acceptedReceipt.requestId"><strong>云端已接受</strong> · 提交 {{acceptedReceipt.requestId}}</p><small v-if="recoveryRecords.length>(pendingSubmission?1:0)">此设备另有 {{recoveryRecords.length-(pendingSubmission?1:0)}} 条待确认提交，返回对应入口和话题可核对。</small></section>
    <section class="executions" aria-label="原生执行状态">
+    <p v-if="jobsError" role="status">{{jobsError}}</p>
+    <div v-if="jobsInfo" class="execution-pages"><small>本页 {{jobs.length}} 项 · 历史范围共 {{jobsInfo.total}} 项 · 待处理／核对范围 {{jobsInfo.attentionTotal}} 项</small><button v-if="jobsInfo.moreAttention" @click="nextExecutions('attention')" :disabled="busy">下一页待处理／核对</button><button v-if="jobsInfo.moreRecent" @click="nextExecutions('recent')" :disabled="busy">更早任务</button><button v-if="jobsInfo.historyPage" @click="latestExecutions" :disabled="busy">返回最新任务</button></div>
     <small v-if="jobs.length">云端已接受 · {{online?'本次查询的原生执行状态':'最近已知状态，联网后重新核对'}}</small>
     <article v-for="j in displayJobs" :key="j.id" class="execution-job" :data-exec-id="j.id" :data-state="j.state">
      <div class="execution-row"><span>{{errors[j.errorCode]?errors[j.errorCode]:(labels[j.state]||j.state)}}<template v-if="j.steps"> · {{j.steps.filter(s=>s.state==='completed').length}} / {{j.stepCount}} 位成员</template></span><button v-if="j.own&&['queued','running','waiting_approval'].includes(j.state)" :data-cancel-id="j.id" @click="cancel(j.id)">{{j.steps?'取消剩余接力':'请求取消本次回复'}}</button></div>

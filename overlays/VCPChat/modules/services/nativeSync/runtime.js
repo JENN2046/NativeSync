@@ -133,6 +133,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
             if (!executionStatus) return { enabled: false };
             return withLocal(refresh ? await executionStatus.refresh(d) : executionStatus.read(d));
         },
+        async getExecutionPage(d,options={}){if(stopped||!executionStatus)throw fail('SYNC_BRIDGE_CLOSED');return executionStatus.page(d,options);},
         async getNativeTaskResult(d, executionId, nativeTaskId) {
             if (stopped) throw fail('SYNC_BRIDGE_CLOSED');
             if (!executionStatus) throw fail('NATIVE_TASK_RESULT_UNAVAILABLE');

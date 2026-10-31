@@ -1,0 +1,85 @@
+{
+  "baseline": "f2a9d1e97b7de945c94f495b7a84a44f40727881",
+  "stateFormat": {
+    "version": 3,
+    "format": "native-message-intents-v2",
+    "oldReadersReject": true
+  },
+  "files": [
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/adapter.js",
+      "baselineSha256": "fd058b885a54bfd37f0556f47a7bf47cd7c2fa88a2ab5b808da6555bd78835f6",
+      "candidateSha256": "8400b4f0530233add1a0c58578f2f838c2377b12ad52d53c48acd0de8b5b120e"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/executionStatus.js",
+      "baselineSha256": "9c8607af4646b07c1c73718227d94bea97e4d2664e71a1bf60d1f8f15ff97a02",
+      "candidateSha256": "7f677b373b41da8603868ee71772b19d7657eb992b56486df714120002dc6b0c"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/inboxPages.js",
+      "baselineSha256": null,
+      "candidateSha256": "9bd62d14ff30d97fad41de8797b6c972a0f8764f4aca5477c5832af9d0bb686a"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/localAttachment.js",
+      "baselineSha256": "312b946f526fe12cda75b34f3f6cfd75101476813fd3abf85f8768bd5208ea81",
+      "candidateSha256": "00309b1e6d1590060eef38553466563c585bc317f2287f179280402e666f880e"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/queries.js",
+      "baselineSha256": "e21c2f18228e545f7043b2508a72d935bbf90e67618f7b0ba03a6db385fdb669",
+      "candidateSha256": "4c2ebb43871dede5f20678c6256536a4c70ef992921f79805c9afff02a41db50"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/runtime.js",
+      "baselineSha256": "a544d3543bb96e47f762bb3252c3404eb8d417150707bc47af7941303c3f7482",
+      "candidateSha256": "72ea9ad5293d404d8fa563b30ba278f2fd046976f869922c90c65e01c67d834e"
+    },
+    {
+      "path": "overlays/VCPChat/modules/services/nativeSync/sourceSync.js",
+      "baselineSha256": "ba2fb594c9f0764b50a64640466074d7ad70807d4f2760623cf5a3c6e3991379",
+      "candidateSha256": "69503326689481d06c07c4cf5be16f6cd579c3d620115539bdc60831fa1d03da"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "baselineSha256": "696b31da32b0e441fae8ad2f78f4f64dad9c1b1dea814cd39b988545d0e492ca",
+      "candidateSha256": "13afe4ce6e5c71a69c4b09e5136a16b861ec7879755a808ed555b44989530eb1"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/executionPages.js",
+      "baselineSha256": null,
+      "candidateSha256": "5f8d7eee0f491e358866f134ddf569ff661585f7c74544debfa5ca4bbb73fbd4"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/groupTurn.js",
+      "baselineSha256": "002c41cbc3b92567f3768514109d9c8490264bbc732818fb51e3c7370b4cf2cf",
+      "candidateSha256": "7fd89ebe16e2cf843ea4a07d29cb3c4f44dd0cf33384615a7e9bc97d4da14324"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "baselineSha256": "4c117edc6827b4e1b5366890f2eb31f6e4594915d6b57801b19e0ae1feff4df6",
+      "candidateSha256": "94b58cdbfcde31f169d39370edb19a3a64f9536ee7523d8cc2cba2c548547749"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/native-sync.js",
+      "baselineSha256": "6e2afb6402cd73f98a922cc514fe9ed176dc082d8df8feba239e0233c515592c",
+      "candidateSha256": "f84d2cda41ef8426c5dab058b622844d8b54b4b700a98125a4080c8e7cdd0f32"
+    },
+    {
+      "path": "overlays/VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "baselineSha256": "5fe1190232f78c246f0e4c889b802f6b2f497019b5fc8400a6bb853cf356cf3c",
+      "candidateSha256": "1a790414a96b05880113d38eb4a647b9abc2efcab28ab5738aed2805a37055ba"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/App.vue",
+      "baselineSha256": "5f266e3986f90c66a64f222b23486e8d76d6700a3445d423ff7012d54fb7d33f",
+      "candidateSha256": "5031e8d9b1b670396dcdbf6d2f5629b3c1087479f34ef20db190542916acc664"
+    },
+    {
+      "path": "overlays/VCPToolBox/apps/mobile/src/executionPages.js",
+      "baselineSha256": null,
+      "candidateSha256": "76eed4d99aaa3334424257bf118fb769008d3b896b86e3ac392975bedd0a32a4"
+    }
+  ]
+}

@@ -53,6 +53,11 @@ class MobilePortal {
             next();
         }, express.json({ limit: '128kb', strict: true }));
         this.router.get('/api/connection', (_req,res) => res.json(this.connection.information()));
+        this.router.use('/api',(req,res,next)=>{
+            const replay=/^\/conversations\/[^/]+\/(messages|invitations)$/.test(req.path);
+            if(this.engine.quiescing&&req.method!=='GET'&&!replay&&!/^\/executions\/[^/]+\/cancel$/.test(req.path))return next(error('HOST_DRAINING',503));
+            next();
+        });
         this.router.post('/api/connection/test', (req,res,next) => { try { res.json(this.connection.test(req.body?.serverUrl)); } catch(e) { next(e); } });
         this.router.post('/api/connection/authenticate', async (req,res,next) => {
             try {
@@ -87,10 +92,12 @@ class MobilePortal {
             try{const topic=this.authorize(req);if(!this.sourceCatalog)throw error('SOURCE_PROTOCOL_UNAVAILABLE',409);if(!req.body||Object.keys(req.body).some(k=>k!=='requestId'))throw error('INVALID_CURSOR');res.json(this.sourceCatalog.beginMobile(req.mobileSession.id,topic,req.body.requestId));}catch(e){next(e);}
         });
         this.router.get('/api/conversations/:key/baseline/:id',(req,res,next)=>{
-            try{const topic=this.authorize(req);if(!this.sourceCatalog)throw error('SOURCE_PROTOCOL_UNAVAILABLE',409);if(Object.keys(req.query).some(k=>!['after','limit'].includes(k)))throw error('INVALID_CURSOR');res.json(this.sourceCatalog.mobilePage(req.mobileSession.id,topic,req.params.id,Number(req.query.after||0),Number(req.query.limit||100)));}catch(e){next(e);}
+            try{const topic=this.authorize(req);if(!this.sourceCatalog)throw error('SOURCE_PROTOCOL_UNAVAILABLE',409);if(Object.keys(req.query).some(k=>!['after','limit','executions'].includes(k)))throw error('INVALID_CURSOR');res.json(this.sourceCatalog.mobilePage(req.mobileSession.id,topic,req.params.id,Number(req.query.after||0),Number(req.query.limit||100)));}catch(e){next(e);}
         });
+        this.router.get('/api/conversations/:key/executions',(req,res,next)=>{try{const topic=this.authorize(req);res.json(this.engine.page(topic.key,req.mobileSession.id,req.query));}catch(e){next(e);}});
+        this.router.get('/api/conversations/:key/execution-request',(req,res,next)=>{try{const topic=this.authorize(req);if(Object.keys(req.query).some(k=>k!=='requestId'))throw error('INVALID_EXECUTION_QUERY');res.json(this.engine.request(topic.key,req.mobileSession.id,req.query.requestId));}catch(e){next(e);}});
         this.router.get('/api/conversations/:key/events',(req,res,next)=>{
-            try{const topic=this.authorize(req);if(Object.keys(req.query).some(k=>!['after','limit'].includes(k)))throw error('INVALID_CURSOR');const result=this.store.pull(Number(req.query.after||0),Number(req.query.limit||100),[JSON.stringify([topic.ownerType,topic.ownerId,topic.topicId])]);const state=this.catalog(req.mobileSession).find(t=>t.key===topic.key);res.json({...result,topic:{ownerType:topic.ownerType,ownerId:topic.ownerId,topicId:topic.topicId},executions:this.engine.list(topic.key,req.mobileSession.id),topicState:state});}catch(e){next(e);}
+            try{const topic=this.authorize(req);if(Object.keys(req.query).some(k=>!['after','limit','executions'].includes(k)))throw error('INVALID_CURSOR');const result=this.store.pull(Number(req.query.after||0),Number(req.query.limit||100),[JSON.stringify([topic.ownerType,topic.ownerId,topic.topicId])]);const state=this.catalog(req.mobileSession).find(t=>t.key===topic.key);res.json({...result,topic:{ownerType:topic.ownerType,ownerId:topic.ownerId,topicId:topic.topicId},...(req.query.executions==='paged'?{executionProtocol:2}:{executions:this.engine.list(topic.key,req.mobileSession.id)}),topicState:state});}catch(e){next(e);}
         });
         this.router.get('/api/conversations/:key', (req,res,next) => {
             try {
@@ -99,7 +106,7 @@ class MobilePortal {
                 const rows = this.db.prepare('SELECT last_seq AS seq,message_json,deleted,msg_id AS id,metadata_version,metadata_hash FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND last_seq>? ORDER BY last_seq LIMIT 201').all(topic.ownerType,topic.ownerId,topic.topicId,after);
                 const page = rows.slice(0,200);
                 const ready=historyReady(this.db,topic);
-                res.json({ messages: page.map(r=>({seq:r.seq,id:r.id,deleted:Boolean(r.deleted),message:this.store.projectMessage(r)})), next:page.at(-1)?.seq??after, hasMore:rows.length>200, executions:this.engine.list(topic.key,req.mobileSession.id),topicState:{historyReady:ready,executable:this.catalog(req.mobileSession).find(t=>t.key===topic.key).executable,unavailableReason:this.catalog(req.mobileSession).find(t=>t.key===topic.key).unavailableReason,...this.engine.configs.public(topic.key)} });
+                res.json({ messages: page.map(r=>({seq:r.seq,id:r.id,deleted:Boolean(r.deleted),message:this.store.projectMessage(r)})), next:page.at(-1)?.seq??after, hasMore:rows.length>200, ...(req.query.executions==='paged'?{executionProtocol:2}:{executions:this.engine.list(topic.key,req.mobileSession.id)}),topicState:{historyReady:ready,executable:this.catalog(req.mobileSession).find(t=>t.key===topic.key).executable,unavailableReason:this.catalog(req.mobileSession).find(t=>t.key===topic.key).unavailableReason,...this.engine.configs.public(topic.key)} });
             } catch(e) { next(e); }
         });
         this.router.post('/api/conversations/:key/messages', (req,res,next) => {
@@ -150,7 +157,7 @@ class MobilePortal {
             try{if(t.ownerType==='group'){const snapshot=this.engine.configs.snapshot(t);if(!snapshot)reason='EXECUTION_CONFIG_REQUIRED';else if(!['sequential','naturerandom','invite_only'].includes(snapshot.group.mode))reason='GROUP_MODE_REQUIRES_DESKTOP';else available=true;}
             else {available=Boolean(t.agentAlias&&(published.model||t.model)&&this.agentManager.isAgent(t.agentAlias)&&(!this.engine.configs.required||this.engine.configs.snapshot(t)));reason=this.engine.configs.required&&!published.configVersion?'EXECUTION_CONFIG_REQUIRED':'SERVER_AGENT_NOT_CONFIGURED';}}catch(e){reason=e.code||'CONFIG_SNAPSHOT_CORRUPT';}
             if(!ready){available=false;reason='HISTORY_IMPORT_PENDING';}
-            return {key:t.key,ownerId:t.ownerId,ownerType:t.ownerType,topicId:t.topicId,historyProtocol:this.sourceCatalog?2:1,...(t.sourceId?{sourceId:t.sourceId,archived:Boolean(t.archived),sourceState:t.sourceState||'available'}:{}),agentName:metadata.agentName||t.agentName||t.ownerId,topicName:metadata.topicName||t.topicName||t.topicId,avatar:metadata.avatar||null,updatedAt:metadata.updatedAt||null,model:t.model||null,historyReady:ready,executable:available,unavailableReason:available?null:reason,attachmentsEnabled:Boolean(this.attachments),...published,syncStatus:ready?(t.sourceId?'history-ready':'central'):'initial-import-pending',...this.db.prepare('SELECT count(*) AS messageCount,coalesce(max(last_seq),0) AS seq FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND deleted=0').get(t.ownerType,t.ownerId,t.topicId)};
+            return {key:t.key,ownerId:t.ownerId,ownerType:t.ownerType,topicId:t.topicId,historyProtocol:this.sourceCatalog?2:1,executionProtocol:2,...(t.sourceId?{sourceId:t.sourceId,archived:Boolean(t.archived),sourceState:t.sourceState||'available'}:{}),agentName:metadata.agentName||t.agentName||t.ownerId,topicName:metadata.topicName||t.topicName||t.topicId,avatar:metadata.avatar||null,updatedAt:metadata.updatedAt||null,model:t.model||null,historyReady:ready,executable:available,unavailableReason:available?null:reason,attachmentsEnabled:Boolean(this.attachments),...published,syncStatus:ready?(t.sourceId?'history-ready':'central'):'initial-import-pending',...this.db.prepare('SELECT count(*) AS messageCount,coalesce(max(last_seq),0) AS seq FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND deleted=0').get(t.ownerType,t.ownerId,t.topicId)};
         });
     }
     agents(session) {
@@ -215,6 +222,7 @@ class MobilePortal {
         res.setHeader('Set-Cookie',`${cookieName}=${token}; Path=/mobile; HttpOnly; Secure; SameSite=Strict; Max-Age=${this.sessionSeconds}`);res.json({authenticated:true,server:this.connection.information()});
     }
     createPairing(options={},requestScope={}) {
+        if(this.engine.quiescing)throw error('HOST_DRAINING',503);
         if(!options||Object.keys(options).some(k=>!['scopeMode','sourceId','snapshot'].includes(k)))throw error('INVALID_PAIRING_SCOPE');
         if(options.snapshot!==undefined&&(typeof options.snapshot!=='boolean'||options.scopeMode!=='source'))throw error('INVALID_PAIRING_SCOPE');
         let scopes=this.staticTopics.filter(t=>requestScope.topics===undefined||requestScope.topics.includes(JSON.stringify([t.ownerType,t.ownerId,t.topicId]))).map(t=>t.key);
@@ -248,7 +256,7 @@ class MobilePortal {
         res.setHeader('Set-Cookie',`${cookieName}=${token}; Path=/mobile; HttpOnly; Secure; SameSite=Strict; Max-Age=${this.sessionSeconds}`);
         res.json({authenticated:true});
     }
-    beginDrain(){this.engine.beginDrain();}
+    beginDrain(){this.engine.beginDrain();if(this.attachments)this.attachments.closing=true;}
     async close(){await this.engine.close();await this.attachments?.close();}
     snapshot(){return {executions:this.engine.snapshot(),sessionCount:this.db.prepare('SELECT count(*) AS n FROM mobile_sessions').get().n};}
 }

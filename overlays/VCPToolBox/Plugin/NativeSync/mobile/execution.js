@@ -21,7 +21,7 @@ class ConversationExecution {
         this.store = store; this.db = store.db; this.topics = new Map(topics.map(t => [t.key, t]));
         this.agentManager = agentManager; this.startDelayMs = startDelayMs; this.fault = fault;
         this.configs = new (require('./executionConfigs').ExecutionConfigs)(this.db, topics, agentManager, configRequired);
-        this.active = new Map(); this.draining = false; this.endpoint = null;
+        this.active = new Map(); this.quiescing = false; this.draining = false; this.endpoint = null;
         this.maxConcurrency = maxConcurrency; this.runningTopics = new Set(); this.inFlight = new Set();
         if(!Number.isSafeInteger(groupIdleTimeoutMs)||groupIdleTimeoutMs<1000||groupIdleTimeoutMs>300000)throw error('INVALID_GROUP_IDLE_TIMEOUT');
         this.executionTimeoutMs = executionTimeoutMs;this.groupIdleTimeoutMs=groupIdleTimeoutMs;
@@ -44,6 +44,7 @@ class ConversationExecution {
         if (!executionColumns.some(c=>c.name==='request_dispatched')) this.db.exec('ALTER TABLE mobile_executions ADD COLUMN request_dispatched INTEGER');
         require('./groupTurn').schema(this);
         this.nativeTasks = new (require('./nativeTasks').NativeTaskLinks)(this);
+        this.db.exec('CREATE INDEX IF NOT EXISTS idx_mobile_execution_topic ON mobile_executions(topic_key); CREATE INDEX IF NOT EXISTS idx_mobile_execution_request ON mobile_executions(topic_key,request_id)');
         this.recover();
         this.timer = setInterval(() => this.tick(), 100); this.timer.unref();
     }
@@ -61,7 +62,18 @@ class ConversationExecution {
         const recovery = executionRecovery(row);
         return { id: row.id, topicKey: row.topic_key, requestId: row.request_id, userMessageId: row.user_message_id, state: row.state, attempts: row.attempts, replyMessageId: row.reply_message_id, errorCode: row.error_code, configVersion:config?.version??null,configHash:config?.hash??null,createdAt: row.created_at, updatedAt: row.updated_at, own: row.session_id === sessionId,reviewResolved:Boolean(row.review_resolved),nativeTasks:this.nativeTasks.list(row.id),toolInvocations:this.nativeTasks.invocations(row.id),...(require('./groupTurn').isGroup(row)?require('./groupTurn').publicState(this,row):{}),...(recovery?{recovery}:{}),...(row.session_id===sessionId&&row.request_payload?{submission:JSON.parse(row.request_payload)}:{}) };
     }
-    list(topicKey, sessionId) { return this.db.prepare('SELECT * FROM mobile_executions WHERE topic_key=? ORDER BY created_at').all(topicKey).map(r => this.public(r, sessionId)); }
+    list(topicKey, sessionId) {
+        const rows=this.db.prepare('SELECT * FROM mobile_executions WHERE topic_key=? ORDER BY created_at LIMIT 10001').all(topicKey);
+        if(rows.length>10000)throw error('EXECUTION_PAGINATION_REQUIRED',409);return rows.map(r=>this.public(r,sessionId));
+    }
+    page(topicKey,sessionId,query){return require('./executionPages').executionPage(this,topicKey,sessionId,query);}
+    request(topicKey,sessionId,requestId){
+        if(typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{8,80}$/.test(requestId))throw error('INVALID_EXECUTION_QUERY');
+        // Topic read authority survives session rotation. Return at most two
+        // matches so recovery can refuse ambiguity rather than invent absence.
+        const rows=this.db.prepare('SELECT * FROM mobile_executions WHERE topic_key=? AND request_id=? ORDER BY rowid DESC LIMIT 2').all(topicKey,requestId);
+        return {executions:rows.map(row=>this.public(row,sessionId))};
+    }
     accept(sessionId, { topicKey, requestId, text, attachments = [] }) {
         if(!Array.isArray(attachments))throw error('INVALID_ATTACHMENT_SUBMISSION');
         const topic = this.topics.get(topicKey);
@@ -75,9 +87,10 @@ class ConversationExecution {
         const prior = this.get(id);
         if (prior) {
             if (prior.request_hash !== requestHash) throw error('REQUEST_ID_REUSED', 409);
-            if (['preparing', 'publishing'].includes(prior.state)) this.completeIntent(prior);
+            if (!this.quiescing && ['preparing', 'publishing'].includes(prior.state)) this.completeIntent(prior);
             return { ...this.public(this.get(id), sessionId), replayed: true };
         }
+        if (this.quiescing) throw error('HOST_DRAINING',503);
         if (this.dependencyHeld(topicKey)) throw error('DEPENDENCY_REVIEW_REQUIRED', 409);
         if (this.db.prepare('SELECT count(*) AS n FROM mobile_executions WHERE session_id=? AND created_at>?').get(sessionId, Date.now() - 60000).n >= 20) throw error('SUBMISSION_RATE_LIMIT', 429);
         const config = this.configs.snapshot(topic);
@@ -111,16 +124,16 @@ class ConversationExecution {
         return this.db.prepare("SELECT id FROM mobile_executions WHERE topic_key=? AND (state IN ('review_required','recovering','blocked_config') OR (review_resolved=0 AND error_code LIKE '%REVIEW_REQUIRED')) LIMIT 1").get(topicKey) || this.nativeTasks.held(topicKey);
     }
     wake() {
-        if (this.draining || this.wakePending) return;
+        if (this.quiescing || this.draining || this.wakePending) return;
         this.wakePending = true;
         queueMicrotask(() => { this.wakePending = false; this.tick(); });
     }
     tick() {
-        if (this.draining || !this.endpoint || this.scheduling) return;
+        if (this.quiescing || this.draining || !this.endpoint || this.scheduling) return;
         this.nativeTasks.reconcile().catch(() => console.warn('[NativeSync] NATIVE_TASK_RECONCILIATION_FAILED'));
         this.scheduling = true;
         try {
-            while (!this.draining && this.inFlight.size < this.maxConcurrency) {
+            while (!this.quiescing && !this.draining && this.inFlight.size < this.maxConcurrency) {
                 const row = this.db.prepare("SELECT jobs.* FROM mobile_executions jobs WHERE jobs.state='queued' AND jobs.not_before<=? AND jobs.topic_key NOT IN (SELECT value FROM json_each(?)) AND NOT EXISTS (SELECT 1 FROM mobile_executions held WHERE held.topic_key=jobs.topic_key AND (held.state IN ('review_required','recovering','blocked_config') OR (held.review_resolved=0 AND held.error_code LIKE '%REVIEW_REQUIRED'))) AND NOT EXISTS (SELECT 1 FROM mobile_native_tasks tasks JOIN mobile_executions parents ON parents.id=tasks.execution_id WHERE parents.topic_key=jobs.topic_key AND tasks.review_required=1 AND tasks.review_resolved=0) ORDER BY jobs.created_at,jobs.rowid LIMIT 1").get(Date.now(), JSON.stringify([...this.runningTopics]));
                 if (!row) break;
                 // Reserve before run() reaches its first await or a reentrant tick.
@@ -179,6 +192,7 @@ class ConversationExecution {
             if(published)require('./groupRequest').assertPortableContext(prepared);
             const packet=require('./nativePacket').nativePacket(prepared,published?{agentId:topic.ownerId,agentName:published.name||topic.agentName,topicId:topic.topicId}:null,row.id,{model:topic.model,contextTokenLimit:Number(topic.contextTokenLimit)||32000,...(Number.isFinite(topic.temperature)?{temperature:topic.temperature}:{}),...(Number.isFinite(topic.maxOutputTokens)?{max_tokens:topic.maxOutputTokens}:{}),stream:published?.streamOutput===true});
             let content;
+            if (this.quiescing && !this.draining) { this.db.prepare("UPDATE mobile_executions SET state='queued',updated_at=? WHERE id=? AND request_dispatched=0").run(Date.now(),row.id); return; }
             if (this.draining) throw error('HOST_DRAINING');
             if (this.get(row.id).cancel_requested) throw error('EXECUTION_CANCELLED');
             this.db.prepare('UPDATE mobile_executions SET request_dispatched=1 WHERE id=?').run(row.id);
@@ -249,10 +263,23 @@ class ConversationExecution {
         this.wake();return this.public(this.get(id),sessionId);
     }
     nativeTaskResult(topicKey,id,nativeTaskId){return this.nativeTasks.result(topicKey,id,nativeTaskId);}
-    beginDrain() { this.draining = true; clearInterval(this.timer); for (const controller of this.active.values()) controller.abort(); }
-    async close() {
+    beginDrain() { this.quiescing = true; clearInterval(this.timer); }
+    drainStatus() {
+        return { accepting: !this.quiescing, inFlight: this.inFlight.size, queued: this.db.prepare("SELECT count(*) n FROM mobile_executions WHERE state='queued'").get().n,
+            waitingApproval: this.db.prepare("SELECT count(*) n FROM mobile_executions WHERE state='waiting_approval'").get().n,
+            unsettledTools: this.db.prepare("SELECT count(*) n FROM mobile_native_invocations WHERE state='started'").get().n,
+            liveNativeTasks: this.db.prepare("SELECT count(*) n FROM mobile_native_tasks WHERE state NOT IN ('completed','failed','cancelled','stopped')").get().n };
+    }
+    async close({ timeoutMs = 5000 } = {}) {
         this.beginDrain();
-        const settled = await Promise.allSettled([...this.inFlight]);
+        let timer;
+        const completion = Promise.allSettled([...this.inFlight]);
+        try {
+            await Promise.race([completion, new Promise(resolve => { timer=setTimeout(()=>{
+                this.draining=true;for(const controller of this.active.values())controller.abort();resolve();
+            },timeoutMs); })]);
+        } finally { clearTimeout(timer); }
+        const settled = await completion;
         const failed = settled.find(row => row.status === 'rejected');
         this.nativeObservers?.();this.nativeObservers=null;
         this.nativeTasks.close();

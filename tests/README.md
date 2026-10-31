@@ -1,5 +1,7 @@
 # 测试边界
 
+架构修复候选在原119项之上增加16项架构回归及50项直接相关宿主回归，完整选中集185项、21文件。涉及v3收件格式、停止受理、任务查询分页与空写；详见 `docs/architecture-recovery-closeout-20261031.md`。旧夹具中版本和停机语义的适配明确保留业务断言；旧v2 Adapter通过固定Git对象取得，用于实际验证拒读v3。
+
 默认 npm test 只运行 snapshot-prompt 的8项纯函数测试。
 
 known-gaps/first-batch-existing-protocol.test.cjs 当前包含18项：原7项按旧全根/

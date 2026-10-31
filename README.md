@@ -4,6 +4,8 @@ NativeSync 独立源码仓库。服务端插件、Windows Bridge、PWA与宿主�
 
 ## 当前边界
 
+- 本地架构修复候选已实现停止受理／排空分离、收件分页、任务有界查询和空写消除；状态升级到v3。见 [修复交付与兼容说明](docs/architecture-recovery-closeout-20261031.md)。尚未安装到生产。
+- 2026-10-31 接手核对：源码 [PR #1](https://github.com/JENN2046/NativeSync/pull/1) 已合并，main 为 `f2a9d1e97b7de945c94f495b7a84a44f40727881`；tree 与已验收候选 `6019d0c8` 相同。生产 Batch2 安装仍未完成；当前证据及下一步见 [推进状态](docs/current-progress.md)。下文各冲刺中的“不推送／未发布”描述保留为当时事实。
 - C1 Windows离线Outbox、修订版C2手机真实发送及跨端接续已有接受记录。
 - 完整功能核心减法已安装：AgentManager恢复原基线，插件内展开不可变快照；完整执行模式仍有3处宿主补丁。
 - 限域11份产品已按#70回执安装，首批两条旧历史入云与手机两话题只读查看已获列明范围审核；本仓新M2/M3冲刺不部署、不触碰生产、不推送。范围合同见 docs/limited-source.md。
@@ -44,10 +46,11 @@ PWA：在overlays/VCPToolBox/apps/mobile使用锁定依赖构建；当前已实�
 
 ## Controlled scope and full-feature integration candidate
 
-The current isolated branch adds explicit same-source approved CAS with old phone
+The accepted integration candidate adds explicit same-source approved CAS with old phone
 rights frozen, and reuses existing native execution/attachment/group/AA paths.
-See docs/controlled-scope-transition.md. This code is not installed or published;
-the real two-topic pilot and continuous-write authorization status are unchanged.
+See docs/controlled-scope-transition.md. Its source is now merged into main;
+Batch2 production installation and the real two-topic continuous-write decision
+remain pending. See docs/current-progress.md for the dated evidence boundary.
 
 ### Batch1 final targeted closure
 

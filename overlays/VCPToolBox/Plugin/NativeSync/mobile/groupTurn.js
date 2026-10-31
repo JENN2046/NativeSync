@@ -26,7 +26,8 @@ function accept(engine,sessionId,input,invitation=false){
  if(!topic||topic.ownerType!=='group')throw fail('TOPIC_NOT_ALLOWED',403);
  if(typeof requestId!=='string'||!/^[a-zA-Z0-9_-]{8,80}$/.test(requestId)||!Array.isArray(attachments)||attachments.length>8||attachments.some(id=>typeof id!=='string')||typeof text!=='string'||text.length>12000||(!invitation&&!text.trim()&&!attachments.length)||(invitation&&(typeof agentId!=='string'||!agentId)))throw fail('INVALID_GROUP_SUBMISSION',400);
  const kind=invitation?'group_invitation':'group_message',id='job_'+sha256(sessionId+'\0'+requestId).slice(0,32),requestHash=sha256(stable({kind,topicKey,...(invitation?{agentId}:{text,attachments})}));
- const prior=engine.get(id);if(prior){if(prior.request_hash!==requestHash)throw fail('REQUEST_ID_REUSED');if(prior.state==='preparing')engine.completeIntent(prior);return {...engine.public(engine.get(id),sessionId),replayed:true};}
+ const prior=engine.get(id);if(prior){if(prior.request_hash!==requestHash)throw fail('REQUEST_ID_REUSED');if(!engine.quiescing&&prior.state==='preparing')engine.completeIntent(prior);return {...engine.public(engine.get(id),sessionId),replayed:true};}
+ if(engine.quiescing)throw fail('HOST_DRAINING',503);
  if(held(engine,topicKey))throw fail('DEPENDENCY_REVIEW_REQUIRED');
  if(engine.db.prepare('SELECT count(*) AS n FROM mobile_executions WHERE session_id=? AND created_at>?').get(sessionId,Date.now()-60000).n>=20)throw fail('SUBMISSION_RATE_LIMIT',429);
  const config=engine.configs.snapshot(topic);if(!config?.group)throw fail('EXECUTION_CONFIG_REQUIRED');
@@ -114,7 +115,7 @@ function observe(engine){
 
 function preparedStepIsCurrent(engine,jobId,stepId){
  const parent=engine.get(jobId),current=step(engine,stepId);
- return !engine.draining&&parent?.state==='running'&&!parent.cancel_requested&&current?.state==='queued';
+ return !engine.quiescing&&!engine.draining&&parent?.state==='running'&&!parent.cancel_requested&&current?.state==='queued';
 }
 
 async function run(engine,initial){
@@ -124,6 +125,7 @@ async function run(engine,initial){
   const job=engine.get(initial.id),topic=engine.topics.get(job.topic_key),config=engine.configs.verify(topic,JSON.parse(job.config_snapshot)),plan=JSON.parse(job.group_plan);
   for(const candidate of steps(engine,job.id)){
    if(candidate.state==='completed')continue;
+   if(engine.quiescing&&!engine.draining)break;
    if(engine.draining)throw fail('EXECUTION_INTERRUPTED_REVIEW_REQUIRED');
    if(engine.get(job.id).cancel_requested)break;
    if(candidate.state!=='queued'||plan[candidate.step_index]!==candidate.agent_id)throw fail('GROUP_PLAN_REVIEW_REQUIRED');
@@ -169,6 +171,7 @@ async function run(engine,initial){
    engine.db.prepare("UPDATE mobile_executions SET state='cancelled',updated_at=? WHERE id=? AND cancel_requested=1 AND state IN ('running','waiting_approval','cancelling') AND NOT EXISTS(SELECT 1 FROM mobile_execution_steps WHERE job_id=? AND state IN ('running','waiting_approval','publishing'))").run(Date.now(),initial.id,initial.id);
   }else if(latest.state==='running'){
    const completed=engine.db.prepare("UPDATE mobile_executions SET state='completed',updated_at=? WHERE id=? AND state='running' AND cancel_requested=0 AND NOT EXISTS(SELECT 1 FROM mobile_execution_steps WHERE job_id=? AND state<>'completed')").run(Date.now(),initial.id,initial.id).changes;
+   if(!completed&&engine.quiescing&&!engine.draining){engine.db.prepare("UPDATE mobile_executions SET state='queued',updated_at=? WHERE id=? AND state='running'").run(Date.now(),initial.id);return;}
    if(!completed)engine.db.prepare("UPDATE mobile_executions SET state='review_required',error_code='GROUP_PLAN_REVIEW_REQUIRED',updated_at=? WHERE id=? AND state='running' AND cancel_requested=0").run(Date.now(),initial.id);
   }
  }catch(e){

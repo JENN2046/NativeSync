@@ -45,8 +45,8 @@ async function attachLocalRecovery({ queue, statePath }) {
         if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1) throw fail('SYNC_STATE_ALIAS');
         try { state = JSON.parse(await fs.readFile(statePath,'utf8')); }
         catch (error) { if (error instanceof SyntaxError) throw fail('INVALID_SYNC_STATE_JSON'); throw error; }
-        if (!state || ![1,2].includes(state.version) || typeof state.deviceId !== 'string' || !state.deviceId || !Array.isArray(state.topics) || (!state.topics.length&&!state.source) || !Array.isArray(state.outbox) || !Number.isSafeInteger(state.cursor) || state.cursor < 0 || !state.acked || typeof state.acked !== 'object') throw fail('INVALID_SYNC_STATE');
-        if (state.version === 2 && (state.format !== 'native-message-intents-v1' || !state.localCommits || !state.receipts || !Array.isArray(state.inbox) || !state.drift)) throw fail('INVALID_SYNC_STATE');
+        if (!state || ![1,2,3].includes(state.version) || typeof state.deviceId !== 'string' || !state.deviceId || !Array.isArray(state.topics) || (!state.topics.length&&!state.source) || !Array.isArray(state.outbox) || !Number.isSafeInteger(state.cursor) || state.cursor < 0 || !state.acked || typeof state.acked !== 'object') throw fail('INVALID_SYNC_STATE');
+        if (state.version >= 2 && (state.format !== (state.version===3?'native-message-intents-v2':'native-message-intents-v1') || !state.localCommits || !state.receipts || !Array.isArray(state.inbox) || !state.drift)) throw fail('INVALID_SYNC_STATE');
         const normalized = state.topics.map(t=>({itemId:t.itemId,itemType:t.itemType || 'agent',topicId:t.topicId}));
         const nextBindings = new Set();
         for (const t of normalized) {
