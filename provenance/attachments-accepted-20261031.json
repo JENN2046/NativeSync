@@ -1,0 +1,192 @@
+{
+  "date": "2026-10-31",
+  "result": "PASS",
+  "scope": "local Linux full VCP host, Electron, Chrome mobile viewport, synthetic models/files/effects; no server or paid model",
+  "applicationSourceCommit": "b21dacad1edfae6f0d211786cd13ac02d39f2d07",
+  "fixCommits": [
+    "39ee3dd0e6c4d4eb3ff612775270ce64716a6310",
+    "b21dacad1edfae6f0d211786cd13ac02d39f2d07"
+  ],
+  "strongerVerificationCommit": "a837de05bbd1d55ac48d4b16398ab8779fd452e4",
+  "currentApplicationInputsMatchCandidate": true,
+  "candidate": {
+    "directory": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/attachments-accepted",
+    "manifest": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/attachments-accepted/MANIFEST.json",
+      "sha256": "b269031c63c864f91b680081a32f792e4c2fca679faf9a426573ad46a17ea9c7"
+    },
+    "zip": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_Attachments_Accepted_20261031.zip",
+      "sha256": "2b46ec24b8af6939f2e7e1788e98279ede7e5cea3b98a72432bfe31a75e15aa9"
+    },
+    "sourceInputsSha256": "d6f676ed98eb1d16797694142db06254e0ec4dc854b383458c52bc97567f8c79",
+    "payloadFiles": 83,
+    "hostPatches": [
+      {
+        "path": "modules/renderer/nativeExecutionStatus.js",
+        "beforeSha256": "699f56022449c555ca936f79fd314d694fa613c9dbeb8cd9d6cb74ca5089a752",
+        "afterSha256": "da6d55eb07db3adb2f565602b9fa0ff088bb7f90d5c922e5cf6cf22046b7894e",
+        "scope": "dedicated full local host; explicit compatibility patch, not part of unchanged 5b59803 candidate",
+        "behavior": "show configured startup degradation even when Bridge is inactive; no new submission or recovery action",
+        "patch": "compat/host-patches/VCPChat-startup-diagnostics.patch",
+        "patchSha256": "23db79f99f0d3ae1ed68657cf9a597cb03201b2692235a22e3b3f782740d4584"
+      },
+      {
+        "path": "modules/services/pdfAttachmentService.js",
+        "beforeSha256": "95e5a0ce235d56e633b72c8e616aeb8a21425ef0bb6baee11559e27712c84fed",
+        "afterSha256": "8b9c2acd16eda62e8fa130b6f22f780b58dc2c052900b779abf15c767bd3f8a3",
+        "scope": "fixed Linux full local host; separate compatibility patch",
+        "behavior": "pass exact Uint8Array bytes to legacy pdf-parse instead of pooled Buffer; on Linux use system pdfinfo/pdftocairo for bounded image fallback without loading pdf-poppler which exits the app",
+        "requires": [
+          "pdfinfo",
+          "pdftocairo"
+        ],
+        "patch": "compat/host-patches/VCPChat-linux-pdf.patch",
+        "patchSha256": "3f8597e44e0c948a204fe42f3f8233f41feddbf03ea1c7a3e61a7e67f3f39351"
+      }
+    ]
+  },
+  "moduleAndPublicInstall": {
+    "receipt": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/attachments-accepted-validation/RESULT.json",
+      "sha256": "5576c10448f7b04638ca0c305a03f7041bc6950aa9efcb95abbcfe06df5c976a"
+    },
+    "tests": {
+      "tests": 235,
+      "pass": 235,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "installationChecks": 8
+  },
+  "fullHost": {
+    "receipt": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T072524237485Z/RESULT.json",
+      "sha256": "d527f4c5263dd882dd4f3f370cabcdf64812847e989216662ec8e3f02e6e9db9"
+    },
+    "caseCount": 14,
+    "cases": [
+      {
+        "case": "attachment-roundtrip",
+        "result": "PASS"
+      },
+      {
+        "case": "attachment-resume",
+        "result": "PASS"
+      },
+      {
+        "case": "attachment-lost-response",
+        "result": "PASS"
+      },
+      {
+        "case": "attachment-access",
+        "result": "PASS"
+      },
+      {
+        "case": "normal",
+        "result": "PASS"
+      },
+      {
+        "case": "offline",
+        "result": "PASS"
+      },
+      {
+        "case": "lost-response",
+        "result": "PASS"
+      },
+      {
+        "case": "startup",
+        "result": "PASS"
+      },
+      {
+        "case": "reply-intent",
+        "result": "PASS"
+      },
+      {
+        "case": "reply-applied",
+        "result": "PASS"
+      },
+      {
+        "case": "effect",
+        "result": "PASS"
+      },
+      {
+        "case": "aa",
+        "result": "PASS"
+      },
+      {
+        "case": "settings",
+        "result": "PASS"
+      },
+      {
+        "case": "install",
+        "result": "PASS"
+      }
+    ]
+  },
+  "differentBinaryAttachmentProof": {
+    "receipt": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T072844626328Z/RESULT.json",
+      "sha256": "a37fa06caf2e5b5741ad629e87f384c10f3142d00f858056927e454aa393f853"
+    },
+    "caseCount": 1,
+    "sameCandidate": true,
+    "modelReceivedImageHash": "53d02518a5739a5949f67c7dcf2dc1cc1a06afd5dc2e28a51c93792cb8546524",
+    "newNativeImageFileCreated": true,
+    "imageDecodedWithoutReload": true,
+    "screenshots": [
+      {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T072844626328Z/evidence/attachments-desktop.png",
+        "sha256": "6279e25a8cb442ee90130eab79b33983ebfe71456402fe21c5876c634379c899"
+      },
+      {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T072844626328Z/evidence/attachments-mobile.png",
+        "sha256": "297fb9670a8ee3997f8b99c8bc531dff5e899b34398712de18b90a2f0bc399ce"
+      }
+    ]
+  },
+  "fixedInstall": {
+    "receipt": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/attachments-accepted-installed.json",
+      "sha256": "e31c02413b06559667c1c20206b710673ee0e8f1ccb95cb992ef7707a92b1fe6"
+    },
+    "smoke": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/attachments-accepted-smoke.json",
+      "sha256": "547040e58084d930c51ed3a3a65fb97d9f52b9a10caf56dfb84be09dbcb10428"
+    },
+    "latestBackup": "/home/jenn/NativeSync-Dev-Backups/attachments-accepted-reinstalled-20261031",
+    "messages": 14,
+    "allAcceptedIdentitiesRetained": true,
+    "noModelRedispatchOnRestart": true,
+    "status": {
+      "degraded": null,
+      "configurationError": null,
+      "attachmentError": null,
+      "cursor": 14,
+      "outbox": 0,
+      "inbox": 0,
+      "inputReady": true
+    },
+    "verificationScripts": [
+      {
+        "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/attachments-accepted-smoke.cjs",
+        "sha256": "08e8aec0f226620a1eb7ca0ff4b1f71b3ce5cac49d7d28c09083a1df81fcb8cb"
+      },
+      {
+        "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/attachments-fixed-check.py",
+        "sha256": "3c4dd89a18871bd03ae8210e35dd2cc8e98501da9ea53ed9e4325f2551ab6ce0"
+      }
+    ]
+  },
+  "superseded": {
+    "zip": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_Attachments_Final_20261031.zip",
+    "reason": "earlier acceptance omitted actual native image decode; not final delivery"
+  },
+  "publicProtocolChanged": false,
+  "stateFormatChanged": false,
+  "databaseMigrationAdded": false,
+  "productionAccess": false,
+  "pushedOrMerged": false
+}
