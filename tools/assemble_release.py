@@ -62,6 +62,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  write_json(out/'SCOPE.json',scope)
  if (ROOT/'docs/release-assembly-20261031.md').exists():shutil.copyfile(ROOT/'docs/release-assembly-20261031.md',out/'INSTALL.md')
  if not ref:shutil.copyfile(ROOT/'docs/local-stable-install-20261031.md',out/'LOCAL_INSTALL.md')
+ if not ref:shutil.copyfile(ROOT/'docs/desktop-sync-settings-20261031.md',out/'SETTINGS.md')
  manifest['supportFiles']={f.relative_to(out).as_posix():sha(f.read_bytes()) for f in sorted(out.rglob('*')) if f.is_file() and not f.is_symlink() and not f.is_relative_to(out/'assembled') and not f.is_relative_to(payload) and f.name not in ['MANIFEST.json','pwa-build.txt']}
  write_json(out/'MANIFEST.json',manifest)
  print(json.dumps({'output':str(out),'files':len(files),'sourceInputsSha256':fingerprint,'kind':manifest['kind'],'completePwa':not skip_pwa}),flush=True)

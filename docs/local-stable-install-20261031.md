@@ -5,7 +5,8 @@ AgentAssistant 原生查询链路；模型回复和外部效果均为本地合�
 
 ## 版本与组成
 
-候选包含77个运行文件、完整PWA、宿主兼容清单和桌面启动失败提示补丁。
+候选包含运行载荷（数量以MANIFEST为准）、完整PWA、宿主兼容清单和已声明的桌面补丁。
+若包中包含SETTINGS.md，NativeSync接入管理面板的操作与边界以该文档为准。
 运行文件逐项SHA见MANIFEST.json，补丁前后SHA见hostPatches，完整本机宿主指纹见
 compat/dev-hosts/linux-full.json。固定宿主的历史源码基础和匹配增量见开发环境原有来源记录；
 不能把该组合冒充另一个完整Git提交。包不包含依赖、凭据、聊天、SQLite或state。
