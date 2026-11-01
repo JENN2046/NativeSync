@@ -1,0 +1,138 @@
+{
+  "date": "2026-11-01",
+  "result": "PASS_WITH_INSTALL_NETWORK_CONDITION",
+  "applicationSourceCommit": "5a4ee827e675f54c4f86babbd6b9777c222038e0",
+  "sourceDirtyAtBuild": false,
+  "candidate": {
+    "directory": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/phone-attachment-fix",
+    "manifest": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/phone-attachment-fix/MANIFEST.json",
+      "sha256": "6773f02ce99d245d053f989e138d6e24c2e57902840f8c0c67e7be8f44550d80"
+    },
+    "zip": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_Android_Attachment_Fix_20261101.zip",
+      "sha256": "5b00d04e54c4db96e2aea4bf2f6fcca596cf47136cafcb4d4bfa235d5c12dfff"
+    },
+    "sourceInputsSha256": "79a1d40944b57ea6334ca35c548071626db1aeb89ba7f0dae49fcbea4326c4f2",
+    "runtimeFiles": 83,
+    "hostPatchCount": 3
+  },
+  "physicalDevice": {
+    "model": "Redmi Turbo 5 Max",
+    "os": "Android",
+    "browser": "Chrome",
+    "osAndBrowserVersions": "not supplied",
+    "installationCondition": "phone VPN enabled; exact blocked endpoint not captured",
+    "originalBasicPathManifestSha256": "00e5e1c1abac22477f8dab06df19786696f3dc3ea75461930a70c2f7bbf04f5d",
+    "fixedAttachmentManifestSha256": "6773f02ce99d245d053f989e138d6e24c2e57902840f8c0c67e7be8f44550d80",
+    "screenshotsProvided": false
+  },
+  "evidence": {
+    "phone-text-roundtrip.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-text-roundtrip.json",
+      "sha256": "58fb7dff3a8a662c4cfbb55c6e70a46423c36ba3324e4177f0cf2c03de7672d2"
+    },
+    "phone-reconnect-result.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-reconnect-result.json",
+      "sha256": "91d2c29bb43b911f2a93e5a124edf08286127bef922c8056f91b285134c2d84e"
+    },
+    "phone-files-result.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-files-result.json",
+      "sha256": "9a8d0363f5ee296adb9a128b5cf9db30218e959d9c8a0d8beecc11fb7c3052a8"
+    },
+    "phone-install-result.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-install-result.json",
+      "sha256": "1ea5fd70459ad98abc29d9696ceb09321af57748661527c053c43a7321d10baf"
+    },
+    "phone-install-retest.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-install-retest.json",
+      "sha256": "7e2fb7c217e7cab07261d6e32ee5275c941283f47162b943e97e612b624cfe8f"
+    },
+    "phone-install-diagnosis.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-install-diagnosis.json",
+      "sha256": "c5c5d44603745c196ed8771101aa2111b361aa7dae5b2ffc9bfe8b83fa2998cc"
+    },
+    "phone-attachment-auth-failure.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-attachment-auth-failure.json",
+      "sha256": "d698063536511fd3045eca205ac8a963f43fa7264a9460811aa13eea99e5ed8c"
+    },
+    "phone-attachment-browser.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-attachment-browser.json",
+      "sha256": "fbab1dbfd6b69b9428ea6c6e6ffc6f1dbb829060e5a74550ac71cf1386abc6f5"
+    },
+    "phone-attachment-physical-retest.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-attachment-physical-retest.json",
+      "sha256": "41095b8c7e9d6e68594ab924f129c2c72c55f4a26c2d10c0d1c5163f059277df"
+    },
+    "phone-physical-acceptance.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-physical-acceptance.json",
+      "sha256": "822947ebd5f75d1af059cb3c3d3b0b924f509f8d302ad8f6a855b3aafae77bde"
+    },
+    "phone-access.jsonl": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/phone-access.jsonl",
+      "sha256": "b36655c3dc8f3930c55c0936d5ca1da26498890c5b70767ae124887c63ede256"
+    },
+    "provider.jsonl": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/provider.jsonl",
+      "sha256": "1409f5ffe87a2ed58228876c0fb4cb8079a2af421cf9828080b1753f983cd899"
+    },
+    "before-attachment-fix-install.json": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T112359468989Z/evidence/before-attachment-fix-install.json",
+      "sha256": "c350d9eb5388deb6ba1c90c54dd602f7e2cb8a3479aa0448573030fad773b2d7"
+    }
+  },
+  "moduleAndPublicInstall": {
+    "receipt": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/phone-attachment-fix-upgrade-validation/RESULT.json",
+      "sha256": "dee10ad721e6fdcb0e3bbc677df9a304819e1864fa025bf6fc31e737896ff17f"
+    },
+    "tests": 239,
+    "installationChecks": 8,
+    "previousCandidate": "phone-readiness"
+  },
+  "archiveVerification": {
+    "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/phone-attachment-fix-upgrade-validation/archive-verification.json",
+    "sha256": "371e89abc8764fdee1d577928b356691e82d86ac6ed86133b3e1f20d4b6b5c52"
+  },
+  "fixedDevelopmentInstall": {
+    "receipt": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/android-attachment-fix-installed.json",
+      "sha256": "128daaf0b117006bc593ebde4c4e995f45834a408b284f83daa59953e1bf2d7f"
+    },
+    "startupStatus": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/android-attachment-fix-final-status.json",
+      "sha256": "5360d5598a2275811601ce993dd1afa1c67eeda5508d5f55319651c4bf2bfff1"
+    },
+    "changedFiles": 6,
+    "protectedFilesByteIdenticalDuringInstallRollbackReinstall": 307,
+    "messagesRetained": 14,
+    "startupModelCalls": 0,
+    "nativeExecutionStatus": {
+      "freshness": "current",
+      "connection": "online",
+      "degraded": null
+    }
+  },
+  "lifecycle": {
+    "phoneStopped": true,
+    "dailyDevelopmentInstanceRestored": true,
+    "temporaryPhoneCertificateRemoval": "requested from user; not device-observed"
+  },
+  "preparationErrors": [
+    {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/phone-attachment-fix-validation",
+      "reason": "Wrong historical baseline without required support inventory"
+    },
+    {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/phone-attachment-fix-final-validation",
+      "reason": "Historical baseline mismatched with upgraded fixture; unknown nativeSyncSettings/feature.json correctly refused"
+    }
+  ],
+  "fullHost14AndGroup5RerunForThisFix": false,
+  "publicProtocolChanged": false,
+  "stateFormatChanged": false,
+  "databaseMigrationAdded": false,
+  "paidModelCalls": 0,
+  "projectServerAccess": false,
+  "pushedOrMerged": false
+}
