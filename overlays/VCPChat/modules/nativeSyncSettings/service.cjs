@@ -26,6 +26,7 @@ class NativeSyncSettings {
         this.requestFactory = requestFactory;
         this.file = path.join(this.root, '.native-sync', 'connection.json');
         this.approval = null;
+        this.deviceDraft=randomUUID();
         this.tail = Promise.resolve();
         this.closed = false;
         // Keep a failed startup baseline distinct from an unconfigured startup.
@@ -114,6 +115,8 @@ class NativeSyncSettings {
             result.configured = Boolean(config.value);
             result.enabled = config.value?.enabled === true;
             result.sourceMode = config.value?.scopeMode === 'source';
+            result.fullSource=result.sourceMode&&!require('../services/nativeSync/sourceScope').normalizeScope(config.value.sourceScope);
+            result.sourceId=config.value?.sourceId||'';result.deviceId=config.value?.deviceId||this.deviceDraft;
             result.topics = (config.value?.topics || []).map(descriptor);
             result.bindingLocked = Boolean(await this.binding(config.value));
             result.restartRequired = initial.unreadable === true || stable(config.value) !== stable(initial.value);
@@ -136,6 +139,7 @@ class NativeSyncSettings {
             pendingOperations: Number.isSafeInteger(d?.outboxSize) ? d.outboxSize : null,
             buffered: Number.isSafeInteger(d?.inboundBuffered) ? d.inboundBuffered : null,
             conflicts: Array.isArray(d?.conflicts) ? d.conflicts.length : null,
+            source:d?.source?{agents:d.source.agents,topics:d.source.topics,pendingImports:d.source.pendingImports,completedImports:d.source.completedImports,directoryErrors:d.source.directoryErrors.length,configurationPending:d.source.configurationPending??null,configurationErrors:d.source.configurationErrors??null}:null,
         };
         return result;
     }
@@ -150,6 +154,7 @@ class NativeSyncSettings {
     preview(input) { return this.serialize(() => this.prepare(input)); }
     async prepare(input) {
         this.approval = null;
+        if(input?.scopeMode==='source')return this.prepareSource(input);
         if (!input || Object.keys(input).some(k => !['expectedRevision', 'topics'].includes(k)) || !Array.isArray(input.topics) || !input.topics.length || input.topics.length > 8) throw fail('INVALID_EXECUTION_SELECTION');
         const current = await this.config();
         if (input.expectedRevision !== current.revision) throw fail('SETUP_CONFIG_CHANGED');
@@ -188,12 +193,38 @@ class NativeSyncSettings {
         return { token, serverOrigin: endpoint.origin, ...proof, topics: topics.map(d => choices.find(c => topicKey(c) === topicKey(d))) };
     }
 
+    async sourceCheck(next,current){
+        const file=await this.owned(path.join(this.root,'.native-sync','state.json'),{optional:true,code:'INVALID_SYNC_STATE'}),state=file?.value;
+        if(state&&!state.source){
+            if(state.version!==3||state.outbox?.length||state.inbox?.length||state.pending||Object.keys(state.localCommits||{}).length||Object.keys(state.drift||{}).length)throw fail('SOURCE_SCOPE_NOT_SETTLED');
+        }
+        const connection=await resolveConnection(next,{appDataRoot:this.root,readSettings:this.readSettings}),send=this.requestFactory(connection);
+        const source=await require('../services/nativeSync/sourceSync').SourceSync.verify(connection,state,send);
+        return source;
+    }
+    async prepareSource(input){
+        if(Object.keys(input).some(k=>!['expectedRevision','scopeMode','sourceId'].includes(k))||!/^[A-Za-z0-9_-]{1,96}$/.test(input.sourceId||''))throw fail('FULL_SOURCE_BINDING_REQUIRED');
+        const current=await this.config();if(input.expectedRevision!==current.revision)throw fail('SETUP_CONFIG_CHANGED');
+        const binding=await this.binding(current.value),endpoint=await this.endpoint();
+        if(binding&&new URL(current.value.serverUrl).origin!==endpoint.origin)throw fail('DESKTOP_BACKEND_IDENTITY_MISMATCH');
+        const settings=await this.readSettings(),deviceId=current.value?.deviceId||this.deviceDraft;
+        const probe={scopeMode:'source',sourceId:input.sourceId,deviceId,url:endpoint.origin,token:settings.vcpApiKey,topics:[]};
+        const info=await this.requestFactory(probe)('/api/v1/sync/source/info?'+new URLSearchParams({sourceId:input.sourceId,deviceId}));
+        if(info.sourceId!==input.sourceId||info.deviceId!==deviceId||info.scope||info.executionMode!=='all-supported'||info.executionConfigPaging!==true)throw fail('SOURCE_EXECUTION_NOT_APPROVED');
+        const next={...(current.value||{}),version:1,enabled:true,scopeMode:'source',fullSelectionApproved:true,sourceId:input.sourceId,deviceId,spaceId:info.spaceId,sourceRoot:this.root,sourceScope:{mode:'full'},topics:[],executionTopics:[],executionMode:'all-supported',serverUrl:endpoint.origin,credentialSource:'existing-vcp-settings',publishCatalog:true,publishExecutionConfigs:true,syncAttachments:true};
+        await this.sourceCheck(next,current);
+        const read=folder=>async id=>(await this.owned(path.join(this.root,folder,id,'config.json'))).value;
+        const directory=await require('../services/nativeSync/sourceDirectory').sourceDirectory({appDataRoot:this.root,readAgentConfig:read('Agents'),readGroupConfig:read('AgentGroups'),connection:{sourceScope:{mode:'full'}}});
+        const token=randomUUID();this.approval={token,at:Date.now(),next,revision:current.revision,credentialHash:endpoint.credentialHash,hadBinding:Boolean(binding),source:true};
+        return {token,sourceMode:true,sourceId:next.sourceId,serverOrigin:endpoint.origin,selectedTopics:directory.topics.length,agentCount:directory.agents.filter(a=>a.ownerType==='agent').length,groupCount:directory.agents.filter(a=>a.ownerType==='group').length,directoryErrors:directory.errors.length,existingState:Boolean(binding)};
+    }
     save(input) { return this.serialize(() => this.persist(input)); }
     async persist(input) {
         if (!input || Object.keys(input).some(k => !['expectedRevision', 'enabled', 'approvalToken', 'confirmed'].includes(k)) || typeof input.enabled !== 'boolean') throw fail('INVALID_SYNC_CONNECTION');
         const current = await this.config();
         if (input.expectedRevision !== current.revision) throw fail('SETUP_CONFIG_CHANGED');
-        if (current.value?.scopeMode === 'source') throw fail('SETUP_SOURCE_READ_ONLY');
+        if (current.value?.scopeMode === 'source'&&!this.approval?.source&&current.value.executionMode!=='all-supported') throw fail('SETUP_SOURCE_READ_ONLY');
+        if(current.value?.scopeMode==='source'&&require('../services/nativeSync/sourceScope').normalizeScope(current.value.sourceScope))throw fail('SETUP_SOURCE_READ_ONLY');
         const binding = await this.binding(current.value);
         let next;
         if (input.enabled) {
@@ -201,13 +232,15 @@ class NativeSyncSettings {
             if (!a || input.confirmed !== true || input.approvalToken !== a.token || a.revision !== current.revision || Date.now() - a.at > 600000) throw fail('SETUP_CONFIRMATION_REQUIRED');
             const endpoint = await this.endpoint();
             if (endpoint.origin !== a.next.serverUrl || endpoint.credentialHash !== a.credentialHash) throw fail('SETUP_CONNECTION_CHANGED');
-            if (a.hadBinding !== Boolean(binding) || (binding && !sameTopics(binding.topics, a.next.topics))) throw fail('SETUP_BINDING_MISMATCH');
+            if (a.hadBinding !== Boolean(binding) || (binding && (a.source?binding.deviceId!==a.next.deviceId:!sameTopics(binding.topics, a.next.topics)))) throw fail('SETUP_BINDING_MISMATCH');
             next = a.next;
+            if(a.source){await this.sourceCheck(next,current);}else{
             const choices = await this.catalog();
             if (next.topics.some(d => !choices.some(c => topicKey(c) === topicKey(d)))) throw fail('SETUP_TOPIC_UNAVAILABLE');
             if (!binding) for (const d of next.approvedHistory) {
                 const record = await this.queue().run(d, () => this.owned(this.queue().getHistoryPath(d.itemId, d.topicId), { code: 'INVALID_HISTORY' }));
                 if (record.revision !== d.rawFileSha256) throw fail('APPROVED_HISTORY_CHANGED');
+            }
             }
         } else {
             if (!current.value) return { saved: true, restartRequired: false };

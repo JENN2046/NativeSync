@@ -73,7 +73,18 @@ function registerApiRoutes(router) {
     // publish private configuration or reach this namespace.
     router.get('/mobile/execution-configs', (req,res) => {
         if (!mobile) return res.status(503).json({error:{code:'MOBILE_DISABLED'}});
-        res.set('Cache-Control','no-store').json({topics:mobile.topics.filter(t=>req.nativeSyncTopics===undefined||req.nativeSyncTopics.includes(JSON.stringify([t.ownerType,t.ownerId,t.topicId]))).map(t=>({key:t.key,ownerType:t.ownerType,ownerId:t.ownerId,topicId:t.topicId,...mobile.engine.configs.public(t.key)}))});
+        const topics=mobile.topics.filter(t=>req.nativeSyncTopics===undefined||req.nativeSyncTopics.includes(JSON.stringify([t.ownerType,t.ownerId,t.topicId])));
+        try{
+            const query=req.query||{},paged=Object.keys(query).length>0;let rows=topics.sort((a,b)=>a.key<b.key?-1:a.key>b.key?1:0);
+            if(!paged)return res.set('Cache-Control','no-store').json({topics:rows.map(t=>({key:t.key,ownerType:t.ownerType,ownerId:t.ownerId,topicId:t.topicId,...mobile.engine.configs.public(t.key)}))});
+            if(Object.keys(query).some(k=>!['limit','cursor','revision'].includes(k)))throw Object.assign(Error(),{code:'INVALID_CONFIG_QUERY',status:400});
+            const limit=Number(query.limit||128);if(!Number.isSafeInteger(limit)||limit<1||limit>128)throw Object.assign(Error(),{code:'INVALID_CONFIG_QUERY',status:400});
+            const revision=require('./sync/protocol').sha256(JSON.stringify([req.nativeSyncSourceBinding||null,rows.map(t=>t.key)]));
+            if(query.revision&&query.revision!==revision)throw Object.assign(Error(),{code:'CONFIG_DIRECTORY_CHANGED',status:409});
+            let after='';if(query.cursor){try{after=JSON.parse(Buffer.from(query.cursor,'base64url').toString('utf8'));if(typeof after!=='string'||after.length>64)throw Error();}catch{throw Object.assign(Error(),{code:'INVALID_CONFIG_QUERY',status:400});}}
+            rows=rows.filter(t=>t.key>after);const page=rows.slice(0,limit);
+            res.set('Cache-Control','no-store').json({topics:page.map(t=>({key:t.key,ownerType:t.ownerType,ownerId:t.ownerId,topicId:t.topicId,...mobile.engine.configs.public(t.key)})),revision,next:page.length?Buffer.from(JSON.stringify(page.at(-1).key)).toString('base64url'):query.cursor||null,hasMore:rows.length>limit});
+        }catch(e){res.status(e.status||400).json({error:{code:e.code||'INVALID_CONFIG_QUERY'}});}
     });
     router.get('/mobile/executions', (req,res) => {
         res.set('Cache-Control','no-store');

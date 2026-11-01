@@ -2,6 +2,10 @@ import { registerSettingsSection, requestSettingsSection } from '../settings/ext
 import { section, custom } from '../settings/schema/kernel.js';
 
 const messages = {
+    SOURCE_EXECUTION_NOT_APPROVED: '服务器尚未批准此来源的全量同步和自动续聊，请核对预配置的来源与设备身份。',
+    FULL_SOURCE_BINDING_REQUIRED: '请填写服务器预配置的 Source ID，并核对下方设备标识。',
+    SOURCE_SCOPE_NOT_SETTLED: '原同步仍有待处理工作，请先完成同步或核对冲突，再转换为全量。',
+    SOURCE_BINDING_CHANGED: '来源或空间身份不一致，原状态已保留。',
     SYNC_CONNECTION_REQUIRED: '同步已停用，原绑定与待同步数据保留。',
     APPROVED_HISTORY_SNAPSHOT_REQUIRED: '首次历史尚未确认，请检查并保存接入配置。',
     SYNC_HTTPS_REQUIRED: '请先在「服务器连接」中保存 HTTPS 地址。',
@@ -56,6 +60,10 @@ function buildPanel(doc) {
     const enabled = el('input'); enabled.type = 'checkbox'; enabled.id = 'nativeSyncEnabled';
     desired.append(enabled, el('span', '下次启动启用同步'));
     const binding = el('p'); binding.id = 'nativeSyncBinding';
+    const mode=el('select');mode.id='nativeSyncScopeMode';mode.setAttribute('aria-label','同步范围');for(const [value,label] of [['selected','选定话题'],['source','全部 Agent／群聊']]){const option=el('option',label);option.value=value;mode.append(option);}
+    const sourceFields=el('div');sourceFields.id='nativeSyncSourceFields';sourceFields.hidden=true;
+    const sourceId=el('input');sourceId.id='nativeSyncSourceId';sourceId.placeholder='服务器预配置的 Source ID';sourceId.setAttribute('aria-label',sourceId.placeholder);
+    const deviceId=el('p');deviceId.id='nativeSyncDeviceId';sourceFields.append(sourceId,deviceId);
     const search = el('input'); search.type = 'search'; search.placeholder = '搜索助手、群聊或话题'; search.setAttribute('aria-label', search.placeholder); search.id = 'nativeSyncSearch';
     const selection = el('p'); selection.id = 'nativeSyncSelectionCount'; selection.setAttribute('aria-live', 'polite');
     const list = el('div', '', 'ns-setup-topics'); list.id = 'nativeSyncTopics'; list.setAttribute('aria-label', '可同步的话题');
@@ -71,19 +79,20 @@ function buildPanel(doc) {
     actions.append(refresh, preview, save);
     const notice = el('p'); notice.id = 'nativeSyncNotice'; notice.setAttribute('role', 'status'); notice.setAttribute('aria-live', 'polite');
     const quit = button('nativeSyncQuit', '退出 VCPChat'); quit.hidden = true;
-    panel.append(intro, server, connection, status, counts, desired, binding, search, selection, list, review, actions, notice, quit);
+    panel.append(intro,mode,sourceFields, server, connection, status, counts, desired, binding, search, selection, list, review, actions, notice, quit);
     // This section has its own persistence authority; do not trigger global settings autosave.
     panel.addEventListener('input', event => event.stopPropagation());
     panel.addEventListener('change', event => event.stopPropagation());
     let view = null, approval = null, busy = false, selected = new Set();
     function invalidate() { approval = null; review.hidden = true; confirmed.checked = false; update(); }
     function update() {
-        selection.textContent = view?.sourceMode ? '同步范围由 Source 配置管理' : `已选择 ${selected.size} / 8 个话题`;
-        const blocked = !view || Boolean(view.error) || view.sourceMode;
+        sourceFields.hidden=mode.value!=='source';list.hidden=search.hidden=mode.value==='source';
+        selection.textContent = mode.value==='source' ? '全部原生 Agent、群聊及以后新增的话题' : `已选择 ${selected.size} / 8 个话题`;
+        const blocked = !view || Boolean(view.error) || (view.sourceMode&&!view.fullSource);
         enabled.disabled = busy || blocked;
-        preview.disabled = busy || blocked || !enabled.checked || !selected.size;
+        preview.disabled = busy || blocked || !enabled.checked || (mode.value==='source'?!sourceId.value.trim():!selected.size);
         save.disabled = busy || blocked || (!enabled.checked && !view?.configured) || (enabled.checked && (!approval || !confirmed.checked));
-        refresh.disabled = busy;
+        refresh.disabled = busy;mode.disabled=busy||blocked||view?.sourceMode;sourceId.disabled=busy||blocked||view?.sourceMode;
         for (const input of list.querySelectorAll('input')) input.disabled = busy || blocked || view.bindingLocked || !enabled.checked;
     }
     function renderTopics() {
@@ -113,7 +122,7 @@ function buildPanel(doc) {
             const result = await api.nativeSyncSetupOverview();
             if (!result?.success) throw Error(result?.error || 'SETUP_UNAVAILABLE');
             view = result; enabled.checked = result.enabled;
-            list.hidden = search.hidden = result.sourceMode;
+            mode.value=result.sourceMode?'source':'selected';sourceId.value=result.sourceId||'';deviceId.textContent='本机设备标识：'+result.deviceId;
             selected = new Set(result.topics.map(key)); invalidate();
             server.textContent = `服务器：${result.serverOrigin || result.backendOrigin || '尚未配置 HTTPS 连接'}`;
             const c = result.current;
@@ -123,7 +132,8 @@ function buildPanel(doc) {
             counts.textContent = `本地待同步 ${c.pendingOperations ?? '待核对'} · 冲突 ${c.conflicts ?? '待核对'} · 已接收待写入 ${c.buffered ?? '待核对'}`;
             if (!c.active && !result.bindingLocked) counts.textContent = '尚未接入，接入后显示同步进度。';
             if (c.configurationError) counts.textContent += ` · ${explain(c.configurationError)}`;
-            binding.textContent = result.sourceMode ? '当前采用 Source 范围管理，本面板只显示状态，不更改范围。' : result.bindingLocked ? '沿用已有设备和话题绑定。此处可停用或恢复；已有范围的变更需走受控范围流程。' : '首次接入请选择需要同步的话题，检查后再确认。';
+            if(c.source)counts.textContent+=` · 历史已接入 ${c.source.completedImports} · 待接入 ${c.source.pendingImports} · 目录异常 ${c.source.directoryErrors} · 续聊配置待就绪 ${c.source.configurationPending??'待核对'}`;
+            binding.textContent = result.sourceMode ? '当前采用 Source 来源绑定；范围和身份保持，全量包含以后新增会话。' : result.bindingLocked ? '沿用已有设备和话题绑定。此处可停用或恢复；已有范围的变更需走受控范围流程。' : '首次接入请选择需要同步的话题，检查后再确认。';
             notice.textContent = result.error ? explain(result.error) : result.connectionError ? explain(result.connectionError) : '';
             if (!c.active && result.enabled && !result.restartRequired && result.topics[0] && api.getNativeExecutionStatus) {
                 const d = result.topics[0];
@@ -135,6 +145,7 @@ function buildPanel(doc) {
         } catch (error) { notice.textContent = explain(error.message); }
         finally { busy = false; update(); }
     }
+    mode.onchange=()=>{invalidate();notice.textContent=mode.value==='source'?'全量模式将包含全部历史、支持的附件、续聊所需设定及未来新增会话。':'';};sourceId.oninput=invalidate;
     enabled.onchange = () => { invalidate(); notice.textContent = enabled.checked ? '先检查连接与历史，再确认保存。' : '保存后，下次启动停用同步；已有绑定、消息和待同步数据会保留。'; };
     confirmed.onchange = update;
     refresh.onclick = load;
@@ -142,11 +153,11 @@ function buildPanel(doc) {
         busy = true; invalidate(); notice.textContent = '正在只读检查连接与所选历史…';
         try {
             const topics = [...selected].map(k => { const [itemType, itemId, topicId] = JSON.parse(k); return { itemType, itemId, topicId }; });
-            const r = await api.nativeSyncSetupPreview({ expectedRevision: view.revision, topics });
+            const r = await api.nativeSyncSetupPreview(mode.value==='source'?{expectedRevision:view.revision,scopeMode:'source',sourceId:sourceId.value.trim()}:{expectedRevision:view.revision,topics});
             if (!r?.success) throw Error(r?.error || 'SETUP_UNAVAILABLE');
             approval = r.token;
-            reviewText.textContent = r.existingState ? `已核对服务器 ${r.serverOrigin}，沿用 ${r.selectedTopics} 个话题的原绑定和同步进度。` : `已核对 ${r.selectedTopics} 个话题：本机 ${r.localMessages} 条消息，其中 ${r.identicalRemoteMessages} 条与服务器相同，${r.newLocalMessages} 条待上传，服务器另有 ${r.remoteOnlyMessages} 条待接收。`;
-            confirmationText.textContent = r.existingState ? '确认使用原绑定恢复同步' : '确认将所选历史和手机续聊所需的助手设定同步到上述服务器';
+            reviewText.textContent = r.sourceMode?`已核对服务器 ${r.serverOrigin} 和来源 ${r.sourceId}：${r.agentCount} 个 Agent、${r.groupCount} 个群聊、${r.selectedTopics} 个话题；目录异常 ${r.directoryErrors}。历史将在重启后分批接入。`:r.existingState ? `已核对服务器 ${r.serverOrigin}，沿用 ${r.selectedTopics} 个话题的原绑定和同步进度。` : `已核对 ${r.selectedTopics} 个话题：本机 ${r.localMessages} 条消息，其中 ${r.identicalRemoteMessages} 条与服务器相同，${r.newLocalMessages} 条待上传，服务器另有 ${r.remoteOnlyMessages} 条待接收。`;
+            confirmationText.textContent = r.sourceMode?'确认同步全部历史、支持的附件、续聊设定（包括提示词）及以后新增的会话，并允许所有受支持会话在手机续聊':r.existingState ? '确认使用原绑定恢复同步' : '确认将所选历史和手机续聊所需的助手设定同步到上述服务器';
             review.hidden = false; notice.textContent = '检查未修改本机历史或服务器数据。';
         } catch (error) { notice.textContent = explain(error.message); }
         finally { busy = false; update(); }

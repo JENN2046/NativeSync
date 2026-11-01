@@ -18,3 +18,5 @@
 .ns-setup button:disabled { opacity: .45; cursor: default; }
 #nativeSyncNotice { min-height: 1.5em; }
 #nativeSyncQuit { justify-self: start; }
+
+#nativeSyncScopeMode,#nativeSyncSourceId{box-sizing:border-box;width:100%;padding:9px 11px;background:var(--input-bg-color,transparent);color:inherit;border:1px solid var(--border-color,#7776);border-radius:7px}#nativeSyncSourceFields{display:grid;gap:8px}#nativeSyncSourceFields[hidden]{display:none}

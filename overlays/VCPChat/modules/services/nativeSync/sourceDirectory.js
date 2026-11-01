@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs/promises'),path=require('node:path');
-const {identity,fail}=require('./protocol');
+const {identity,fail,sha256,stable}=require('./protocol');
 const key=d=>JSON.stringify([d.ownerType,d.ownerId,d.topicId||'']);
 async function plain(file,{directory=false,missing=false}={}){
  try{const s=await fs.lstat(file);if(s.isSymbolicLink()||(!directory&&(!s.isFile()||s.nlink!==1)))throw fail('SOURCE_PATH_ALIAS');if(directory&&!s.isDirectory())throw fail('SOURCE_PATH_ALIAS');return s;}
@@ -9,7 +9,7 @@ async function plain(file,{directory=false,missing=false}={}){
 // Native config membership is authoritative. Missing/failed reads are observations,
 // never deletions. In particular, do not upload the get-agents DTO or its prompts.
 async function sourceDirectory({appDataRoot,readAgentConfig,readGroupConfig,connection}){
- const agents=[],topics=[],errors=[],root=path.resolve(appDataRoot);
+ const agents=[],topics=[],errors=[],configRevisions={},root=path.resolve(appDataRoot);
  const {normalizeScope,permits}=require('./sourceScope'),scope=normalizeScope(connection?.sourceScope);
  await plain(root,{directory:true});
  for(const [ownerType,folder,read]of [['agent','Agents',readAgentConfig],['group','AgentGroups',readGroupConfig]]){
@@ -24,6 +24,7 @@ async function sourceDirectory({appDataRoot,readAgentConfig,readGroupConfig,conn
     if(typeof read!=='function')throw fail('SOURCE_CONFIG_READER_REQUIRED');
     const config=await read(ownerId);
     if(!config||!Array.isArray(config.topics))throw fail('SOURCE_TOPICS_UNAVAILABLE');
+    configRevisions[JSON.stringify([ownerType,ownerId])]={hash:sha256(stable(config)),members:ownerType==='group'&&Array.isArray(config.members)?[...config.members]:[]};
     const own={ownerType,ownerId,name:String(config.name||ownerId).slice(0,200),avatar:null};agents.push(own);
     const ids=new Set();
     for(const t of config.topics){
@@ -53,7 +54,7 @@ async function sourceDirectory({appDataRoot,readAgentConfig,readGroupConfig,conn
   }
  }
  if(new Set(topics.map(key)).size!==topics.length)throw fail('SOURCE_DUPLICATE_TOPIC');
- return {agents,topics,errors};
+ return {agents,topics,errors,configRevisions};
 }
 async function assertHistoryPath(root,file){
  const resolved=path.resolve(file);if(!resolved.startsWith(path.resolve(root)+path.sep))throw fail('SOURCE_PATH_ESCAPE');

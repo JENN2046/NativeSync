@@ -8,7 +8,7 @@ const { HistoryMutationQueue } = require(CHAT + '/modules/services/historyMutati
 const { NativeSyncAdapter } = require(CHAT + '/modules/services/nativeSync/adapter');
 const { createNativeSyncRuntime } = require(CHAT + '/modules/services/nativeSync/runtime');
 const d = { itemId: 'one', itemType: 'agent', topicId: 'topic' };
-async function fixture(t) {
+async function fixture(t,{source=false}={}) {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'nativesync-settings-'));
     const file = path.join(root, '.native-sync/connection.json'), history = path.join(root, 'UserData/one/topics/topic/history.json');
     const settings = { vcpServerUrl: 'https://synthetic.invalid/v1/chat/completions', vcpApiKey: 'SYNTHETIC_PRIVATE_KEY' };
@@ -19,6 +19,8 @@ async function fixture(t) {
     const requests = [];
     const send = async (route, options) => {
         requests.push({ route, options });
+        if(source&&route.includes('/source/info'))return {version:1,sourceId:'sourceA',deviceId:new URL(route,'https://synthetic.invalid').searchParams.get('deviceId'),spaceId:'spaceA',revision:0,executionMode:'all-supported',executionConfigPaging:true};
+        if(source&&route.includes('/source/verify-state'))return {verified:true};
         if (route.includes('execution-configs')) return { topics: [{ ownerType: 'agent', ownerId: 'one', topicId: 'topic' }] };
         return route.includes('/pull') ? { events: [], nextSeq: 0, headSeq: 0, hasMore: false } : { headSeq: 0 };
     };
@@ -142,4 +144,16 @@ test('the Feature IPC accepts only the owned main frame and cleans up all regist
     assert.equal((await query({ sender: {}, senderFrame: frame })).error, 'SETUP_WINDOW_REQUIRED'); assert.equal(calls, 0);
     assert.equal((await query({ sender: contents, senderFrame: frame })).success, true); assert.equal(calls, 1);
     await handle.dispose(); assert.equal(handlers.size, 0); assert.equal(disposed, true);
+});
+
+test('full-source preview explicitly confirms future history and execution while saving only owned configuration',async t=>{
+ const f=await fixture(t,{source:true}),before=await fs.readFile(f.history),view=await f.service.overview();
+ const proof=await f.service.preview({expectedRevision:view.revision,scopeMode:'source',sourceId:'sourceA'});assert.equal(proof.sourceMode,true);assert.equal(proof.agentCount,1);assert.equal(proof.selectedTopics,1);assert(!JSON.stringify(proof).includes('PRIVATE_'));
+ await f.save(proof);const saved=JSON.parse(await fs.readFile(f.file));assert.equal(saved.scopeMode,'source');assert.equal(saved.executionMode,'all-supported');assert.deepEqual(saved.topics,[]);assert.equal(saved.deviceId,view.deviceId);assert.deepEqual(await fs.readFile(f.history),before);await assert.rejects(fs.access(path.join(f.root,'.native-sync/state.json')),{code:'ENOENT'});
+});
+test('selected-to-source enrollment preserves state and device; unsettled local work cannot be converted',async t=>{
+ const f=await fixture(t,{source:true}),old=await f.bind(),stateFile=path.join(f.root,'.native-sync/state.json'),before=await fs.readFile(stateFile);
+ const proof=await f.service.preview({expectedRevision:(await f.service.overview()).revision,scopeMode:'source',sourceId:'sourceA'});await f.save(proof);assert.deepEqual(await fs.readFile(stateFile),before);assert.equal(JSON.parse(await fs.readFile(f.file)).deviceId,old.deviceId);
+ const g=await fixture(t,{source:true});await g.bind();await g.queue.mutate(d,rows=>[...rows,{id:'pending-local',role:'user',content:'synthetic',timestamp:1}]);const pending=await fs.readFile(path.join(g.root,'.native-sync/state.json'));
+ await assert.rejects(g.service.preview({expectedRevision:(await g.service.overview()).revision,scopeMode:'source',sourceId:'sourceA'}),{code:'SOURCE_SCOPE_NOT_SETTLED'});assert.deepEqual(await fs.readFile(path.join(g.root,'.native-sync/state.json')),pending);
 });

@@ -42,6 +42,7 @@ test('source-authorized group members need native source ownership, not global a
  const topic=f.portal.topics.find(x=>x.ownerId==='group'),member={id:'one',name:'One',systemPrompt:'SOURCE_GROUP_PROMPT',model:'synthetic-model',maxOutputTokens:64};
  const input={group:{name:'Source group',members:['one'],mode:'sequential'},agents:[member]};await f.portal.engine.configs.publish({topics:[{...wireTopic(group),expectedVersion:0,config:input}]});const snapshot=f.portal.engine.configs.snapshot(topic);assert.equal(snapshot.agents[0].authority.memberId,'one');assert.equal(snapshot.agents[0].agentAlias,undefined);
  await assert.rejects(()=>f.portal.engine.configs.publish({topics:[{...wireTopic(group),expectedVersion:1,config:{group:{...input.group,members:['unowned']},agents:[{...member,id:'unowned'}]}}]}),e=>e.code==='GROUP_MEMBER_NOT_AUTHORIZED');
+ await f.portal.engine.configs.publish({topics:[{...wireTopic(group),expectedVersion:1,config:input}]});
  let calls=0;const http=require('node:http'),server=http.createServer(async(req,res)=>{for await(const b of req){}calls++;res.setHeader('Content-Type','application/json');res.end(JSON.stringify({choices:[{message:{role:'assistant',content:'GROUP_SOURCE_EXECUTED'}}]}));});await new Promise(r=>server.listen(0,'127.0.0.1',r));f.cleanups.push(()=>new Promise(r=>server.close(r)));f.portal.engine.setEndpoint({url:'http://127.0.0.1:'+server.address().port+'/v1/chat/completions',key:'synthetic-only'});
  const job=f.portal.engine.accept('group-phone',{topicKey:topic.key,requestId:'source-group-1',text:'continue group'});const {waitFor}=require('./fixtures/boundedSourceHarness.cjs');await waitFor(()=>f.portal.engine.get(job.id).state==='completed','source group');assert.equal(calls,1);
 });
@@ -51,4 +52,19 @@ test('source discovery and reopen do not preload history bodies; background impo
  for(let i=0;i<6;i++){await f.sync.tick();assert.ok(f.sync.snapshots.size<=1);}
  assert.ok(Object.values(f.sync.state.plans).some(p=>p.stage!=='complete'));
  await f.close();f.reads.length=0;await f.open({discover:false});assert.equal(f.reads.filter(r=>r.kind==='history').length,0);assert.equal(f.sync.snapshots.size,0);await f.pump();assert.equal(f.sync.snapshots.size,0);assert.equal(f.sync.snapshotBases.size,0);assert.equal(f.sync.bodySnapshotPeak,1);
+});
+
+test('source publication sends only changed topic inputs, updates dependent groups and recovers rejected configuration',async t=>{
+ const f=await fixture(t,{scope:{mode:'full'},executionMode:'all-supported'}),group={itemType:'group',itemId:'publish-group',topicId:'g'};
+ const update=async(type,id,patch)=>{const file=path.join(f.app,type==='group'?'AgentGroups':'Agents',id,'config.json');await fs.writeFile(file,JSON.stringify({...JSON.parse(await fs.readFile(file)),...patch}));};
+ for(const id of ['one','other'])await update('agent',id,{model:'synthetic-model',systemPrompt:'PORTABLE_'+id});
+ await f.owner('publish-group',{type:'group',topics:[{id:'g',name:'g'}]});await update('group','publish-group',{members:['one'],mode:'sequential'});await f.history(group,[]);await f.adopt();await f.pump();await f.sync.discover();
+ const {SourceExecutionPublication}=require(CHAT+'/modules/services/nativeSync/sourceExecutionPublication'),posts=[];
+ const send=async(route,options)=>{if(options?.body){posts.push(options.body);return f.portal.engine.configs.publish(options.body);}return {revision:'synthetic-directory',topics:f.portal.topics.map(t=>({ownerType:t.ownerType,ownerId:t.ownerId,topicId:t.topicId,key:t.key,...f.portal.engine.configs.public(t.key)})),hasMore:false,next:''};};
+ const publisher=new SourceExecutionPublication({send,getTopics:()=>f.connection.topics,getDirectory:()=>f.sync.directory,readAgentConfig:f.readAgentConfig,readGroupConfig:f.readGroupConfig});
+ for(let i=0;i<8;i++)await publisher.tick();assert.equal(posts.length,5);assert.equal(publisher.errors.size,0);for(let i=0;i<3;i++)await publisher.tick();assert.equal(posts.length,5);
+ await update('agent','one',{temperature:0.6});await f.sync.discover();for(let i=0;i<5;i++)await publisher.tick();assert.equal(posts.length,9);assert.equal(posts.slice(5).filter(p=>p.topics[0].ownerType==='group').length,1);
+ await update('agent','other',{systemPrompt:'{{VCPChatCanvas}}'});await f.sync.discover();await publisher.tick();assert.equal(publisher.errors.size,1);const other=f.portal.topics.find(t=>t.ownerId==='other');assert.equal(f.portal.engine.configs.public(other.key).configError,'DESKTOP_CONTEXT_REQUIRED');
+ await update('agent','other',{systemPrompt:'PORTABLE_other'});await f.sync.discover();await publisher.tick();assert.equal(publisher.errors.size,0);assert.equal(f.portal.engine.configs.public(other.key).configError,undefined);
+ assert(posts.every(p=>p.topics.length===1));assert(!JSON.stringify(posts).includes('apiKey'));
 });

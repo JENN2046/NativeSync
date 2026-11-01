@@ -42,7 +42,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
         if (endpoint.protocol !== 'http:' || endpoint.hostname !== '127.0.0.1') throw fail('ISOLATED_LOOPBACK_REQUIRED');
     }
     const releaseOwner=reserveOwner(queue,appDataRoot);
-    let local,adapter,queries,sourceSync,sourceListener;
+    let local,adapter,queries,sourceSync,sourceListener,sourcePublisher,configurationTimer,configurationRunning;
     try {
     const statePath = path.join(appDataRoot, '.native-sync', 'state.json');
     local = await attachLocalRecovery({queue,statePath});
@@ -67,6 +67,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
     if(full){connection.previousSelectedTopics=!local.state?.source?local.state?.topics:undefined;source=await require('./sourceSync').SourceSync.verify(connection,local.state,send);connection.topics=local.state?.topics.map(t=>({...t}))||[];}
     let publicationError = null,bootstrap;
     const publishConfiguration = async () => {
+        if(full&&connection.executionMode==='all-supported')return;
         if (!connection?.publishExecutionConfigs || (full&&!connection.executionTopics.length)) return;
         try {
             await require('./executionConfigs').publishExecutionConfigs({topics:full?connection.executionTopics:connection.topics,readAgentConfig,readGroupConfig,readTavernRules,readExecutionPolicy,send});
@@ -93,7 +94,12 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
     adapter = await NativeSyncAdapter.open({ queue, statePath,bootstrap, ...(full?{source,sourceAdoptionVerified:!local.state?.source,sourceTransitionVerified:Boolean(local.state?.source&&source.scopeTransition?.localStateHash)}:{}), ...(connection || { url: option('native-sync-url'), deviceId: option('native-sync-device'), topics: JSON.parse(option('native-sync-topics') || '[]'), token: 'isolated-poc-token' }), ...((connection || request) ? { request: send } : {}), notify });
     if(full){sourceSync=await new (require('./sourceSync').SourceSync)({adapter,connection,appDataRoot,readAgentConfig,readGroupConfig,send,fault:sourceFault}).open();
         sourceListener=()=>{sourceSync.dirty=true;};agentConfigEvents?.on?.('agent-config-updated',sourceListener);
-        await sourceSync.discover();}
+        await sourceSync.discover();
+        if(connection.executionMode==='all-supported'){
+            sourcePublisher=new (require('./sourceExecutionPublication').SourceExecutionPublication)({send,getTopics:()=>connection.topics,getDirectory:()=>sourceSync.directory,readAgentConfig,readGroupConfig,readTavernRules,readExecutionPolicy});
+            adapter.sourceExecutionPublication=()=>sourcePublisher.diagnostics();
+        }
+    }
     const download=requestBinary||(async route=>{
         route=require('./connection').sourceRoute(connection,route);
         let response;try{response=await fetch(connection.url+route,{headers:{...syncHeaders(connection),Authorization:`Bearer ${connection.token}`,'X-NativeSync-Protocol':'2','X-NativeSync-Capabilities':'attachments-v1,message-intents-v1'},redirect:'error',signal:AbortSignal.timeout(30000)});}catch{throw fail('NETWORK_UNAVAILABLE');}
@@ -117,9 +123,14 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
         executionRunning = executionStatus.refreshAll().catch(() => {}).finally(() => { executionRunning = null; });
     }, executionIntervalMs) : null;
     executionTimer?.unref?.();
+    configurationTimer=sourcePublisher?setInterval(()=>{
+        if(stopped||configurationRunning)return;
+        configurationRunning=sourcePublisher.tick().finally(()=>{configurationRunning=null;});
+    },250):null;
+    configurationTimer?.unref?.();
     const timer = setInterval(() => {
         if (stopped || running) return;
-        running = (async () => { if (!prepared) await prepare(); if(sourceSync){await sourceSync.tick();executionStatus?.addTopics(adapter.topics);} if(connection?.publishExecutionConfigs && Date.now()-lastConfigCheck>=5000){await publishConfiguration();lastConfigCheck=Date.now();} adapter.configurationError=publicationError; const checkAttachments=attachments&&Date.now()-lastAttachmentCheck>=5000; if(checkAttachments)try{await attachments.uploadLocal();adapter.attachmentError=null;}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';} await adapter.synchronize(); adapter.lastTransportError=null; if(checkAttachments){try{await attachments.restoreRemote();}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';}lastAttachmentCheck=Date.now();adapter.attachmentSkipped=attachments.skipped;} if(sourceSync)await sourceSync.report(); })().catch(error => {
+        running = (async () => { if (!prepared) await prepare(); if(sourceSync){await sourceSync.tick();executionStatus?.addTopics(adapter.topics);} if(connection?.publishExecutionConfigs && Date.now()-lastConfigCheck>=5000){await publishConfiguration();lastConfigCheck=Date.now();} adapter.configurationError=sourcePublisher?(sourcePublisher.error||(sourcePublisher.errors.size?'SOURCE_CONFIGURATION_INCOMPLETE':null)):publicationError; const checkAttachments=attachments&&Date.now()-lastAttachmentCheck>=5000; if(checkAttachments)try{await attachments.uploadLocal();adapter.attachmentError=null;}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';} await adapter.synchronize(); adapter.lastTransportError=null; if(checkAttachments){try{await attachments.restoreRemote();}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';}lastAttachmentCheck=Date.now();adapter.attachmentSkipped=attachments.skipped;} if(sourceSync)await sourceSync.report(); })().catch(error => {
             adapter.degraded = error.code || 'SYNC_FAILED';
             adapter.lastTransportError={code:adapter.degraded,status:error.status??null};
         }).finally(() => { running = null; });
@@ -141,10 +152,10 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
         },
         close() {
             if(closing)return closing;
-            stopped=true;clearInterval(timer);clearInterval(executionTimer);
+            stopped=true;clearInterval(timer);clearInterval(executionTimer);clearInterval(configurationTimer);
             closing=(async()=>{
                 await queries?.close();
-                await running;await executionRunning;
+                await running;await executionRunning;await configurationRunning;
                 // Host quit admission already stops new native requests. Keep the
                 // capture observer until admitted local Queue work has settled.
                 await Promise.allSettled([...(queue?.queues?.values() || [])]);
@@ -155,6 +166,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
     };
     return runtime;
     } catch(error) {
+        clearInterval(configurationTimer);await configurationRunning;
         if(sourceListener)agentConfigEvents?.off?.('agent-config-updated',sourceListener);
         local?.setError(error.code || 'SYNC_STARTUP_FAILED');
         await queries?.close();

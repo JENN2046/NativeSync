@@ -15,8 +15,9 @@ class ExecutionConfigs {
             PRIMARY KEY(topic_key,version));`);
     }
     latest(key) { return this.db.prepare('SELECT * FROM owner_execution_configs WHERE topic_key=? ORDER BY version DESC LIMIT 1').get(key); }
+    issue(key){return this.sourceCatalog?JSON.parse(this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceExecutionIssue:'+key)?.value||'null'):null;}
     public(key) {
-        const r=this.latest(key);if(!r)return {configVersion:null,configHash:null};
+        const issue=this.issue(key),r=this.latest(key);if(issue)return {configVersion:r?.version??null,configHash:r?.hash??null,configError:issue.code};if(!r)return {configVersion:null,configHash:null};
         try{const c=JSON.parse(r.config_json);return {configVersion:r.version,configHash:r.hash,model:c.model,...(c.group?{groupMode:c.group.mode,members:c.agents.map(a=>({id:a.id,name:a.name||a.id,model:a.model||null,unavailable:a.unavailable===true}))}:{})};}
         catch{return {configVersion:null,configHash:null,configError:'CONFIG_SNAPSHOT_CORRUPT'};}
     }
@@ -63,6 +64,7 @@ class ExecutionConfigs {
         if (typeof input.name !== 'string' || !input.name || input.name.length > 200 || typeof input.systemPrompt !== 'string' || input.systemPrompt.length > 128000 || typeof input.model !== 'string' || !input.model.trim() || input.model.length > 200) throw fail('INVALID_EXECUTION_CONFIG',400);
         let prompt=input.systemPrompt.replace(/\{\{AgentName\}\}/g,input.name),promptPolicy='desktop',promptTemplate;
         const references=text=>this.hasAgentReference(text);
+        if(/\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(prompt))throw fail('DESKTOP_CONTEXT_REQUIRED');
         const refs=references(prompt);
         if(refs.length){
             if(!topic.agentAlias||!this.agentManager.isAgent(topic.agentAlias))throw fail('CONFIG_PROMPT_SNAPSHOT_UNAVAILABLE');
@@ -101,7 +103,7 @@ class ExecutionConfigs {
             if (!row || Object.keys(row).some(k=>!['ownerType','ownerId','topicId','expectedVersion','config'].includes(k)) || !Number.isSafeInteger(row.expectedVersion) || row.expectedVersion < 0) throw fail('INVALID_EXECUTION_CONFIG',400);
             const topic = this.topics.find(t=>t.ownerType===row.ownerType && t.ownerId===row.ownerId && t.topicId===row.topicId);
             if (!topic) throw fail('TOPIC_NOT_ALLOWED',403);
-            const config = await this.normalize(topic,row.config);
+            let config;try{config=await this.normalize(topic,row.config);}catch(e){if(this.authority(topic))this.db.prepare('INSERT INTO native_sync_metadata(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value').run('sourceExecutionIssue:'+topic.key,JSON.stringify({code:e.code||'INVALID_EXECUTION_CONFIG'}));throw e;}
             return {topic,row,config,hash:sha256(stable(config))};
         }));
         if (new Set(rows.map(r=>r.topic.key)).size !== rows.length) throw fail('DUPLICATE_CONFIG_TOPIC',400);
@@ -109,6 +111,7 @@ class ExecutionConfigs {
         try {
             for (const {topic,row,config,hash} of rows) {
                 const latest = this.latest(topic.key);
+                if(this.sourceCatalog)this.db.prepare('DELETE FROM native_sync_metadata WHERE key=?').run('sourceExecutionIssue:'+topic.key);
                 if (latest?.hash === hash) continue;
                 if ((latest?.version || 0) !== row.expectedVersion) throw fail('CONFIG_VERSION_CONFLICT');
                 // Reverting to an older payload still creates a newer version.
@@ -119,6 +122,7 @@ class ExecutionConfigs {
         return {topics:rows.map(r=>({key:r.topic.key,...this.public(r.topic.key)}))};
     }
     snapshot(topic) {
+        const issue=this.issue(topic.key);if(issue)throw fail(issue.code);
         const row = this.latest(topic.key);
         if (!row) { if (this.required) throw fail('EXECUTION_CONFIG_REQUIRED'); return null; }
         const config = JSON.parse(row.config_json);
