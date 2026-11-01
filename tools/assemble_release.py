@@ -47,7 +47,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
    files.append({'path':name,'sha256':sha(f.read_bytes()),'bytes':f.stat().st_size,'baselineSourceSha256':sha(old) if old is not None else None})
  assert files and not any('executionLifecycle' in r['path'] or 'executionDecisions.generated' in r['path'] for r in files),'Experimental execution adapter in payload'
  if not ref:
-  for name in ['VCPChat-startup-diagnostics','VCPChat-linux-pdf']:
+  for name in ['VCPChat-startup-diagnostics','VCPChat-linux-pdf','VCPChat-group-parameters']:
    for ext in ['json','patch']:
     f=ROOT/'compat/host-patches'/(name+'.'+ext);inputs[f.relative_to(ROOT).as_posix()]=sha(f.read_bytes())
  for name,digest in inputs.items():
@@ -56,7 +56,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  manifest={'format':1,'profile':scope['profile'],'kind':'rollback-baseline' if ref else 'candidate','sourceCommit':ref or git('rev-parse','HEAD').decode().strip(),'sourceInputsSha256':fingerprint,'sourceDirty':False if ref else bool(git('status','--porcelain')),'completePwa':not skip_pwa,'node':subprocess.check_output([node,'--version'],text=True).strip(),'buildRecipeSha256':sha(b''.join((ROOT/p).read_bytes() for p in ['tools/assemble_release.py','tools/build_contracts.mjs','release/scope.json','tools/check_sync_storage.cjs','tools/install_release.py','tools/dev-environment/install_local.py'])),'buildDependencies':{name:lock['packages']['node_modules/'+name]['version'] for name in ['vite','vue','@vitejs/plugin-vue','rolldown']},'scope':scope,'files':files,'productionTargetVerified':False,'dataRestoreSupported':False}
  if not ref:
   manifest['hostProfiles']=['linux-full-local']
-  manifest['hostPatches']=[{**json.loads((ROOT/'compat/host-patches'/(n+'.json')).read_text()),'patch':'compat/host-patches/'+n+'.patch','patchSha256':sha((ROOT/'compat/host-patches'/(n+'.patch')).read_bytes())} for n in ['VCPChat-startup-diagnostics','VCPChat-linux-pdf']]
+  manifest['hostPatches']=[{**json.loads((ROOT/'compat/host-patches'/(n+'.json')).read_text()),'patch':'compat/host-patches/'+n+'.patch','patchSha256':sha((ROOT/'compat/host-patches'/(n+'.patch')).read_bytes())} for n in ['VCPChat-startup-diagnostics','VCPChat-linux-pdf','VCPChat-group-parameters']]
  write_json(out/'MANIFEST.json',manifest);write_json(out/'SOURCE_INPUTS.json',inputs)
  shutil.copytree(ROOT/'compat',out/'compat');shutil.copytree(ROOT/'LICENSES',out/'LICENSES');shutil.copyfile(ROOT/'NOTICE.md',out/'NOTICE.md')
  if not ref:(out/'diagnostics').mkdir();shutil.copyfile(ROOT/'tools/check_sync_storage.cjs',out/'diagnostics/check_sync_storage.cjs')
@@ -67,6 +67,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  if not ref:shutil.copyfile(ROOT/'docs/local-stable-install-20261031.md',out/'LOCAL_INSTALL.md')
  if not ref:shutil.copyfile(ROOT/'docs/desktop-sync-settings-20261031.md',out/'SETTINGS.md')
  if not ref:shutil.copyfile(ROOT/'docs/attachments-local-20261031.md',out/'ATTACHMENTS.md')
+ if not ref:shutil.copyfile(ROOT/'docs/groups-local-20261101.md',out/'GROUPS.md')
  manifest['supportFiles']={f.relative_to(out).as_posix():sha(f.read_bytes()) for f in sorted(out.rglob('*')) if f.is_file() and not f.is_symlink() and not f.is_relative_to(out/'assembled') and not f.is_relative_to(payload) and f.name not in ['MANIFEST.json','pwa-build.txt']}
  write_json(out/'MANIFEST.json',manifest)
  print(json.dumps({'output':str(out),'files':len(files),'sourceInputsSha256':fingerprint,'kind':manifest['kind'],'completePwa':not skip_pwa}),flush=True)

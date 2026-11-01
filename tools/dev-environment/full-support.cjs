@@ -9,16 +9,17 @@ function calls(){try{return fs.readFileSync(root+'/evidence/provider.jsonl','utf
 http.createServer(async(req,res)=>{
  try{
   if(req.url==='/health'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({mode:'isolated-local-scripted',calls:calls().length}));}
-  if(req.url==='/v1/models'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({data:['normal','offline','lost-response','reply-intent','reply-applied','effect','aa','startup'].map(n=>({id:'nativesync-'+n,object:'model',owned_by:'local-test'}))}));}
+  if(req.url==='/v1/models'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({data:['normal','offline','lost-response','reply-intent','reply-applied','effect','aa','startup',...['sequential','invite','nature','recovery','effect'].flatMap(g=>['group-'+g+'-a','group-'+g+'-b'])].map(n=>({id:'nativesync-'+n,object:'model',owned_by:'local-test'}))}));}
   let raw='';for await(const part of req)raw+=part;const body=JSON.parse(raw);
   if(req.url==='/v1/embeddings'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({data:(Array.isArray(body.input)?body.input:[body.input]).map((_,i)=>({index:i,embedding:Array.from({length:3072},(_,n)=>n===0?1:0)}))}));}
   if(req.url!=='/v1/chat/completions'){res.writeHead(404);return res.end('{}');}
   const parts=(body.messages||[]).flatMap(m=>Array.isArray(m.content)?m.content:[]);
   const imageHashes=parts.filter(p=>p.type==='image_url'&&p.image_url?.url?.startsWith('data:')).map(p=>require('node:crypto').createHash('sha256').update(Buffer.from(p.image_url.url.split(',')[1],'base64')).digest('hex'));
   const attachmentMarkers=['ISOLATED_TEXT_ATTACHMENT','ISOLATED_PDF_ATTACHMENT','ISOLATED_RESUME_ATTACHMENT'].filter(s=>JSON.stringify(body.messages).includes(s));
-  const previous=calls().filter(r=>r.model===body.model).length;record('provider.jsonl',{model:body.model,ordinal:previous+1,pid:process.pid,at:Date.now(),imageHashes,attachmentMarkers});
+  const inputLabels=(body.messages||[]).filter(m=>m.role!=='system').flatMap(m=>(typeof m.content==='string'?m.content:(m.content||[]).filter(p=>p.type==='text').map(p=>p.text).join(' ')).match(/ISOLATED_GROUP_[A-Z0-9_]+|nativesync-group-(?:sequential|invite|nature|recovery|effect)-[ab]/g)||[]);
+  const previous=calls().filter(r=>r.model===body.model).length;record('provider.jsonl',{model:body.model,ordinal:previous+1,pid:process.pid,at:Date.now(),imageHashes,attachmentMarkers,...(body.model?.startsWith('nativesync-group-')?{inputLabels,temperature:body.temperature,maxTokens:body.max_tokens}:{})});
   let content='【本地模拟模型】隔离验证回复 '+body.model;
-  if(body.model==='nativesync-effect'&&previous===0)content='<<<[TOOL_REQUEST]>>>\ntool_name:「始」IsolatedEffect「末」\n<<<[END_TOOL_REQUEST]>>>';
+  if(['nativesync-effect','nativesync-group-effect-a'].includes(body.model)&&previous===0)content='<<<[TOOL_REQUEST]>>>\ntool_name:「始」IsolatedEffect「末」\n<<<[END_TOOL_REQUEST]>>>';
   if(body.model==='nativesync-aa'&&previous===0)content='<<<[TOOL_REQUEST]>>>\ntool_name:「始」AgentAssistant「末」,\nagent_name:「始」IsolatedAA「末」,\nprompt:「始」Return the isolated read-only report.「末」,\ntask_delegation:「始」true「末」\n<<<[END_TOOL_REQUEST]>>>';
   if(body.model==='nativesync-aa-child')content='ISOLATED_AA_REPORT\n[[Flowlock::Complete]]';
   if(body.stream){res.writeHead(200,{'Content-Type':'text/event-stream'});for(const chunk of [{role:'assistant',content},{}])res.write('data: '+JSON.stringify({id:'isolated-'+Date.now(),object:'chat.completion.chunk',choices:[{index:0,delta:chunk,finish_reason:chunk.content?null:'stop'}]})+'\n\n');return res.end('data: [DONE]\n\n');}

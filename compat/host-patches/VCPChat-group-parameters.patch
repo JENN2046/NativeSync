@@ -1,0 +1,10 @@
+--- a/Groupmodules/groupchat.js
++++ b/Groupmodules/groupchat.js
+@@ -1274,6 +1274,7 @@
+                     body: JSON.stringify(buildGroupRequestBody(messagesForAI, {
+                         model: modelConfigForAgent.model,
+                         temperature: modelConfigForAgent.temperature,
++                        max_tokens: modelConfigForAgent.max_tokens,
+                         stream: modelConfigForAgent.stream
+                     }, messageIdForAgentResponse)),
+                     signal: controller.signal

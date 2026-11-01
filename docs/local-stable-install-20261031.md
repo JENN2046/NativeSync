@@ -46,7 +46,7 @@ python3 /absolute/candidate/tools/install_local.py install \
 /home/jenn/NativeSync-Dev/start
 ```
 
-前一包应从对应安装记录核对；本轮固定环境的前一包为.local/release-assembly/desktop-setup-final，
+前一包应从对应安装记录核对；本轮固定环境的前一包为.local/release-assembly/attachments-accepted，
 隔离整机升级同时覆盖从早期delivery-a载荷安装新Feature的路径。
 如当前已经应用桌面提示补丁且其摘要准确匹配，重复安装可为零文件替换；这不等于没有校验。
 新备份必须位于开发根之外，工具拒绝覆盖已有备份。

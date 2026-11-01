@@ -10,3 +10,6 @@ execution.ConversationExecution=class extends Original {constructor(options){sup
 const {NativeTaskLinks}=require(root+'/VCPToolBox/Plugin/NativeSync/mobile/nativeTasks');
 const observe=NativeTaskLinks.prototype.observe;
 NativeTaskLinks.prototype.observe=function(row,data){if(control().fault==='aa-terminal'&&data.state==='completed')crash('aa-terminal',{nativeTaskId:data.nativeTaskId,executionId:row.execution_id,resultRef:data.resultRef,resultHash:data.resultHash});return observe.call(this,row,data);};
+
+// A recovered accepted plan must not invoke the random selector again.
+if(control().forbidGroupReselection)require(root+'/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/natureRandomMode').determineSpeakers=()=>{throw Error('ISOLATED_GROUP_RESELECTION_FORBIDDEN');};

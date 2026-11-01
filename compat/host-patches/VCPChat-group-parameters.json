@@ -1,0 +1,7 @@
+{
+  "path": "Groupmodules/groupchat.js",
+  "beforeSha256": "b1e93ead7f842f347a7ed1db36a05ab6598e57a70e064d8ff6a30a0801e9aa73",
+  "afterSha256": "fc505e497a52c1cc353ee06301dea20177877c32bd6a3b2962a0e86d1fbaeb96",
+  "scope": "fixed local VCPChat host; sequential group request parameters only",
+  "behavior": "send the already resolved member max_tokens on sequential requests, matching the native invitation path and published PWA snapshot"
+}

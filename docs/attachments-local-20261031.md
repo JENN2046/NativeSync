@@ -33,7 +33,7 @@ FileManager 的新时间戳、解析器结果与 null 默认值不进入已接�
 
 源码工具 `tools/dev-environment/verify_full_runtime.py` 默认包含原有10项与4项附件场景，
 可用 `--cases attachment-roundtrip,attachment-resume,attachment-lost-response,attachment-access` 定向运行。
-`--package` 应指向本次候选；默认目录为 `.local/release-assembly/attachments-accepted`。
+`--package` 应指向本次候选；默认目录为 `.local/release-assembly/groups-accepted`。
 
 每次创建独立本机目录与浏览器配置。测试启用附件和脚本化模型的图片输入能力，
 记录模型实际收到的图片字节哈希与合成文本标记。文件选择框代选、网络故障代理和预加载均只在测试进程中。
