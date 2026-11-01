@@ -1,0 +1,164 @@
+{
+  "date": "2026-11-01",
+  "result": "PASS",
+  "applicationSourceCommit": "cf43bd00eca83fc44a6d947c3f94b9a59cdf64d1",
+  "sourceDirtyAtBuild": false,
+  "runtimePayloadUnchangedFromAttachmentsCandidate": true,
+  "currentApplicationInputsMatchCandidate": true,
+  "candidate": {
+    "directory": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/groups-accepted",
+    "manifest": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/groups-accepted/MANIFEST.json",
+      "sha256": "22b5e135c40dd38f4de11f3f635d02218959a4e668c4a64ee51a3bd457ad8f4e"
+    },
+    "zip": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_Groups_Accepted_20261101.zip",
+      "sha256": "7d9cc36351ac0cc3720004775015363df71678526377448199d4ab43f2f8f8c8"
+    },
+    "runtimeFiles": 83,
+    "hostPatches": [
+      {
+        "path": "modules/renderer/nativeExecutionStatus.js",
+        "beforeSha256": "699f56022449c555ca936f79fd314d694fa613c9dbeb8cd9d6cb74ca5089a752",
+        "afterSha256": "da6d55eb07db3adb2f565602b9fa0ff088bb7f90d5c922e5cf6cf22046b7894e",
+        "scope": "dedicated full local host; explicit compatibility patch, not part of unchanged 5b59803 candidate",
+        "behavior": "show configured startup degradation even when Bridge is inactive; no new submission or recovery action",
+        "patch": "compat/host-patches/VCPChat-startup-diagnostics.patch",
+        "patchSha256": "23db79f99f0d3ae1ed68657cf9a597cb03201b2692235a22e3b3f782740d4584"
+      },
+      {
+        "path": "modules/services/pdfAttachmentService.js",
+        "beforeSha256": "95e5a0ce235d56e633b72c8e616aeb8a21425ef0bb6baee11559e27712c84fed",
+        "afterSha256": "8b9c2acd16eda62e8fa130b6f22f780b58dc2c052900b779abf15c767bd3f8a3",
+        "scope": "fixed Linux full local host; separate compatibility patch",
+        "behavior": "pass exact Uint8Array bytes to legacy pdf-parse instead of pooled Buffer; on Linux use system pdfinfo/pdftocairo for bounded image fallback without loading pdf-poppler which exits the app",
+        "requires": [
+          "pdfinfo",
+          "pdftocairo"
+        ],
+        "patch": "compat/host-patches/VCPChat-linux-pdf.patch",
+        "patchSha256": "3f8597e44e0c948a204fe42f3f8233f41feddbf03ea1c7a3e61a7e67f3f39351"
+      },
+      {
+        "path": "Groupmodules/groupchat.js",
+        "beforeSha256": "b1e93ead7f842f347a7ed1db36a05ab6598e57a70e064d8ff6a30a0801e9aa73",
+        "afterSha256": "fc505e497a52c1cc353ee06301dea20177877c32bd6a3b2962a0e86d1fbaeb96",
+        "scope": "fixed local VCPChat host; sequential group request parameters only",
+        "behavior": "send the already resolved member max_tokens on sequential requests, matching the native invitation path and published PWA snapshot",
+        "patch": "compat/host-patches/VCPChat-group-parameters.patch",
+        "patchSha256": "b65486d9e2a5ae32028f44d37698c9e66e8295b81534934874a161f24007526c"
+      }
+    ]
+  },
+  "moduleAndPublicInstall": {
+    "receipt": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/groups-accepted-validation/RESULT.json",
+      "sha256": "6aba97092a1af62ecee501e1e7de35c8f93ef3f440b05f34bb3ebeceabbbe654"
+    },
+    "tests": {
+      "tests": 235,
+      "pass": 235,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "installationChecks": 8
+  },
+  "existingFullHost": {
+    "receipt": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T091303391988Z/RESULT.json",
+      "sha256": "1ea0dcd5673b9cb4c8dcf73e85b5ad8a59e33affc44b50f2cfd655812efa938b"
+    },
+    "cases": 14
+  },
+  "groupFullHost": {
+    "receipt": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T091127640442Z/RESULT.json",
+      "sha256": "2dbb1e4a23486b59eea4fb35bdfd1a4704983b12683965f5a16fb692b2760642"
+    },
+    "groupCases": 5,
+    "installationCase": 1,
+    "rows": [
+      {
+        "case": "group-sequential",
+        "result": "PASS"
+      },
+      {
+        "case": "group-invite",
+        "result": "PASS"
+      },
+      {
+        "case": "group-nature",
+        "result": "PASS"
+      },
+      {
+        "case": "group-recovery",
+        "result": "PASS"
+      },
+      {
+        "case": "group-effect",
+        "result": "PASS"
+      },
+      {
+        "case": "install",
+        "result": "PASS"
+      }
+    ],
+    "selectedTopicCount": 8,
+    "screenshots": [
+      {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T091127640442Z/evidence/group-sequential-desktop.png",
+        "sha256": "c1d0a3afa345932d230b23ef32e9a04940e7d5940d486bba6e85779bc6f3f88f"
+      },
+      {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T091127640442Z/evidence/group-sequential-mobile.png",
+        "sha256": "9f19761aac022b1d4bc79d8798ca1786480ec68e796fae82c317f6aca6cbd4ed"
+      },
+      {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T091127640442Z/evidence/group-nature-recovered.png",
+        "sha256": "0bd81c88cf6c98199064b5f2d2c2ca5c7f678091de3ad1c0d71286ef8ff904cf"
+      },
+      {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T091127640442Z/evidence/group-effect-resolution.png",
+        "sha256": "8af97d65ba65b1615f3f29d03d088de2f4978936f274aae5b156f47cb94e863c"
+      }
+    ]
+  },
+  "unknownGroupTargetRefused": {
+    "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T091509038573Z/evidence/group-dirty-target.json",
+    "sha256": "88c91744f5a91e50afdf8d519e5cf03d12c849f8dea692f33cccf4513360790d"
+  },
+  "fixedInstall": {
+    "receipt": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/groups-accepted-installed.json",
+      "sha256": "d61e97b2bc7c14a21be85a16032b39c4dc973641e4488c7868d85addd21fe29d"
+    },
+    "changedFiles": 1,
+    "messagesRetained": 14,
+    "backups": [
+      "/home/jenn/NativeSync-Dev-Backups/groups-accepted-20261101",
+      "/home/jenn/NativeSync-Dev-Backups/groups-accepted-reinstalled-20261101"
+    ],
+    "status": {
+      "degraded": null,
+      "configurationError": null,
+      "attachmentError": null,
+      "cursor": 14,
+      "outbox": 0,
+      "inbox": 0,
+      "inputReady": true
+    }
+  },
+  "negativeControl": {
+    "root": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T090302924375Z",
+    "reason": "native sequential request omitted max_tokens while published PWA member parameters included it"
+  },
+  "publicProtocolChanged": false,
+  "stateFormatChanged": false,
+  "databaseMigrationAdded": false,
+  "realModelCalls": 0,
+  "productionAccess": false,
+  "pushedOrMerged": false,
+  "scope": "local Linux full host, Electron and Chrome mobile viewport; synthetic models and effects; group profile separate from existing 14 cases"
+}

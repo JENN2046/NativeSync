@@ -40,7 +40,7 @@ python3 tools/validate_local.py --profile tencent-ce904c47 --prepare-only
 配置哨兵；不会打开本机真实聊天数据。HTTP与模型夹具仅使用本机回环和合成输入。
 结果写入`RESULT.json`及`LOCAL_EXECUTION.json`，后者记录实际执行主机和本机安装路径。
 
-当前候选固定为5b59803的77文件包，回退验证基线为支持v3的9dc099b代码包；本次只调整
+最初候选为5b59803的77文件包，回退验证基线为支持v3的9dc099b代码包；本次只调整
 开发与验证入口，没有修改候选运行代码或重建发布包。后续功能修改通过同一组装流程
 在本机生成新候选，再更新本机配置中的包路径。
 
@@ -48,4 +48,6 @@ python3 tools/validate_local.py --profile tencent-ce904c47 --prepare-only
 
 最新稳定候选、完整应用恢复验证入口和本机安装方式见[稳定交付验收](local-stable-closeout-20261031.md)及[操作说明](local-stable-install-20261031.md)。本机CONFIG中的候选已更新为stable-local-delivery。
 
-当前候选已推进至desktop-setup-final，增加全局设置中的NativeSync面板，见[桌面接入管理交付](desktop-sync-settings-closeout-20261031.md)。旧稳定包保留为兼容回退资料，不被新记录覆盖。
+此前候选推进至desktop-setup-final，增加全局设置中的NativeSync面板，见[桌面接入管理交付](desktop-sync-settings-closeout-20261031.md)。旧稳定包保留为兼容回退资料，不被新记录覆盖。
+
+当前本机CONFIG已指向groups-accepted，群聊五项专项与原有14项整机分别运行，见[群聊交付](groups-closeout-20261101.md)。运行载荷83文件，三个宿主兼容补丁；固定环境已安装并保留原14条开发消息。
