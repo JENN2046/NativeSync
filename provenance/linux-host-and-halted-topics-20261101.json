@@ -1,0 +1,154 @@
+{
+  "date": "2026-11-01",
+  "sourceBaseCommit": "9082df2e5acba4a79ffa20a3f9f2722911bd0fdb",
+  "applicationSourceCommit": "ca723359105742b687fe3fada1d15a4fb99cecf2",
+  "archives": {
+    "NativeSync_Linux_Host_Baseline_20261101.zip": {
+      "path": "/home/jenn/下载/NativeSync_Linux_Host_Baseline_20261101.zip",
+      "workspacePath": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_Linux_Host_Baseline_20261101.zip",
+      "sha256": "c16a81d1338dc9d5febad066a4190846a4c6f699f2a8685bb9d4b8ada5781bfd",
+      "bytes": 428815117,
+      "files": 136,
+      "publicHostFiles": 5901
+    },
+    "NativeSync_HaltedTopics_Experiment_20261101.zip": {
+      "path": "/home/jenn/下载/NativeSync_HaltedTopics_Experiment_20261101.zip",
+      "workspacePath": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_HaltedTopics_Experiment_20261101.zip",
+      "sha256": "a13a479be4919806d6b7c15a2ec63c13e5acedde61f93f6615057897dbddaeb0",
+      "bytes": 77773,
+      "files": 32
+    }
+  },
+  "hostSeal": {
+    "result": "PASS_PUBLIC_CODE_RECONSTRUCTION",
+    "manifest": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/linux-host-final-seal-20261101/HOST_CODE_MANIFEST.json",
+      "sha256": "d2ca648b4812d260d3f21275c266a150bb170f20971d721d50926b643fe3afda"
+    },
+    "upstreamAnchors": {
+      "VCPToolBox": {
+        "commit": "c603f13692b212db371223ff6d91fb71b0b3b39e",
+        "upstreamRepository": "https://github.com/lioensky/VCPToolBox.git",
+        "localGitBase": "afc089973f0c34b6cab2d5d67f0f97f204ba7a56",
+        "upstreamIsVerifiedAncestor": true,
+        "tree": "96c65ae4d9d7fb97916dc5bcd3a5921519a66fed",
+        "patchedGitTree": "3ef225153be42c55ac362db45e94fbe846fb50cb",
+        "publicAnchorSha256": "cd43551be99ac1b8564919917aa4b383be0a8003ede5bad2279f4e570cca48a0",
+        "patchSha256": "a8258979b9fff457d0ec03774e960f5f841208a2ae9df583b87b9e6a9690afb7",
+        "publicCodeFiles": 2796,
+        "changedPublicPaths": 406
+      },
+      "VCPChat": {
+        "commit": "44e19e7d2a04a06d3bc61304375077f0ac43e01f",
+        "upstreamRepository": "https://github.com/lioensky/VCPChat.git",
+        "localGitBase": "fb37badf5a302a6e8768a3e4b0b1e6d50efa085d",
+        "upstreamIsVerifiedAncestor": true,
+        "tree": "2463a23ca5a1f2168e8dbec7f4bd6c12cf556ad2",
+        "patchedGitTree": "973fc6844011a1e7457d1332d677c0c756d84c53",
+        "publicAnchorSha256": "0660a6d3c0187802a3ac115439babc26c78571662cdbebca1a4c88c65bb201f5",
+        "patchSha256": "59996d910e37776e488f78ca7c3d5479f2b9d9dbe26376f94d9de4c9d2bbcbb2",
+        "publicCodeFiles": 3105,
+        "changedPublicPaths": 889
+      }
+    },
+    "publicFiles": 5901,
+    "runtimeFiles": 84,
+    "linuxFullRequirements": 17,
+    "restoreResult": {
+      "path": "/var/tmp/nativesync-host-rebuild-1000/20261101-vault-complete-code/RESTORE_RESULT.json",
+      "sha256": "8f5e5c3c91986b8a903eb5b28cce63159592a47f351c1a601326290e2d0de93a"
+    },
+    "sourceRecheck": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/linux-host-final-seal-20261101/verification/SOURCE_RECHECK.json",
+      "sha256": "074d08a94287b36688e8f0702a437f520cd9da06c194862741f458beb2394689"
+    },
+    "moduleLoad": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/linux-host-final-seal-20261101/verification/MODULE_LOAD.json",
+      "sha256": "0cc160170668db4b34d9780f1265530663094831ba22c70ec57c8bfc0278402f"
+    },
+    "sourceDirectoryOrNetworkNeededToRestoreCode": false,
+    "runtimeDependenciesInstalledOrFullAppStarted": false,
+    "liveConfigurationCredentialsOrChatDataArchived": false,
+    "preparationCorrections": [
+      "Excluded machine .npmrc from public export",
+      "Moved from local Fork Git bases to verified author-upstream ancestors",
+      "Kept public credentialVault.cjs code while excluding credential data; rebuilt and verified again"
+    ]
+  },
+  "haltedTopics": {
+    "verdict": "ORIGINAL_PROPOSAL_NOT_COMPLETELY_SAFE",
+    "conditionalCandidate": true,
+    "productionIntegrated": false,
+    "testGroups": {
+      "boundedProtocolModel": {
+        "tests": 13,
+        "receipt": {
+          "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/final/RESULT.json",
+          "sha256": "cdf88c4379c82bd74965c3ee7c9809dc658c8bdbd3285f0036057f2470632052"
+        },
+        "tap": {
+          "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/final/validation.tap",
+          "sha256": "37002306d3b7c180fe3ca707b6baab168fd8bc883ff37b609c64d770009bee35"
+        },
+        "observations": {
+          "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/final/observations.json",
+          "sha256": "e93bdb1a9dfd184fd85ed262207d02de73ffa3f94436aaa15a01efb71427107d"
+        },
+        "provenance": {
+          "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/final/PROVENANCE.json",
+          "sha256": "7d2d021cec2c1dd962437ba48e25854c08c5fa86a99b85d058f9d71b25db3810"
+        }
+      },
+      "additionalRoutingCounterexample": {
+        "tests": 1,
+        "assertionReproducedUnsafeBehavior": true,
+        "receipt": {
+          "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/routing-counterexample/RESULT.json",
+          "sha256": "346469ec48a09de816edb8cbdfd663721d3a1cca3068a46a912f733739e74eec"
+        },
+        "tap": {
+          "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/routing-counterexample/validation.tap",
+          "sha256": "976ca4057ee178b0d57784b6c32806935b61d2d71d6e60c5333eca707e762801"
+        },
+        "observations": {
+          "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/routing-counterexample/observations.json",
+          "sha256": "01ca7ad30b230de6fb1ac9980279535038b95bb7d5977ed7edb32f8a90d28d12"
+        }
+      }
+    },
+    "fiveSafetyConditions": {
+      "visibility": "conditional; valid-but-wrong routing remains unidentified online",
+      "integrity": "known gaps retained; cannot establish correctness of wrong-owner content",
+      "versionAndDeletionOrder": "passed tested cases with per-message seq guards and fixed handoff boundary",
+      "repairCrashAtomicity": "passed real child exits in isolated SQLite; not JSON or physical-power-loss acceptance",
+      "legacyCompatibility": "actual validator accepts unknown-field/gapped frame; experimental capability gate returns409; production gate not installed"
+    },
+    "existingReadOnlyCheckerDetectsRoutingCounterexample": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/routing-counterexample/existing-storage-check.json",
+      "sha256": "c463aefeee2b24d3819e4cfa368c903623c397bd405392ebc7699af7288bec44"
+    },
+    "experimentImplementationReuseProof": {
+      "prototype.cjs": "fcd6782bc78f9e13462ceb1d7d41abf36775a7e7240e281fa86b01b118ac9ea6",
+      "worker.cjs": "d2991bfa377f7badb318b24bf974c1298b62616f65945fb53b46351a186cd353"
+    },
+    "newTestOnlyAppendedAfterThirteenCases": true,
+    "initialFailure": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/run-1/validation.tap",
+      "sha256": "a90966580d507903caf77feb7c4346660b31ee7dd06b3354d114119050fd8e76"
+    },
+    "legacyDependencyRetry": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/halted-topics-work/legacy-retry/validation.tap",
+      "sha256": "6590600ea818e6981615c2f7f75105fc2a614a36c57e5e11837c511864fbf531"
+    },
+    "newProtocolAndPersistentStateWouldBeRequired": true,
+    "fullApplicationOrAndroidAcceptance": false,
+    "tenThousandRowPrototypeInstalled": false
+  },
+  "fixedDevelopmentStillRunning": true,
+  "fixedProviderObservedCalls": 0,
+  "productPayloadAndRequiredHostBytesUnchanged": true,
+  "productionProtocolStateOrSchemaChanged": false,
+  "realDataOrProjectServerAccess": false,
+  "paidModelCallsByThisTask": 0,
+  "pushedMergedOrDeployed": false
+}
