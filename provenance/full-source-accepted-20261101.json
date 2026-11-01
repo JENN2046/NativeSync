@@ -1,0 +1,319 @@
+{
+  "date": "2026-11-01",
+  "result": "PASS_LOCAL_SYNTHETIC_FULL_SOURCE",
+  "applicationSourceCommit": "ca723359105742b687fe3fada1d15a4fb99cecf2",
+  "packagingSourceCommit": "b7fbeae619566a9d24457e85589b50a0b0ab94df",
+  "sourceDirtyAtBuild": false,
+  "candidate": {
+    "directory": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/full-source-accepted",
+    "manifest": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/full-source-accepted/MANIFEST.json",
+      "sha256": "ddf0408c85737bdc41e46dafa9bf2654b57e8d3f5d77d0c7568c457ba14b5dfb"
+    },
+    "zip": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_Full_Source_20261101.zip",
+      "sha256": "6ef387bc2557c748a56437d092a93d3a9012a84c963f324fd31b54062963769a"
+    },
+    "sourceInputsSha256": "d0af2174bb6612b35b789b21ad53b5b30732abc6d689b83539b1a6bafceb89a5",
+    "runtimeFiles": 84,
+    "hostPatches": [
+      {
+        "path": "modules/renderer/nativeExecutionStatus.js",
+        "beforeSha256": "699f56022449c555ca936f79fd314d694fa613c9dbeb8cd9d6cb74ca5089a752",
+        "afterSha256": "da6d55eb07db3adb2f565602b9fa0ff088bb7f90d5c922e5cf6cf22046b7894e",
+        "scope": "dedicated full local host; explicit compatibility patch, not part of unchanged 5b59803 candidate",
+        "behavior": "show configured startup degradation even when Bridge is inactive; no new submission or recovery action",
+        "patch": "compat/host-patches/VCPChat-startup-diagnostics.patch",
+        "patchSha256": "23db79f99f0d3ae1ed68657cf9a597cb03201b2692235a22e3b3f782740d4584"
+      },
+      {
+        "path": "modules/services/pdfAttachmentService.js",
+        "beforeSha256": "95e5a0ce235d56e633b72c8e616aeb8a21425ef0bb6baee11559e27712c84fed",
+        "afterSha256": "8b9c2acd16eda62e8fa130b6f22f780b58dc2c052900b779abf15c767bd3f8a3",
+        "scope": "fixed Linux full local host; separate compatibility patch",
+        "behavior": "pass exact Uint8Array bytes to legacy pdf-parse instead of pooled Buffer; on Linux use system pdfinfo/pdftocairo for bounded image fallback without loading pdf-poppler which exits the app",
+        "requires": [
+          "pdfinfo",
+          "pdftocairo"
+        ],
+        "patch": "compat/host-patches/VCPChat-linux-pdf.patch",
+        "patchSha256": "3f8597e44e0c948a204fe42f3f8233f41feddbf03ea1c7a3e61a7e67f3f39351"
+      },
+      {
+        "path": "Groupmodules/groupchat.js",
+        "beforeSha256": "b1e93ead7f842f347a7ed1db36a05ab6598e57a70e064d8ff6a30a0801e9aa73",
+        "afterSha256": "fc505e497a52c1cc353ee06301dea20177877c32bd6a3b2962a0e86d1fbaeb96",
+        "scope": "fixed local VCPChat host; sequential group request parameters only",
+        "behavior": "send the already resolved member max_tokens on sequential requests, matching the native invitation path and published PWA snapshot",
+        "patch": "compat/host-patches/VCPChat-group-parameters.patch",
+        "patchSha256": "b65486d9e2a5ae32028f44d37698c9e66e8295b81534934874a161f24007526c"
+      }
+    ],
+    "hostComposition": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/full-source-accepted/compat/dev-hosts/linux-full.json",
+      "sha256": "fb626d49995f8b3aec5713e8f3d75bb06381a39b2ae23820ba6889e5626e4e5e"
+    }
+  },
+  "completeHostCases": [
+    {
+      "case": "source-enrollment-and-backfill",
+      "result": "PASS",
+      "receipt": {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/RESULT-before-continuation-161524.json",
+        "sha256": "f5e4a832e8f6f82a7d710f4a43356cb2a2802ae1a1b3b2ee7997755d461c001f"
+      },
+      "details": {
+        "case": "source-enrollment-and-backfill",
+        "result": "PASS",
+        "elapsedMs": 105143,
+        "topics": 130,
+        "messages": 330,
+        "cursor": 330,
+        "sourceId": "local-full-source",
+        "importResponseLossRecovered": true,
+        "oldPhoneScopeStillOne": true,
+        "backgroundBodyPeak": 1,
+        "modelCalls": 0
+      },
+      "actualManifestSha256": "8fe7387a4709f64cf83737dd00fe542ffe779df61f7e95b0257c16b1822a10dd"
+    },
+    {
+      "case": "source-frozen-request-recovery",
+      "result": "PASS",
+      "receipt": {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/RESULT-before-delivery-163744.json",
+        "sha256": "906f06c975024e13a2c713aa51b30dde8e78a868da8e16c9f2e69661a9bcafd0"
+      },
+      "details": {
+        "case": "source-frozen-request-recovery",
+        "result": "PASS",
+        "elapsedMs": 8816,
+        "topics": 133,
+        "messages": 350,
+        "cursor": 350,
+        "executionId": "job_646383fd9fc6f790376c36bd6e83ad8d",
+        "requestId": "3328dc7c-961c-4ba1-8c88-40c092fd698c",
+        "originalSnapshotRetained": true,
+        "crossSourceDenied": true,
+        "modelCallsAdded": 1
+      },
+      "actualManifestSha256": "8fe7387a4709f64cf83737dd00fe542ffe779df61f7e95b0257c16b1822a10dd"
+    },
+    {
+      "case": "source-discovery-and-continuation",
+      "result": "PASS",
+      "receipt": {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/RESULT-before-recovery-162542.json",
+        "sha256": "b9145e6715f11b01e93035592bc0ba7b724c7ed97847bcb38f6338e685cc577e"
+      },
+      "details": {
+        "case": "source-discovery-and-continuation",
+        "result": "PASS",
+        "elapsedMs": 33760,
+        "topics": 133,
+        "messages": 348,
+        "cursor": 348,
+        "newAgents": 1,
+        "newGroups": 1,
+        "newTopics": 3,
+        "modelCallsAdded": 5
+      },
+      "actualManifestSha256": "8fe7387a4709f64cf83737dd00fe542ffe779df61f7e95b0257c16b1822a10dd"
+    },
+    {
+      "case": "source-install-and-compatible-rollback",
+      "result": "PASS",
+      "receipt": {
+        "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/RESULT.json",
+        "sha256": "8234e47e92e26f4e527307ded09b7c001421ff2580c7b50524459546b8a51ca8"
+      },
+      "details": {
+        "case": "source-install-and-compatible-rollback",
+        "result": "PASS",
+        "elapsedMs": 56668,
+        "manifestSha256": "466aba6c639549d0f551675c8a3ec9099bf7b774c93b2c2019da1de14329fd70",
+        "legacySource": "5a4ee82",
+        "codeRollbackRetainsFullHistory": true,
+        "newAutomaticExecutionDisabledOnLegacy": true,
+        "originalMessages": 350,
+        "originalJobs": 10,
+        "modelCallsAdded": 0,
+        "backups": "/var/tmp/nativesync-full-runtime-1000/backups/20261101T160910395984Z-source-delivery"
+      },
+      "actualManifestSha256": "466aba6c639549d0f551675c8a3ec9099bf7b774c93b2c2019da1de14329fd70"
+    }
+  ],
+  "evidenceReuse": {
+    "originalInvestigationManifest": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/full-source-investigation/MANIFEST.json",
+      "sha256": "8fe7387a4709f64cf83737dd00fe542ffe779df61f7e95b0257c16b1822a10dd"
+    },
+    "candidateBManifest": {
+      "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/release-assembly/full-source-candidate-b/MANIFEST.json",
+      "sha256": "2b39b26ad39b6c8fced8a2ea8972bc3afa5cee175fa0e9b34256e7ff7f476797"
+    },
+    "changedRuntimeFilesInvestigationToB": [
+      {
+        "path": "VCPChat/modules/nativeSyncSettings/renderer.js",
+        "beforeSha256": "a565416f845579f9aa53a737d8990bbdd4af6904c21dd89769d72eb643723215",
+        "afterSha256": "5a52fd69f492b22feabb639af1a14d9ae9ac5bf4618e14638fd951717a63c436"
+      },
+      {
+        "path": "VCPChat/modules/nativeSyncSettings/service.cjs",
+        "beforeSha256": "6e0cd7f255d9fd2cafb124f8c92250c8ddced17f7d1102d8792dd1e4794a40c2",
+        "afterSha256": "2dcc0b035b14a814f4ee69ad69b0ce1993da2574d7f0c271bbf06927ff6fc828"
+      },
+      {
+        "path": "VCPChat/modules/services/nativeSync/sourceExecutionPublication.js",
+        "beforeSha256": "f1ec7b10fa38bf1408a57799e59d6d59a8131763a45495d0907667a1323c2c87",
+        "afterSha256": "d72d5b93dfcb715980ac800bd9d23d5af9ad7013771df1007cac967eafb64e1b"
+      },
+      {
+        "path": "VCPChat/modules/services/nativeSync/sourceSync.js",
+        "beforeSha256": "bfec6be863a635c919e2a0bbdec3f639ebd510c453cd2c76281905ed540053b0",
+        "afterSha256": "71d915278072f93ecf0204389ca6c2bbbc2f34744820cd996568a3be8debd356"
+      },
+      {
+        "path": "VCPToolBox/Plugin/NativeSync/mobile/executionConfigs.js",
+        "beforeSha256": "e4195f3de392b06c609640d8e2b376d90f054d8417bcc40a77d881d296dab246",
+        "afterSha256": "3cc77fe467823c9352692c92639caa5302295cce0002b9875e9861d1f5a5b08a"
+      }
+    ],
+    "unchangedBackfillMethods": {
+      "open": "6fcc65d560563bd05c3fdf2a83aba0752c81e87927bbdb38e56c70bfc292615e",
+      "basesFor": "51cfad15d31307f5648b2dfc20887bcc7f331eb1dfe8a93a225cc746a0015bea",
+      "rememberSnapshot": "16de0092c5ef9b575eff69e4e8d7740c07252548b0207e797647b22ae185c036",
+      "loadSnapshot": "7438a64db738aa7384c0256bdd1834cf802879b65e8d007af4b8a0250b7432c1",
+      "ensureSnapshot": "3b7725dc6ccc61999351a29a5b3c7e56ab3a8409df385f3657c34966f57810b2",
+      "discover": "4f04cf0f8ec39357c9452c88674c4e48fd664f9e49e950d5447e8250f61e730a",
+      "step": "948c39e3ae9b57a923a258ce5e6bd8108d4ca1649c1b5a999ff80af886f1279e",
+      "tick": "f7ba604e7c8aeca1e5fc72d0ad96b4d4f2f2352ae15d17fbf4dd6e7e1c8049a6"
+    },
+    "affectedPathsVerifiedBy": [
+      "24 targeted Source/setup checks",
+      "1 updated binding/archive check",
+      "fixed-development actual settings conversion",
+      "candidate B Android Source continuation and attachments"
+    ],
+    "finalPayloadAndHostPatchesByteIdenticalToB": true,
+    "finalSourceInputsMatchB": true,
+    "freshFull130TopicRunOnFinalPackage": false,
+    "reason": "Reuse unchanged code evidence and validate actual changed paths; no historical matrix gate"
+  },
+  "directChecks": {
+    "sourceAndSettings": {
+      "tests": 24,
+      "pass": 24,
+      "receipt": {
+        "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/full-source-work/final-targeted-2.tap",
+        "sha256": "4642c42c28765b10db53893e5dac70a0360a2b45c1647482ae3fd76e6bdada88"
+      }
+    },
+    "updatedCapabilityBindingAndArchive": {
+      "tests": 1,
+      "pass": 1,
+      "receipt": {
+        "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/full-source-work/source-capability-final.tap",
+        "sha256": "42348843fd1690606abfafc2dae1d8b20cb13bcbeb3faf3895a663ec36d9eb6e"
+      }
+    }
+  },
+  "phone": {
+    "device": "Redmi Turbo 5 Max",
+    "platform": "Android Chrome installed standalone application",
+    "osAndBrowserVersions": "not supplied",
+    "screenshotsProvided": false,
+    "baseline": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/evidence/full-source-phone-baseline.json",
+      "sha256": "5a674b747fd7c635d5e6f9894c94fbb17c2a066ccd001295110c5cd160596f07"
+    },
+    "roundtripAndPhysicalAcceptance": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/evidence/full-source-phone-roundtrip.json",
+      "sha256": "2678825af37f2d076976513ccee965bd9a5a0d1bc245320482eb1b1d59be4210"
+    },
+    "providerRecords": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/evidence/provider.jsonl",
+      "sha256": "327205c2cfffbbe619b5f73171c1f1c3b68d66b4bdbc989b315295fbbda11a62"
+    },
+    "accessRecords": {
+      "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/evidence/phone-access.jsonl",
+      "sha256": "70b0bae42109d1c741797c7eb3e7ab0bef7e6fb07a5846da69962345daeae079"
+    },
+    "physicalSourceDirectory": {
+      "agents": 11,
+      "groups": 4
+    },
+    "modelCalls": {
+      "computerValidation": 9,
+      "physicalRequest": 1,
+      "total": 10,
+      "reopenAndSaveAdded": 0
+    },
+    "messages": 352,
+    "jobs": 11,
+    "topicCount": 133,
+    "supportedAttachmentBytesMatched": 2
+  },
+  "fixedDevelopment": {
+    "root": "/home/jenn/NativeSync-Dev",
+    "selectedToFullActivation": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/full-source-active.json",
+      "sha256": "bb8a4c2f310e556261741f762d54d02c7b982070cdc754bdc053da431075d870"
+    },
+    "actualBCodeRollbackAndReinstall": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/full-source-b-final-delivery.json",
+      "sha256": "b35c05ecb1d0f5bae1e7b7d9203aa2ea4681e006cdea9d8ce5cfe7784756e693"
+    },
+    "finalAcceptedInstall": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/full-source-accepted-installed.json",
+      "sha256": "092661b5f3d7c032fff78ab88976ce718472e7019ce7be16a405faf2a8a315a4"
+    },
+    "finalStatus": {
+      "path": "/home/jenn/NativeSync-Dev/evidence/full-source-accepted-status.json",
+      "sha256": "d43b56168b6089ed1df070df43180e3d14bcb6bb423d430fc1fb6e7a98adfbdc"
+    },
+    "messagesRetained": 14,
+    "cursor": 14,
+    "modelCallsOnStartup": 0,
+    "running": true
+  },
+  "archiveVerification": {
+    "path": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/full-source-work/final-archive-verification.json",
+    "sha256": "191e67c0f41131b2faa3e8b2fa8e0f632e0d6bc808b72520a75d635cb8fa300c"
+  },
+  "sourceResourceRecords": {
+    "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/evidence/source-resources.jsonl",
+    "sha256": "6ea0240f7f573d178edf1d81347a642dcc4cd7d8b03350d1e9ee199a98cb068f"
+  },
+  "hostScenarioControlProvenance": {
+    "path": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T160910395984Z/PROVENANCE.json",
+    "sha256": "65c4a9a6fb056400f7c8514ffea94baf44f69ca1506331c02d0a50c28999448a"
+  },
+  "lifecycle": {
+    "temporaryPhoneGatewayStopped": true,
+    "dailyDevelopmentInstanceRestored": true,
+    "caSigningKeyDeleted": true,
+    "phoneUserCaRemoval": "requested; not device-observed"
+  },
+  "compatibility": {
+    "oldSourceCommit": "5a4ee827e675f54c4f86babbd6b9777c222038e0",
+    "requiresSettledStoppedRootAndSourceCompatPrepare": true,
+    "legacyFullSourceHistoryAndReading": true,
+    "newAutomaticSourceContinuationOnLegacy": false,
+    "existingStaticAliasPathRetained": true,
+    "databaseStateCursorScopeOrSnapshotsRewound": false
+  },
+  "publicMessageProtocolChanged": false,
+  "stateFormatVersionChanged": false,
+  "databaseMigrationAdded": false,
+  "newOptionalInterfaces": [
+    "executionMode all-supported",
+    "Source configuration capability and paging",
+    "optional configuration progress fields"
+  ],
+  "historical239_14_5_8MatrixRerun": false,
+  "realDatasetOrProjectServersAccessed": false,
+  "paidModelsCalled": false,
+  "pushedOrMerged": false,
+  "mainCheckout": "9dc099b6007e018a9743d72048d5e6fbb43b94e7"
+}
