@@ -1,0 +1,11 @@
+{
+  "manifestVersion": "1.0.0",
+  "name": "NativeSyncSettings",
+  "displayName": "NativeSync 接入管理",
+  "version": "1.0.0",
+  "description": "选择同步话题、确认首次接入并查看状态。保存配置后重新启动生效。这是设置面板，停用本面板不会停用现有同步。",
+  "pluginType": "feature",
+  "main": "index.js",
+  "renderer": "modules/nativeSyncSettings/renderer.js",
+  "defaultEnabled": true
+}

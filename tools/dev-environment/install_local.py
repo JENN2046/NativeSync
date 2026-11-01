@@ -25,7 +25,7 @@ def root_check(root):
 def target(root,name):
     p=pathlib.PurePosixPath(name)
     assert not p.is_absolute() and '..' not in p.parts and '\\' not in name,'UNSAFE_PATH'
-    assert name.startswith(('VCPChat/modules/services/nativeSync/','VCPToolBox/Plugin/NativeSync/')) or name in ['VCPToolBox/modules/requestExecutionContext.js','VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js','VCPChat/modules/renderer/nativeExecutionStatus.js'],'PATH_NOT_OWNED'
+    assert name.startswith(('VCPChat/modules/services/nativeSync/','VCPChat/modules/nativeSyncSettings/','VCPToolBox/Plugin/NativeSync/')) or name in ['VCPToolBox/modules/requestExecutionContext.js','VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js','VCPChat/modules/renderer/nativeExecutionStatus.js'],'PATH_NOT_OWNED'
     f=root/name
     for q in [f,*f.parents]:
         if q==root:break

@@ -18,6 +18,11 @@ async function readConnection({ appDataRoot, readSettings }) {
         if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 65536) throw fail('SYNC_CONNECTION_ALIAS');
         config = JSON.parse(await fs.readFile(file, 'utf8'));
     } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+    return resolveConnection(config, { appDataRoot, readSettings });
+}
+
+// Shared semantic validation for the desktop setup preview; it does not persist.
+async function resolveConnection(config, { appDataRoot, readSettings }) {
     if (config.enabled !== true) return null;
     const fields = ['version', 'enabled', 'historySelectionApproved', 'deviceId', 'topics', 'serverUrl', 'credentialSource', 'approvedHistory', 'publishCatalog', 'publishExecutionConfigs', 'syncAttachments', 'scopeMode', 'sourceId', 'spaceId', 'sourceRoot', 'fullSelectionApproved', 'executionTopics', 'sourceScope', 'sourcePaused', 'scopeTransition'];
     if (Object.keys(config).some(key => !fields.includes(key))) throw fail('UNEXPECTED_SYNC_CONNECTION_FIELD');
@@ -57,4 +62,4 @@ function sourceRoute(connection,route){
     if(route.startsWith(prefix)&&!route.slice(prefix.length).startsWith('source/'))route=prefix+'source/'+route.slice(prefix.length);
     return route;
 }
-module.exports = { readConnection,sourceRoute };
+module.exports = { readConnection,resolveConnection,sourceRoute };

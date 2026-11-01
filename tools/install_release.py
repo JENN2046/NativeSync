@@ -1,7 +1,7 @@
 """Install/restore code only in marked, disposable public-host test fixtures."""
 import argparse,hashlib,json,pathlib,shutil,os
 sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest() if p.is_file() else None
-PREFIXES=('VCPChat/modules/services/nativeSync/','VCPToolBox/Plugin/NativeSync/')
+PREFIXES=('VCPChat/modules/services/nativeSync/','VCPChat/modules/nativeSyncSettings/','VCPToolBox/Plugin/NativeSync/')
 INTEGRATIONS={'VCPToolBox/modules/requestExecutionContext.js','VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js'}
 def relative(name):
  p=pathlib.PurePosixPath(name)

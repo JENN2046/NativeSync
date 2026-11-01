@@ -45,6 +45,30 @@
     {
       "path": "VCPChat/audio_engine/audio_server",
       "sha256": "73c2b3c4801c0ae97c8aeb36b59533f3f8f6e85ad1d61f7a68a293adc15ab25f"
+    },
+    {
+      "path": "VCPChat/modules/appFeatures.js",
+      "sha256": "380ec63d704ef219f2154e1e62f9ddd215bd3fea3f01b85413dc72e293076fe1"
+    },
+    {
+      "path": "VCPChat/modules/settings/extensions.js",
+      "sha256": "97568c83a528cbcbb269a209064cdbee15405bfeb5bf759999b26a6a6cff988f"
+    },
+    {
+      "path": "VCPChat/modules/settings/schema/kernel.js",
+      "sha256": "fbbcd7576b21a67cff8eb6e891fbe27c607e28aa1544a8318250f6d90e5dc6af"
+    },
+    {
+      "path": "VCPChat/modules/renderer/appFeatures.js",
+      "sha256": "0874385e29a6caaa1830708e2bc3d5e42ba16f97617dbd99e0f5139f851c9417"
+    },
+    {
+      "path": "VCPChat/preloads/core/registry.js",
+      "sha256": "c5c441b204e5cace53835c725a177f9e4a1ce0bea6073b64cc6502d7b1aa4c33"
+    },
+    {
+      "path": "VCPChat/modules/services/quitAdmission.cjs",
+      "sha256": "72a55b032cadf204c6bab1f90e4f2e094693f60e7f0692cf2e2cd977f2ce817c"
     }
   ]
 }

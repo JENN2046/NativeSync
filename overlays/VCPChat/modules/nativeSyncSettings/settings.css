@@ -1,0 +1,20 @@
+.ns-setup { display: grid; gap: 12px; padding: 8px 2px; color: var(--text-color, inherit); }
+.ns-setup p { margin: 0; line-height: 1.55; overflow-wrap: anywhere; }
+.ns-setup > p:first-child, #nativeSyncBinding, #nativeSyncCounts { opacity: .8; font-size: .9em; }
+.ns-setup input[type="search"] { width: 100%; box-sizing: border-box; padding: 9px 11px; color: inherit; background: var(--input-bg-color, transparent); border: 1px solid var(--border-color, #7776); border-radius: 7px; }
+.ns-setup-switch { display: flex; align-items: flex-start; gap: 9px; line-height: 1.5; }
+.ns-setup input[type="checkbox"] { flex: none; margin: 4px 0 0; accent-color: var(--accent-color, #d6ac42); }
+.ns-setup-topics { display: grid; max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color, #7776); border-radius: 8px; }
+.ns-setup-topic { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border-color, #7773); }
+.ns-setup-topic:last-child { border-bottom: 0; }
+.ns-setup-topic[hidden] { display: none; }
+.ns-setup-topic span { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.ns-setup-topic small { opacity: .75; }
+.ns-setup-review { border-left: 3px solid var(--accent-color, #d6ac42); padding: 10px 12px; background: #8881; border-radius: 4px; }
+.ns-setup-review .ns-setup-switch { margin-top: 10px; }
+.ns-setup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.ns-setup button.sidebar-button { width: auto !important; min-width: 0 !important; min-height: 32px; padding: 7px 12px !important; margin: 0 !important; border: 1px solid var(--border-color, #7776); border-radius: 7px; background: transparent !important; color: inherit !important; font-size: .9em; line-height: 1.4; justify-self: start; }
+.ns-setup #nativeSyncSave { background: var(--accent-color, #d6ac42) !important; color: #17191d !important; border-color: transparent; }
+.ns-setup button:disabled { opacity: .45; cursor: default; }
+#nativeSyncNotice { min-height: 1.5em; }
+#nativeSyncQuit { justify-self: start; }
