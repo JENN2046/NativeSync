@@ -1,0 +1,67 @@
+'use strict';
+// Full-host attachment acceptance. All fixtures, cookies and effects are local/synthetic.
+module.exports=async function(c){
+ const {root,cases,fs,path,crypto,assert,control,until,read,sql,job,counts,count,history,state,selectPhone,call,proof,run,backend,stop,restartChat,credential}=c;
+ if(!cases.some(n=>n.startsWith('attachment-')))return;
+ const desktop=()=>c.desktop(),phone=()=>c.phone(),sha=b=>crypto.createHash('sha256').update(b).digest('hex');
+ const dir=root+'/fixtures';fs.mkdirSync(dir,{recursive:true});
+ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64');
+ const generated=require('node:child_process').spawnSync('/home/jenn/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3',['-c',
+  'from reportlab.pdfgen import canvas; import sys; c=canvas.Canvas(sys.argv[1]+"/synthetic.pdf",invariant=1); c.drawString(72,700,"ISOLATED_PDF_ATTACHMENT has enough readable synthetic text for native extraction."); c.save(); c=canvas.Canvas(sys.argv[1]+"/scan.pdf",invariant=1); c.rect(72,300,200,200,fill=1); c.save()',dir],{encoding:'utf8'});assert.equal(generated.status,0,generated.stderr);
+ const files={'synthetic.png':png,'synthetic.txt':Buffer.from('ISOLATED_TEXT_ATTACHMENT\n仅供本机验证的合成附件。\n'),'synthetic.pdf':fs.readFileSync(dir+'/synthetic.pdf'),'scan.pdf':fs.readFileSync(dir+'/scan.pdf'),'resume.txt':Buffer.from('ISOLATED_RESUME_ATTACHMENT\n'+'local synthetic attachment payload\n'.repeat(6000))};
+ for(const [name,bytes]of Object.entries(files))fs.writeFileSync(dir+'/'+name,bytes);
+ const names=['synthetic.png','synthetic.txt','synthetic.pdf'];
+ const downloadRoute=(topic,m,a)=>'/conversations/'+topic+'/attachments/messages/'+encodeURIComponent(m.id)+'/'+encodeURIComponent(a.id);
+ async function bytes(page,route){return page.evaluate(async route=>{const r=await fetch('/mobile/api'+route);return {status:r.status,type:r.headers.get('content-type'),disposition:r.headers.get('content-disposition'),hash:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await r.arrayBuffer())),n=>n.toString(16).padStart(2,'0')).join('')};},route);}
+ async function pickMobile(topic,names,text){await selectPhone(topic);const input=await phone().waitForSelector('footer input[type=file]');await input.uploadFile(...names.map(n=>dir+'/'+n));await phone().type('#message-text',text);await phone().click('#send');}
+ async function nativeAttachments(topic,text){return until(()=>history(topic).find(m=>m.role==='user'&&m.content===text&&m.attachments?.every(a=>a.internalPath||a._fileManagerData?.internalPath)),'native attachment materialization',45000);}
+ function checkNative(m){for(const a of m.attachments){const f=a._fileManagerData||a,handle=a.internalPath||f.internalPath,p=handle.startsWith('file:')?require('node:url').fileURLToPath(handle):handle;assert.ok(fs.realpathSync(p).startsWith(root+'/data/chat/UserData/attachments/'));assert.equal(sha(fs.readFileSync(p)),sha(files[a.name]));assert.equal(a.hash||a.blobHash||f.hash,sha(files[a.name]));if(a.name.endsWith('.txt'))assert.ok(a.extractedText?.includes('ISOLATED_'));if(a.name.endsWith('.pdf'))assert.ok(a.extractedText?.includes('ISOLATED_PDF_ATTACHMENT'));}}
+ if(cases.includes('attachment-roundtrip'))await run('attachment-roundtrip',async()=>{
+  await desktop().click('#agentList [data-item-id="ns-normal"]');await until(()=>desktop().evaluate(()=>document.querySelector('#agentList li.active')?.dataset.itemId==='ns-normal'),'desktop attachment topic');
+  control({pickerFiles:[...names,'scan.pdf'].map(n=>dir+'/'+n)});await desktop().click('#attachFileBtn');await until(()=>fs.existsSync(root+'/evidence/picker.jsonl'),'actual native picker adapter');await until(()=>desktop().evaluate(()=>document.querySelector('#attachmentPreviewArea')?.textContent.includes('synthetic.pdf')||document.body.innerText.includes('synthetic.pdf')),'desktop attachment preview');control({offline:true});
+  await desktop().type('#messageInput','ISOLATED_DESKTOP_ATTACHMENTS');await desktop().click('#sendMessageBtn');
+  const d=await until(()=>history('normal').find(m=>m.role==='user'&&m.content==='ISOLATED_DESKTOP_ATTACHMENTS'),'desktop attachment history');assert.equal(d.attachments.length,4);const scan=d.attachments.find(a=>a.name==='scan.pdf');assert.equal((scan._fileManagerData||scan).imageFrames?.length,1);
+  await until(()=>state().outbox.length>=2&&history('normal').some(m=>m.role==='assistant'),'offline attachment outbox');const originalOps=state().outbox.map(x=>x.opId);await restartChat();assert.deepEqual(state().outbox.map(x=>x.opId),originalOps);control({});
+  await selectPhone('normal');await until(()=>phone().evaluate(id=>document.querySelector(`[data-message-id="${id}"] .attachment a`)?.href,d.id),'PWA downloadable desktop attachment',45000);
+  await until(()=>history('normal').find(m=>m.id===d.id)?.attachments.find(a=>a.name==='scan.pdf')?.frameHashes?.length===1,'PDF frame synchronized',45000);
+  const downloads=[];for(const a of require(root+'/VCPChat/modules/services/nativeSync/protocol').canonicalMessage(d).attachments){const result=await bytes(phone(),downloadRoute('normal',d,a));assert.equal(result.status,200);assert.equal(result.hash,sha(files[a.name]));downloads.push({name:a.name,...result});}
+  await until(()=>phone().evaluate(id=>[...document.querySelectorAll(`[data-message-id="${id}"] .attachment img`)].some(i=>i.complete&&i.naturalWidth>0),d.id),'PWA actual image decode');
+  await until(()=>phone().evaluate(id=>document.querySelector(`[data-message-id="${id}"]`)?.textContent.includes('ISOLATED_PDF_ATTACHMENT'),d.id),'PWA extracted PDF text');
+  await pickMobile('normal',names,'ISOLATED_MOBILE_ATTACHMENTS');await until(()=>job('normal')?.state==='completed','mobile multimodal execution',45000);const m=await nativeAttachments('normal','ISOLATED_MOBILE_ATTACHMENTS');assert.equal(m.attachments.length,3);checkNative(m);
+  const model=counts().filter(x=>x.model==='nativesync-normal').at(-1);assert.ok(model.imageHashes.includes(sha(png)));assert.ok(model.attachmentMarkers.includes('ISOLATED_TEXT_ATTACHMENT'));assert.ok(model.attachmentMarkers.includes('ISOLATED_PDF_ATTACHMENT'));
+  await until(()=>desktop().evaluate(()=>document.body.innerText.includes('ISOLATED_MOBILE_ATTACHMENTS')),'native displayed remote message');
+  await desktop().screenshot({path:root+'/evidence/attachments-desktop.png',fullPage:true});await phone().screenshot({path:root+'/evidence/attachments-mobile.png',fullPage:true});
+  const before=counts().length,ids=(await proof('normal')).ids;await stop('backend');await backend();await restartChat();await proof('normal');assert.deepEqual(history('normal').map(m=>m.id),ids);assert.equal(counts().length,before);checkNative(history('normal').find(x=>x.id===m.id));
+  return {desktopMessageId:d.id,mobileMessageId:m.id,downloads,nativeFilesVerified:3,linuxPdfFallbackAlive:true,desktopPdfFrames:1,offlineOriginalOpIds:originalOps,modelReceivedImageHash:sha(png),textAndPdfExtracted:true,restartNoRedispatch:true,...await proof('normal')};
+ });
+ if(cases.includes('attachment-resume'))await run('attachment-resume',async()=>{
+  const topic='offline',before=count('nativesync-offline');control({dropChunkOnce:true});await pickMobile(topic,['resume.txt'],'ISOLATED_ATTACHMENT_RESUME');
+  const lost=await until(()=>fs.existsSync(root+'/evidence/lost-chunk.json')&&read('evidence/lost-chunk.json'),'accepted chunk response dropped');assert.equal(lost.offset,65536);assert.equal(count('nativesync-offline'),before);const upload=sql('SELECT id,offset,request_id FROM attachment_uploads WHERE id=?',lost.uploadId)[0];assert.equal(upload.offset,65536);
+  await stop('backend');control({});await backend();await phone().reload({waitUntil:'networkidle0'});await pickMobile(topic,['resume.txt'],'ISOLATED_ATTACHMENT_RESUME');
+  await until(()=>job(topic)?.state==='completed','resumed attachment execution',45000);const rows=sql('SELECT id,offset,size,state FROM attachment_uploads WHERE principal NOT LIKE ? AND topic_key=?','desktop:%',topic);assert.equal(rows.length,1);assert.equal(rows[0].id,upload.id);assert.equal(rows[0].offset,files['resume.txt'].length);assert.equal(rows[0].state,'ready');
+  const chunks=fs.readFileSync(root+'/evidence/chunks.jsonl','utf8').trim().split('\n').map(JSON.parse).filter(x=>x.uploadId===upload.id);assert.equal(chunks.filter(x=>x.offset===65536).length,1);assert.equal(chunks[1].offset,131072);assert.equal(count('nativesync-offline'),before+1);
+  const m=await nativeAttachments(topic,'ISOLATED_ATTACHMENT_RESUME');checkNative(m);const accepted=job(topic),submitted=(await call(phone(),'/conversations/'+topic)).body.executions.find(x=>x.id===accepted.id).submission;
+  const after=count('nativesync-offline'),replay=await call(phone(),'/conversations/'+topic+'/messages',submitted);assert.equal(replay.status,202);assert.equal(replay.body.id,accepted.id);assert.equal(replay.body.replayed,true);assert.equal(count('nativesync-offline'),after);
+  return {uploadId:upload.id,requestId:upload.request_id,lostResponseOffset:65536,resumedNextOffset:chunks[1].offset,originalUploadRetained:true,executionId:accepted.id,replayedWithoutModel:true,...await proof(topic)};
+ });
+ if(cases.includes('attachment-lost-response'))await run('attachment-lost-response',async()=>{
+  const topic='lost-response',before=count('nativesync-'+topic);control({dropAttachmentResponseOnce:true});await pickMobile(topic,['synthetic.png','synthetic.txt'],'ISOLATED_ATTACHMENT_LOST_RESPONSE');
+  const accepted=await until(()=>fs.existsSync(root+'/evidence/attachment-lost-response.json')&&read('evidence/attachment-lost-response.json'),'accepted attachment response lost');await until(()=>job(topic)?.state==='completed','accepted attachment execution');control({});assert.equal(count('nativesync-'+topic),before+1);
+  await phone().reload({waitUntil:'networkidle0'});await selectPhone(topic);await until(()=>phone().evaluate(accepted=>document.querySelector('#accepted-submission')?.dataset.requestId===accepted.requestId||[...document.querySelectorAll('.execution-job')].some(x=>x.dataset.execId===accepted.executionId),accepted),'attachment acceptance recovered in PWA');
+  const data=await call(phone(),'/conversations/'+topic),submission=data.body.executions.find(x=>x.id===accepted.executionId).submission;assert.equal(submission.requestId,accepted.requestId);assert.equal(submission.attachments.length,2);
+  const replay=await call(phone(),'/conversations/'+topic+'/messages',submission);assert.equal(replay.status,202);assert.equal(replay.body.id,accepted.executionId);assert.equal(replay.body.replayed,true);assert.equal(count('nativesync-'+topic),before+1);assert.equal(job(topic).attempts,1);checkNative(await nativeAttachments(topic,'ISOLATED_ATTACHMENT_LOST_RESPONSE'));
+  return {...accepted,originalUploadIds:submission.attachments,providerCallsAdded:1,refreshFoundOriginalExecution:true,explicitReplayNoRedispatch:true,...await proof(topic)};
+ });
+ if(cases.includes('attachment-access'))await run('attachment-access',async()=>{
+  const context=await c.mobileBrowser().createBrowserContext(),page=await context.newPage();
+  try{
+   const r=await fetch('http://127.0.0.1:17650/api/plugins/NativeSync/mobile/pairing',{method:'POST',headers:{Authorization:'Bearer '+credential,'Content-Type':'application/json','X-NativeSync-Topics':Buffer.from(JSON.stringify([['agent','ns-offline','test-topic']])).toString('base64url')},body:'{}'});assert.equal(r.status,200);const grant=await r.json();
+   await page.goto('https://127.0.0.1:17653/mobile/',{waitUntil:'networkidle0'});await page.click('main.pairing > details > summary');await page.waitForSelector('#pair-code',{visible:true});await page.type('#pair-code',grant.pairingCode);const paired=page.waitForResponse(r=>r.url().endsWith('/mobile/api/pair')&&r.request().method()==='POST');await page.click('#pair-submit');const receipt=await paired;assert.equal(receipt.status(),200);await page.waitForSelector('#message-text');await selectPhone('offline',page);
+   const forbidden=await call(page,'/conversations/normal/attachments/status',{messageIds:[]});assert.equal(forbidden.status,403);
+   const denied=await bytes(page,'/conversations/normal/attachments/messages/known-message/attachment_'+sha(png));assert.equal(denied.status,403);
+   const uncommitted=await bytes(page,'/conversations/offline/attachments/messages/uncommitted/attachment_'+sha(png));assert.equal(uncommitted.status,403);
+   const session=(await call(page,'/session')).body;assert.ok(session.topics?.every(t=>t.key==='offline'));
+   return {realOneTimePairing:true,crossTopicStatusDenied:true,crossTopicDownloadDenied:true,uncommittedHashDenied:true};
+  }catch(e){await page.screenshot({path:root+'/evidence/failure-pairing.png',fullPage:true});throw e;}finally{await context.close();}
+ });
+};

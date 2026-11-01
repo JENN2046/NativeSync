@@ -7,6 +7,7 @@ AgentAssistant 原生查询链路；模型回复和外部效果均为本地合�
 
 候选包含运行载荷（数量以MANIFEST为准）、完整PWA、宿主兼容清单和已声明的桌面补丁。
 若包中包含SETTINGS.md，NativeSync接入管理面板的操作与边界以该文档为准。
+附件使用与Linux PDF兼容条件见包内ATTACHMENTS.md；Linux图片回退需要本机pdfinfo/pdftocairo。
 运行文件逐项SHA见MANIFEST.json，补丁前后SHA见hostPatches，完整本机宿主指纹见
 compat/dev-hosts/linux-full.json。固定宿主的历史源码基础和匹配增量见开发环境原有来源记录；
 不能把该组合冒充另一个完整Git提交。包不包含依赖、凭据、聊天、SQLite或state。
@@ -45,7 +46,8 @@ python3 /absolute/candidate/tools/install_local.py install \
 /home/jenn/NativeSync-Dev/start
 ```
 
-本轮已知前一运行包为NativeSync源码副本中的.local/release-assembly/delivery-a。
+前一包应从对应安装记录核对；本轮固定环境的前一包为.local/release-assembly/desktop-setup-final，
+隔离整机升级同时覆盖从早期delivery-a载荷安装新Feature的路径。
 如当前已经应用桌面提示补丁且其摘要准确匹配，重复安装可为零文件替换；这不等于没有校验。
 新备份必须位于开发根之外，工具拒绝覆盖已有备份。
 
@@ -69,7 +71,7 @@ python3 /absolute/candidate/tools/install_local.py rollback \
 失败现场保留；正常结束后恢复固定开发实例。使用--prepare-only只准备，不启停应用。
 
 完整场景包括正常往返/重启、离线Outbox、已接受响应丢失、启动失败/恢复、两个回复持久化中断点、
-工具未知结果与人工放弃/跨会话拒绝、AA终态查询/只读报告，以及真实代码安装/回退/再安装。
+工具未知结果与人工放弃/跨会话拒绝、AA终态查询/只读报告，以及真实代码安装/回退/再安装。附件双向、续传、回执丢失与按话题权限另列四项。
 既有联合模块检查和八项公共夹具安装/回退单独记录，不与整机场景数量相加。
 
 本轮经用户明确确认，fs.inotify.max_user_watches从262144临时提高到1048576，未写持久配置。

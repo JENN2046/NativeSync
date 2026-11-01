@@ -1,0 +1,29 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),crypto=require('node:crypto');
+const host=path.join(process.env.NATIVESYNC_TEST_HOSTS,'VCPChat');
+const {HistoryMutationQueue,quiet}=require(host+'/tests/helpers/nativeSyncFixture.cjs');
+const {NativeSyncAdapter}=require(host+'/modules/services/nativeSync/adapter');
+const {DesktopAttachments}=require(host+'/modules/services/nativeSync/attachments');
+const {canonicalMessage,messageHash}=require(host+'/modules/services/nativeSync/protocol');
+const hash=b=>crypto.createHash('sha256').update(b).digest('hex');
+test('native UI wrappers bind file and PDF frames to canonical identities without changing original operation identity',async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'nativesync-native-shape-')),topic={itemType:'agent',itemId:'synthetic',topicId:'test'},wire={key:'files',ownerType:'agent',ownerId:'synthetic',topicId:'test'},queue=new HistoryMutationQueue({userDataDir:root+'/UserData',logger:quiet});
+ const adapter=await NativeSyncAdapter.open({queue,statePath:root+'/state.json',deviceId:'test-device',url:'http://127.0.0.1:1',token:'synthetic',topics:[topic]});t.after(async()=>{await adapter.close();await queue.dispose();await fs.rm(root,{recursive:true,force:true});});
+ await fs.mkdir(root+'/UserData/attachments',{recursive:true});
+ const parts=[{name:'a.txt',bytes:Buffer.from('synthetic text'),type:'text/plain'},{name:'b.pdf',bytes:Buffer.from('%PDF synthetic'),type:'application/pdf',imageFrames:[Buffer.from('frame').toString('base64')]}];
+ const attachments=[];for(const p of parts){const digest=hash(p.bytes),file=root+'/UserData/attachments/'+digest+path.extname(p.name);await fs.writeFile(file,p.bytes);attachments.push({name:p.name,type:p.type,_fileManagerData:{id:'native-'+p.name,name:p.name,type:p.type,size:p.bytes.length,hash:digest,internalPath:'file://'+file,...(p.imageFrames?{imageFrames:p.imageFrames}:{})}});}
+ const original={id:'original-message',role:'user',content:'native wrapper',timestamp:1,attachments};await queue.mutate(topic,()=>[original]);const operationId=adapter.state.outbox[0].opId,begins=[];let current;
+ const send=async(_route,{body}={})=>{if(!body)return {topics:[wire]};if(body.expectedHash){begins.push(body);current=body.expectedHash;return {uploadId:'synthetic',offset:0,state:'uploading'};}if(body.data)return {offset:body.offset+Buffer.from(body.data,'base64').length};return {state:'ready',hash:current};};
+ const sync=new DesktopAttachments({queue,appDataRoot:root,connection:{topics:[topic]},send});await sync.uploadLocal();await adapter.recover();
+ assert.deepEqual(begins.map(b=>[b.attachmentId,b.frameIndex??null]),[['native-a.txt',null],['native-b.pdf',null],['native-b.pdf',0]]);assert.equal(new Set(begins.map(b=>b.requestId)).size,3);
+ const saved=(await queue.read(topic))[0];assert.equal(saved.attachments[0].frameHashes,undefined);assert.deepEqual(saved.attachments[1]._fileManagerData.frameHashes,[hash(Buffer.from('frame'))]);assert.equal(adapter.state.outbox.length,1);assert.equal(adapter.state.outbox[0].opId,operationId);assert.equal(messageHash(saved),messageHash(original));assert.deepEqual(canonicalMessage(saved).attachments.map(a=>a.id),['native-a.txt','native-b.pdf']);
+ await sync.uploadLocal();assert.equal(begins.length,3);
+});
+test('native FileManager timestamps stay local and multiple restored attachments preserve accepted content and operation identity',async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'nativesync-native-materialize-')),topic={itemType:'agent',itemId:'synthetic',topicId:'test'},wire={key:'files',ownerType:'agent',ownerId:'synthetic',topicId:'test'},queue=new HistoryMutationQueue({userDataDir:root+'/UserData',logger:quiet});
+ const adapter=await NativeSyncAdapter.open({queue,statePath:root+'/state.json',deviceId:'test-device',url:'http://127.0.0.1:1',token:'synthetic',topics:[topic]});t.after(async()=>{await adapter.close();await queue.dispose();await fs.rm(root,{recursive:true,force:true});});
+ const bytes=Buffer.from('synthetic mobile attachment'),value=hash(bytes),second=Buffer.from('different mobile bytes'),original={id:'accepted',role:'user',content:'mobile',timestamp:1,attachments:[{id:'first',name:'first.txt',type:'text/plain',size:bytes.length,hash:value,blobHash:value,extractedText:bytes.toString()},{id:'second',name:'second.txt',type:'text/plain',size:second.length,hash:hash(second),blobHash:hash(second),createdAt:123,extractedText:second.toString()}]};await queue.mutate(topic,()=>[original]);const op=adapter.state.outbox[0].opId;let stores=0;
+ const storeAttachment=async(b,name)=>{stores++;const file=root+'/UserData/attachments/'+name;await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,b);return {hash:hash(b),internalPath:'file://'+file,createdAt:999999,extractedText:'native parser text',imageFrames:null};};
+ const sync=new DesktopAttachments({queue,appDataRoot:root,connection:{topics:[topic]},send:async()=>({topics:[wire]}),download:async route=>route.endsWith('/first')?bytes:second,storeAttachment});await sync.restoreRemote();
+ const result=(await queue.read(topic))[0];assert.equal(stores,2);assert.equal(messageHash(result),messageHash(original));assert.equal(result.attachments[0]._fileManagerData.createdAt,null);assert.equal(result.attachments[1]._fileManagerData.createdAt,123);assert.equal(adapter.state.outbox.length,1);assert.equal(adapter.state.outbox[0].opId,op);assert.equal(messageHash(adapter.state.outbox[0].message),messageHash(original));await sync.restoreRemote();assert.equal(stores,2);
+});

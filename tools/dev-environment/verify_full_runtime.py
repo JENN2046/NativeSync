@@ -9,7 +9,7 @@ def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def write(p, value):
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(value, ensure_ascii=False, indent=2)+'\n')
-def prepare(root, package):
+def prepare(root, package, attachments=False):
     root.mkdir(mode=0o700, parents=True)
     write(root/'ISOLATED.json', {'kind':'nativesync-full-local-runtime','source':str(DEV)})
     manifests = json.loads((DEV/'matched-overlays.json').read_text())
@@ -42,12 +42,11 @@ def prepare(root, package):
     for row in payload['files']:
         dest=root/row['path'];dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(package/'payload'/row['path'],dest)
         provenance['files'][row['path']]=digest(dest)
-    # Apply the narrow renderer fix from the selected package if needed.
-    meta=package/'compat/host-patches/VCPChat-startup-diagnostics.json'
-    if meta.exists():
-        m=json.loads(meta.read_text());f=root/'VCPChat'/m['path']
-        if digest(f)==m['beforeSha256']:subprocess.run(['git','apply',str(package/'compat/host-patches/VCPChat-startup-diagnostics.patch')],cwd=root/'VCPChat',check=True)
-        assert digest(f)==m['afterSha256'],'Unrecognized desktop renderer'
+    # Apply only the selected package's declared host compatibility patches.
+    for m in payload.get('hostPatches',[]):
+        f=root/'VCPChat'/m['path']
+        if digest(f)==m['beforeSha256']:subprocess.run(['git','apply',str(package/m['patch'])],cwd=root/'VCPChat',check=True)
+        assert digest(f)==m['afterSha256'],'Unrecognized desktop host patch target: '+m['path']
         provenance['files']['VCPChat/'+m['path']]=digest(f)
     # Already-built public admin assets, no private config or runtime data.
     admin=DEV/'VCPToolBox/AdminPanel-Vue/dist'
@@ -63,15 +62,15 @@ def prepare(root, package):
     topics=[];selected=[];approved=[];now=int(datetime.datetime.now().timestamp()*1000)
     for case in cases:
         owner='ns-'+case;model='nativesync-'+case
-        topics.append({'key':case,'ownerType':'agent','ownerId':owner,'topicId':'test-topic','agentAlias':'NSDEV','model':model})
+        topics.append({'key':case,'ownerType':'agent','ownerId':owner,'topicId':'test-topic','agentAlias':'NSDEV','model':model,**({'imageModels':[model]} if attachments else {})})
         d={'itemId':owner,'itemType':'agent','topicId':'test-topic'};selected.append(d)
         h=root/'data/chat/UserData'/owner/'topics/test-topic/history.json';write(h,[]);approved.append({**d,'rawFileSha256':digest(h)})
         prompt='本地合成测试。'+('允许本轮指定测试工具。' if case in ['effect','aa'] else '[[VCPToolUse=Forbidden]]')
         write(root/'data/chat/Agents'/owner/'config.json',{'id':owner,'name':'NS '+case,'systemPrompt':prompt,'model':model,'maxOutputTokens':1024,'contextTokenLimit':32000,'temperature':0,'topics':[{'id':'test-topic','name':case,'createdAt':now}],'useThemeColorsInChat':True})
     write(root/'data/chat/settings.json',{'vcpServerUrl':'https://127.0.0.1:17653/v1/chat/completions','vcpApiKey':key,'userName':'本机合成测试','uiMode':'next','ChatDataServiceEnabled':False,'enableDistributedServer':False,'lastOpenAgentId':'ns-normal','lastOpenTopicId':'test-topic'})
-    write(root/'data/chat/.native-sync/connection.json',{'version':1,'enabled':True,'historySelectionApproved':True,'deviceId':'isolated-'+secrets.token_hex(8),'scopeMode':'selected','topics':selected,'approvedHistory':approved,'serverUrl':'https://127.0.0.1:17653','credentialSource':'existing-vcp-settings','publishCatalog':True,'publishExecutionConfigs':True,'syncAttachments':False})
+    write(root/'data/chat/.native-sync/connection.json',{'version':1,'enabled':True,'historySelectionApproved':True,'deviceId':'isolated-'+secrets.token_hex(8),'scopeMode':'selected','topics':selected,'approvedHistory':approved,'serverUrl':'https://127.0.0.1:17653','credentialSource':'existing-vcp-settings','publishCatalog':True,'publishExecutionConfigs':True,'syncAttachments':attachments})
     credentials=json.loads((root/'config/local-credentials.json').read_text())
-    values={'HOST':'127.0.0.1','PORT':'17650','ADMIN_PORT':'17651','API_URL':'http://127.0.0.1:17652','API_Key':key,'Key':key,'VCP_Key':key,'AdminUsername':credentials['adminUser'],'AdminPassword':credentials['adminPassword'],'DebugMode':'false','RAGMemoRefresh':'false','AGENT_DIR_PATH':str(root/'data/backend/agents'),'TVSTXT_DIR_PATH':str(root/'data/backend/tvs'),'KNOWLEDGEBASE_ROOT_PATH':str(root/'data/backend/knowledge'),'KNOWLEDGEBASE_STORE_PATH':str(root/'data/backend/store'),'KNOWLEDGEBASE_FULL_SCAN_ON_STARTUP':'false','WhitelistEmbeddingModel':'nativesync-local-embedding','NativeSyncEnabled':'true','NativeSyncDataDir':str(root/'data/native-sync'),'NativeMobileEnabled':'true','NativeMobileOrigin':'https://127.0.0.1:17653','NativeMobileTopics':json.dumps(topics,separators=(',',':')),'NativeMobileConfigSync':'true','NativeMobileAttachments':'false','NativeMobileBackendUrl':'https://127.0.0.1:17653','NativeMobileKeyExchangeEnabled':'true','NativeMobilePwaDir':str(root/'VCPToolBox/Plugin/NativeSync/mobile-dist')}
+    values={'HOST':'127.0.0.1','PORT':'17650','ADMIN_PORT':'17651','API_URL':'http://127.0.0.1:17652','API_Key':key,'Key':key,'VCP_Key':key,'AdminUsername':credentials['adminUser'],'AdminPassword':credentials['adminPassword'],'DebugMode':'false','RAGMemoRefresh':'false','AGENT_DIR_PATH':str(root/'data/backend/agents'),'TVSTXT_DIR_PATH':str(root/'data/backend/tvs'),'KNOWLEDGEBASE_ROOT_PATH':str(root/'data/backend/knowledge'),'KNOWLEDGEBASE_STORE_PATH':str(root/'data/backend/store'),'KNOWLEDGEBASE_FULL_SCAN_ON_STARTUP':'false','WhitelistEmbeddingModel':'nativesync-local-embedding','NativeSyncEnabled':'true','NativeSyncDataDir':str(root/'data/native-sync'),'NativeMobileEnabled':'true','NativeMobileOrigin':'https://127.0.0.1:17653','NativeMobileTopics':json.dumps(topics,separators=(',',':')),'NativeMobileConfigSync':'true','NativeMobileAttachments':str(attachments).lower(),'NativeMobileBackendUrl':'https://127.0.0.1:17653','NativeMobileKeyExchangeEnabled':'true','NativeMobilePwaDir':str(root/'VCPToolBox/Plugin/NativeSync/mobile-dist')}
     (root/'VCPToolBox/config.env').write_text(''.join(k+'='+v+'\n' for k,v in values.items()));os.chmod(root/'VCPToolBox/config.env',0o600)
     write(root/'VCPToolBox/agent_map.json',{'NSDEV':'Development.txt'});(root/'data/backend/agents/Development.txt').write_text('本机隔离开发 Agent。')
     write(root/'VCPToolBox/toolApprovalConfig.json',{'enabled':False,'fuzzyToolMatching':False})
@@ -80,20 +79,20 @@ def prepare(root, package):
     plugin=root/'VCPToolBox/Plugin/IsolatedEffect';plugin.mkdir(parents=True,exist_ok=True)
     write(plugin/'plugin-manifest.json',{'name':'IsolatedEffect','pluginType':'hybridservice','entryPoint':{'script':'effect.cjs'},'communication':{'protocol':'direct'},'configSchema':{}})
     (plugin/'effect.cjs').write_text("const fs=require('fs'),path=require('path');exports.processToolCall=async()=>{const r=path.resolve(__dirname,'../../..');if(!fs.existsSync(r+'/ISOLATED.json'))throw Error('ISOLATION_REQUIRED');const fd=fs.openSync(r+'/evidence/effect.txt','a',0o600);fs.writeSync(fd,'effect\\n');fs.fsyncSync(fd);fs.closeSync(fd);if(JSON.parse(fs.readFileSync(r+'/control.json')).fault==='external-effect')process.exit(78);return {status:'success',result:'isolated marker saved'};};")
-    for name in ['dev.py','desktop-stop.cjs','desktop-ready.cjs','verify-desktop-diagnostics.cjs','full-support.cjs','full-preload.cjs','full-browser.cjs']:
+    for name in ['dev.py','desktop-stop.cjs','desktop-ready.cjs','verify-desktop-diagnostics.cjs','full-support.cjs','full-preload.cjs','full-desktop-preload.cjs','full-attachments.cjs','full-browser.cjs']:
         shutil.copyfile(REPO/'tools/dev-environment'/name,root/'bin'/name)
     write(root/'control.json',{})
-    provenance['verificationFiles']={n:digest(root/'bin'/n) for n in ['dev.py','desktop-stop.cjs','full-browser.cjs','full-support.cjs','full-preload.cjs']}
+    provenance['verificationFiles']={n:digest(root/'bin'/n) for n in ['dev.py','desktop-stop.cjs','full-browser.cjs','full-support.cjs','full-preload.cjs','full-desktop-preload.cjs','full-attachments.cjs']}
     write(root/'PROVENANCE.json',provenance)
     return provenance
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--package',type=pathlib.Path,default=REPO/'.local/release-assembly/stable-local-delivery');p.add_argument('--cases',default='normal,offline,lost-response,startup,reply-intent,reply-applied,effect,aa,settings,install');p.add_argument('--resume',type=pathlib.Path);p.add_argument('--prepare-only',action='store_true');a=p.parse_args()
-    selected=a.cases.split(',');allowed={'normal','offline','lost-response','startup','reply-intent','reply-applied','effect','aa','install','settings'}
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--package',type=pathlib.Path,default=REPO/'.local/release-assembly/attachments-final');p.add_argument('--cases',default='normal,offline,lost-response,startup,reply-intent,reply-applied,effect,aa,settings,install,attachment-roundtrip,attachment-resume,attachment-lost-response,attachment-access');p.add_argument('--resume',type=pathlib.Path);p.add_argument('--prepare-only',action='store_true');a=p.parse_args()
+    selected=a.cases.split(',');allowed={'normal','offline','lost-response','startup','reply-intent','reply-applied','effect','aa','install','settings','attachment-roundtrip','attachment-resume','attachment-lost-response','attachment-access'}
     if not selected or len(set(selected))!=len(selected) or any(n not in allowed for n in selected):p.error('Unknown or repeated case')
     root=a.resume.resolve() if a.resume else RUNS/datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     assert root.is_relative_to(RUNS)
-    if not a.resume:prepare(root,a.package.resolve())
+    if not a.resume:prepare(root,a.package.resolve(),any(n.startswith('attachment-') for n in selected))
     print(json.dumps({'root':str(root),'phase':'prepared','cases':a.cases}),flush=True)
     if a.prepare_only:return
     assert json.loads((root/'ISOLATED.json').read_text())['kind']=='nativesync-full-local-runtime'

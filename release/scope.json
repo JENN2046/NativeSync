@@ -4,7 +4,8 @@
     "architecture recovery",
     "shared deterministic contracts",
     "server storage integrity",
-    "desktop native sync setup feature"
+    "desktop native sync setup feature",
+    "native attachment identity and local materialization compatibility"
   ],
   "excludes": [
     "pure execution lifecycle adapter",

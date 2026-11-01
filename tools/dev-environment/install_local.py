@@ -25,7 +25,7 @@ def root_check(root):
 def target(root,name):
     p=pathlib.PurePosixPath(name)
     assert not p.is_absolute() and '..' not in p.parts and '\\' not in name,'UNSAFE_PATH'
-    assert name.startswith(('VCPChat/modules/services/nativeSync/','VCPChat/modules/nativeSyncSettings/','VCPToolBox/Plugin/NativeSync/')) or name in ['VCPToolBox/modules/requestExecutionContext.js','VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js','VCPChat/modules/renderer/nativeExecutionStatus.js'],'PATH_NOT_OWNED'
+    assert name.startswith(('VCPChat/modules/services/nativeSync/','VCPChat/modules/nativeSyncSettings/','VCPToolBox/Plugin/NativeSync/')) or name in ['VCPToolBox/modules/requestExecutionContext.js','VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js','VCPChat/modules/renderer/nativeExecutionStatus.js','VCPChat/modules/services/pdfAttachmentService.js'],'PATH_NOT_OWNED'
     f=root/name
     for q in [f,*f.parents]:
         if q==root:break
@@ -41,14 +41,17 @@ def install(package,previous,root,backup):
         p=pathlib.PurePosixPath(row['path']);assert not p.is_absolute() and '..' not in p.parts
         assert sha(root/row['path'])==row['sha256'],'FULL_HOST_REQUIREMENT_MISMATCH '+row['path']
     # Explicit support patch, with its own before/after hashes; never arbitrary diff.
-    patchmeta=package/'compat/host-patches/VCPChat-startup-diagnostics.json';patch=None
-    if patchmeta.exists():patch=json.loads(patchmeta.read_text())
+    patches=new_m.get('hostPatches',[])
     plans=[]
     for name in sorted(set(new)|set(old)):
         f=target(root,name);before=sha(f);expected=old.get(name,{}).get('sha256');after=new.get(name,{}).get('sha256')
         assert before==expected,'TARGET_DIRTY '+name
         if before!=after:plans.append({'path':name,'before':before,'after':after,'source':str(package/'payload'/name) if after else None})
-    if patch:
+    for patch in patches:
+        patchfile=pathlib.PurePosixPath(patch['patch'])
+        assert not patchfile.is_absolute() and '..' not in patchfile.parts and patchfile.parent==pathlib.PurePosixPath('compat/host-patches') and patchfile.suffix=='.patch','INVALID_HOST_PATCH_PATH'
+        if patch.get('patchSha256'):assert sha(package/patchfile)==patch['patchSha256'],'HOST_PATCH_DIGEST_MISMATCH'
+        for executable in patch.get('requires',[]):assert shutil.which(executable),'HOST_PATCH_DEPENDENCY_REQUIRED '+executable
         name='VCPChat/'+patch['path'];f=target(root,name);before=sha(f)
         assert before in [patch['beforeSha256'],patch['afterSha256']],'HOST_PATCH_TARGET_DIRTY'
         if before==patch['beforeSha256']:
@@ -56,7 +59,7 @@ def install(package,previous,root,backup):
             import tempfile,subprocess
             with tempfile.TemporaryDirectory(prefix='nativesync-host-patch-') as temp:
                 stage=pathlib.Path(temp);out=stage/patch['path'];out.parent.mkdir(parents=True);shutil.copyfile(f,out)
-                subprocess.run(['git','apply',str(package/'compat/host-patches/VCPChat-startup-diagnostics.patch')],cwd=stage,check=True)
+                subprocess.run(['git','apply',str(package/patch['patch'])],cwd=stage,check=True)
                 assert sha(out)==patch['afterSha256'],'PATCH_RESULT_MISMATCH'
                 content=out.read_bytes()
             plans.append({'path':name,'before':before,'after':patch['afterSha256'],'patchContent':content})

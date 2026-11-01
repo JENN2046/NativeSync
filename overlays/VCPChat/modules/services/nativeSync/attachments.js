@@ -3,6 +3,20 @@ const fs=require('node:fs/promises'),path=require('node:path'),{fileURLToPath}=r
 const {wireTopic,fail}=require('./protocol');
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const MAX_FILE=20*1024*1024,CHUNK=65536;
+// Native send history keeps the FileManager identity inside its UI wrapper.
+// Match the existing metadata contract before constructing upload identities.
+const attachmentId=a=>a.id||a._fileManagerData?.id||'attachment_'+(a.hash||a._fileManagerData?.hash);
+function materializedData(a,restored,frames,frameHashes){
+ const data={...restored,id:a.id,createdAt:a.createdAt??null};
+ // FileManager returns null defaults and fresh parser/timestamp values.
+ // Only accepted metadata may enter the raw-history envelope validation path.
+ for(const key of ['extractedText','imageFrames','blobHash','frameHashes'])delete data[key];
+ if(typeof a.extractedText==='string')data.extractedText=a.extractedText;
+ if(Array.isArray(frames))data.imageFrames=frames;
+ if(a.blobHash)data.blobHash=a.blobHash;
+ if(frameHashes)data.frameHashes=frameHashes;
+ return data;
+}
 class DesktopAttachments{
  constructor({queue,appDataRoot,connection,send,download,storeAttachment}){
   this.queue=queue;this.root=path.resolve(appDataRoot,'UserData','attachments');this.connection=connection;this.send=send;this.download=download;this.storeAttachment=storeAttachment;this.uploaded=new Map();this.skipped=0;
@@ -20,9 +34,9 @@ class DesktopAttachments{
  async mapping(){const r=await this.send('/api/plugins/NativeSync/mobile/execution-configs');return r.topics;}
  find(rows,d){const id=wireTopic(d),t=rows.find(t=>t.ownerType===id.ownerType&&t.ownerId===id.ownerId&&t.topicId===id.topicId);if(!t)throw fail('TOPIC_NOT_ALLOWED');return t;}
  async uploadBytes(t,message,attachment,bytes,name,value,type,frameIndex){
-  const requestId='desktop_'+digest(JSON.stringify([t.key,message.id,attachment.id,value,frameIndex??null]));
+  const id=attachmentId(attachment),requestId='desktop_'+digest(JSON.stringify([t.key,message.id,id,value,frameIndex??null]));
   const route='/api/plugins/NativeSync/attachments/'+encodeURIComponent(t.key);
-  const started=await this.send(route+'/uploads',{body:{requestId,name,size:bytes.length,expectedHash:value,messageId:message.id,attachmentId:attachment.id,...(type&&type!=='application/octet-stream'?{type}:{}),...(frameIndex!==undefined?{frameIndex}:{})}});
+  const started=await this.send(route+'/uploads',{body:{requestId,name,size:bytes.length,expectedHash:value,messageId:message.id,attachmentId:id,...(type&&type!=='application/octet-stream'?{type}:{}),...(frameIndex!==undefined?{frameIndex}:{})}});
   if(started.state!=='ready')for(let offset=started.offset;offset<bytes.length;offset+=CHUNK)await this.send(route+'/uploads/'+started.uploadId+'/chunks',{body:{offset,data:bytes.subarray(offset,offset+CHUNK).toString('base64')}});
   const done=await this.send(route+'/uploads/'+started.uploadId+'/finish',{body:{}});if(done.hash!==value)throw fail('ATTACHMENT_HASH_MISMATCH');
  }
@@ -33,14 +47,14 @@ class DesktopAttachments{
     try{
      const source=attachment._fileManagerData||attachment,value=attachment.blobHash||source.blobHash||attachment.hash||source.hash;
      if(!/^[a-f0-9]{64}$/.test(value||''))throw fail('ATTACHMENT_SOURCE_HASH_REQUIRED');
-     const {file,stat}=await this.localFile(attachment),cache=JSON.stringify([t.key,message.id,attachment.id,value,file,stat.size,stat.mtimeMs]);
+     const {file,stat}=await this.localFile(attachment),cache=JSON.stringify([t.key,message.id,attachmentId(attachment),value,file,stat.size,stat.mtimeMs]);
      const fresh=!this.uploaded.has(cache);
      if(fresh){const bytes=await fs.readFile(file);if(digest(bytes)!==value)throw fail('ATTACHMENT_SOURCE_HASH_MISMATCH');const name=path.win32.basename(path.basename(attachment.name||source.name||'attachment.txt'));await this.uploadBytes(t,message,attachment,bytes,name,value,source.type);this.uploaded.set(cache,true);}
      const frames=source.imageFrames||attachment.imageFrames;
      if(Array.isArray(frames)&&frames.length&&(fresh||!source.frameHashes?.length)){
       if(frames.length>10)throw fail('ATTACHMENT_FRAME_LIMIT');const hashes=[];
       for(let index=0;index<frames.length;index++){const frame=Buffer.from(frames[index],'base64');if(frame.length>MAX_FILE)throw fail('ATTACHMENT_FILE_TOO_LARGE');const value=digest(frame),type=frame[0]===137?'image/png':frame[0]===255?'image/jpeg':'image/webp',ext=type.split('/')[1].replace('jpeg','jpg');await this.uploadBytes(t,message,attachment,frame,'frame_'+index+'.'+ext,value,type,index);hashes.push(value);}
-      if(JSON.stringify(source.frameHashes)!==JSON.stringify(hashes))await this.queue.mutate(d,history=>history.map(m=>m.id!==message.id?m:{...m,attachments:(m.attachments||[]).map(a=>{const data=a._fileManagerData||a;if(a.id!==attachment.id||(a.hash||data.hash)!==value||JSON.stringify(data.imageFrames||a.imageFrames)!==JSON.stringify(frames))return a;return {...a,frameHashes:hashes,...(a._fileManagerData?{_fileManagerData:{...a._fileManagerData,frameHashes:hashes}}:{})};})}));
+      if(JSON.stringify(source.frameHashes)!==JSON.stringify(hashes))await this.queue.mutate(d,history=>history.map(m=>m.id!==message.id?m:{...m,attachments:(m.attachments||[]).map(a=>{const data=a._fileManagerData||a;if(attachmentId(a)!==attachmentId(attachment)||(a.hash||data.hash)!==value||JSON.stringify(data.imageFrames||a.imageFrames)!==JSON.stringify(frames))return a;return {...a,frameHashes:hashes,...(a._fileManagerData?{_fileManagerData:{...a._fileManagerData,frameHashes:hashes}}:{})};})}));
      }
      if(this.uploaded.size>10000)this.uploaded.delete(this.uploaded.keys().next().value);
     }catch(e){if(['ENOENT','ATTACHMENT_BLOB_MISSING','ATTACHMENT_SOURCE_OUTSIDE_ROOT','ATTACHMENT_SOURCE_HASH_REQUIRED'].includes(e.code)){this.skipped++;continue;}throw e;}
@@ -62,7 +76,7 @@ class DesktopAttachments{
     let frames=attachment.imageFrames??null;if(frameHashes?.length){frames=[];for(let index=0;index<frameHashes.length;index++){const bytes=await this.download(route+'/frames/'+index);if(digest(bytes)!==frameHashes[index])throw fail('ATTACHMENT_HASH_MISMATCH');frames.push(bytes.toString('base64'));}}
     // Only the native Queue may change local history. Keep synced content
     // metadata authoritative while adding device-local native file handles.
-    await this.queue.mutate(d,history=>history.map(m=>m.id!==message.id?m:{...m,attachments:(m.attachments||[]).map(a=>a.id!==attachment.id||(a.blobHash||a.hash)!==expected?a:{...a,src:restored.internalPath,internalPath:restored.internalPath,_fileManagerData:{...restored,id:a.id,extractedText:a.extractedText??null,imageFrames:frames,...(a.blobHash?{blobHash:a.blobHash}:{}),...(frameHashes?{frameHashes}:{})}})}),{intent:{source:'native-attachment-materialization',localOnly:true,known:false}});
+    await this.queue.mutate(d,history=>history.map(m=>m.id!==message.id?m:{...m,attachments:(m.attachments||[]).map(a=>a.id!==attachment.id||(a.blobHash||a.hash)!==expected?a:{...a,src:restored.internalPath,internalPath:restored.internalPath,_fileManagerData:materializedData(a,restored,frames,frameHashes)})}),{intent:{source:'native-attachment-materialization',localOnly:true,known:false}});
    }
   }
  }

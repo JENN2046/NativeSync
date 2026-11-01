@@ -1,0 +1,11 @@
+{
+  "path": "modules/services/pdfAttachmentService.js",
+  "beforeSha256": "95e5a0ce235d56e633b72c8e616aeb8a21425ef0bb6baee11559e27712c84fed",
+  "afterSha256": "8b9c2acd16eda62e8fa130b6f22f780b58dc2c052900b779abf15c767bd3f8a3",
+  "scope": "fixed Linux full local host; separate compatibility patch",
+  "behavior": "pass exact Uint8Array bytes to legacy pdf-parse instead of pooled Buffer; on Linux use system pdfinfo/pdftocairo for bounded image fallback without loading pdf-poppler which exits the app",
+  "requires": [
+    "pdfinfo",
+    "pdftocairo"
+  ]
+}

@@ -1,0 +1,53 @@
+--- a/modules/services/pdfAttachmentService.js
++++ b/modules/services/pdfAttachmentService.js
+@@ -320,16 +320,23 @@
+ 
+     try {
+         console.log(`[PdfAttachmentService] 开始 Poppler 转图渲染: ${pdfPath}`);
+-        const poppler = require('pdf-poppler');
+         const prefix = 'page';
+-        const popplerOptions = {
+-            format: 'jpeg',
+-            out_dir: tempDir,
+-            out_prefix: prefix,
+-            page: null // 先渲染所有页面，随后按上限截取
+-        };
+-
+-        await poppler.convert(pdfPath, popplerOptions);
++        let totalPages = null;
++        if (process.platform === 'linux') {
++            // pdf-poppler exits the process on Linux; use the installed Poppler CLI.
++            const execFile = require('util').promisify(require('child_process').execFile);
++            const info = await execFile('pdfinfo', [pdfPath], { timeout: 15000, maxBuffer: 1024 * 1024 });
++            const match = info.stdout.match(/^Pages:\s+(\d+)/m);
++            if (match) totalPages = Number(match[1]);
++            await execFile('pdftocairo', ['-jpeg', '-scale-to', String(MAX_IMAGE_DIMENSION),
++                '-f', '1', '-l', String(maxPages), pdfPath, path.join(tempDir, prefix)],
++                { timeout: 60000, maxBuffer: 1024 * 1024 });
++        } else {
++            const poppler = require('pdf-poppler');
++            await poppler.convert(pdfPath, {
++                format: 'jpeg', out_dir: tempDir, out_prefix: prefix, page: null
++            });
++        }
+ 
+         const allFiles = await fs.readdir(tempDir);
+         const imageFiles = allFiles
+@@ -368,7 +375,7 @@
+         console.log(`[PdfAttachmentService] 成功转换并压缩 ${imageFrames.length} 页图片（原 PDF 共 ${totalRendered} 页）`);
+         return {
+             imageFrames,
+-            totalPages: totalRendered,
++            totalPages: totalPages || totalRendered,
+             convertedCount: imageFrames.length
+         };
+     } finally {
+@@ -403,7 +410,7 @@
+     let parsedSuccess = false;
+     try {
+         const pdfParse = require('pdf-parse');
+-        const parseResult = await pdfParse(dataBuffer, {
++        const parseResult = await pdfParse(new Uint8Array(dataBuffer), {
+             pagerender: async (pageData) => {
+                 const structured = await renderPageStructured(pageData);
+                 pages.push(structured);
