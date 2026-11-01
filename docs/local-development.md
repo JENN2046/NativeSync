@@ -47,3 +47,5 @@ python3 tools/validate_local.py --profile tencent-ce904c47 --prepare-only
 本轮已在本机 `jenn-System-Product-Name` 实际安装目标版本副本：220/220联合检查及8项安装/回退场景通过。最新本机回执位于 `.local/local-validation/runs/tencent-ce904c47/20261031T162120827352Z/`；该结果不是复用远端通过记录。
 
 最新稳定候选、完整应用恢复验证入口和本机安装方式见[稳定交付验收](local-stable-closeout-20261031.md)及[操作说明](local-stable-install-20261031.md)。本机CONFIG中的候选已更新为stable-local-delivery。
+
+当前候选已推进至desktop-setup-final，增加全局设置中的NativeSync面板，见[桌面接入管理交付](desktop-sync-settings-closeout-20261031.md)。旧稳定包保留为兼容回退资料，不被新记录覆盖。

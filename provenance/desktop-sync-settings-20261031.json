@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-31 America/Adak",
+  "sourceCommit": "66c94fd2c9f71318acca44c7ebb010ea26f7d1ab",
+  "manifestSha256": "019a1ff7eca7225576c402892517ec946e7bd1c78d00ae48760e3fb30653b419",
+  "zipSha256": "a3e44906c211b88fbe4a950939a6b03c6ab37078ad0b0f8b100cddbd8b9a36c2",
+  "payloadFiles": 83,
+  "runtimeEvidence": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T063449751830Z",
+  "fullRuntimeCases": [
+    {
+      "case": "normal",
+      "result": "PASS"
+    },
+    {
+      "case": "offline",
+      "result": "PASS"
+    },
+    {
+      "case": "lost-response",
+      "result": "PASS"
+    },
+    {
+      "case": "startup",
+      "result": "PASS"
+    },
+    {
+      "case": "reply-intent",
+      "result": "PASS"
+    },
+    {
+      "case": "reply-applied",
+      "result": "PASS"
+    },
+    {
+      "case": "effect",
+      "result": "PASS"
+    },
+    {
+      "case": "aa",
+      "result": "PASS"
+    },
+    {
+      "case": "settings",
+      "result": "PASS"
+    },
+    {
+      "case": "install",
+      "result": "PASS"
+    }
+  ],
+  "verificationFiles": {
+    "dev.py": "b26b83979c23d2cb6eb15ffeb84468ddd7282d8214fe2c0774b3f142d571bb6a",
+    "desktop-stop.cjs": "5f1681d433e7be2a9834e24823bcac828eb79972bd0ea1083eb10b0873ed92f1",
+    "full-browser.cjs": "6cbf51a290fb25a2f5c1db915230b6c69d2df517c140edeadcb2a19838f3d2bc",
+    "full-support.cjs": "b4b2013037ebd79f0591a40b03cdad590d4766e28b5bf307dd2edaa5ce99aab8",
+    "full-preload.cjs": "2c542068ffad4fcb9d274d291a2c5102a7346146e0c89ae1afc094d43110a934"
+  },
+  "integration": {
+    "tests": 233,
+    "pass": 233,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "installationChecks": 8,
+  "fixtureEvidence": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/desktop-setup-final-validation",
+  "fixedEnvironment": {
+    "result": "PASS",
+    "candidateManifestSha256": "019a1ff7eca7225576c402892517ec946e7bd1c78d00ae48760e3fb30653b419",
+    "zipSha256": "a3e44906c211b88fbe4a950939a6b03c6ab37078ad0b0f8b100cddbd8b9a36c2",
+    "sourceCommit": "66c94fd2c9f71318acca44c7ebb010ea26f7d1ab",
+    "payloadFiles": 83,
+    "changedFiles": 7,
+    "existingHistoryAndConnectionAndStateBytesRetained": true,
+    "existingMessages": 6,
+    "existingJobIdentitiesAndAttemptsRetained": true,
+    "current": {
+      "active": true,
+      "readOnly": false,
+      "degraded": null,
+      "configurationError": null,
+      "attachmentError": null,
+      "pendingOperations": 0,
+      "buffered": 0,
+      "conflicts": 0
+    },
+    "settingsPageOpened": true
+  },
+  "backups": {
+    "failedAttempt": "/home/jenn/NativeSync-Dev-Backups/desktop-setup-20261031",
+    "installed": "/home/jenn/NativeSync-Dev-Backups/desktop-setup-final-20261031"
+  },
+  "limitations": [
+    "selected mode and server-preconfigured topic binding",
+    "existing scope changes remain controlled; Source setup is readonly",
+    "manual reopen through existing launcher after guarded quit",
+    "local Linux Electron and Chrome mobile viewport; synthetic models/effects only"
+  ],
+  "serversAccessed": false,
+  "productionDataCopied": false
+}
