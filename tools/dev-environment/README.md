@@ -32,3 +32,7 @@ IsolatedEffect是该实例新生成的direct hybridservice插件，只写入并f
 `install_local.py`用于固定开发根及本入口生成的实例，要求停止本套进程，核对完整宿主和前一包摘要，
 只替换包内代码及已声明的桌面补丁；拒绝未知目标和脏文件。回退仅恢复备份代码，不回退数据库或状态。
 候选包内`tools/install_local.py`与`tools/install_release.py`可独立配合使用，公共夹具安装器限制保持原样。
+
+正常桌面退出由`desktop-stop.cjs`核对本实例主窗口后调用原生`closeApp`，等待受保护的清理流程，
+不以SIGTERM/SIGKILL绕过busy拒绝。后端仍使用自身SIGTERM排空；已退出的僵尸PID和被复用的外部PID
+不再被当成本环境活跃进程。指定故障点的exit78只存在于单独的崩溃测试。

@@ -80,10 +80,10 @@ def prepare(root, package):
     plugin=root/'VCPToolBox/Plugin/IsolatedEffect';plugin.mkdir(parents=True,exist_ok=True)
     write(plugin/'plugin-manifest.json',{'name':'IsolatedEffect','pluginType':'hybridservice','entryPoint':{'script':'effect.cjs'},'communication':{'protocol':'direct'},'configSchema':{}})
     (plugin/'effect.cjs').write_text("const fs=require('fs'),path=require('path');exports.processToolCall=async()=>{const r=path.resolve(__dirname,'../../..');if(!fs.existsSync(r+'/ISOLATED.json'))throw Error('ISOLATION_REQUIRED');const fd=fs.openSync(r+'/evidence/effect.txt','a',0o600);fs.writeSync(fd,'effect\\n');fs.fsyncSync(fd);fs.closeSync(fd);if(JSON.parse(fs.readFileSync(r+'/control.json')).fault==='external-effect')process.exit(78);return {status:'success',result:'isolated marker saved'};};")
-    for name in ['dev.py','desktop-ready.cjs','verify-desktop-diagnostics.cjs','full-support.cjs','full-preload.cjs','full-browser.cjs']:
+    for name in ['dev.py','desktop-stop.cjs','desktop-ready.cjs','verify-desktop-diagnostics.cjs','full-support.cjs','full-preload.cjs','full-browser.cjs']:
         shutil.copyfile(REPO/'tools/dev-environment'/name,root/'bin'/name)
     write(root/'control.json',{})
-    provenance['verificationFiles']={n:digest(root/'bin'/n) for n in ['dev.py','full-browser.cjs','full-support.cjs','full-preload.cjs']}
+    provenance['verificationFiles']={n:digest(root/'bin'/n) for n in ['dev.py','desktop-stop.cjs','full-browser.cjs','full-support.cjs','full-preload.cjs']}
     write(root/'PROVENANCE.json',provenance)
     return provenance
 

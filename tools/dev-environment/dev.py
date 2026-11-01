@@ -13,7 +13,7 @@ def alive(pid):
  except OSError:return False
 def spawn(name,args,cwd):
  old=processes.get(name)
- if old and alive(old):return
+ if old and alive(old) and PathLikeUnderRoot(old):return
  log=(ROOT/'logs'/f'{name}.log').open('ab');p=subprocess.Popen(args,cwd=cwd,env=environment(),stdout=log,stderr=subprocess.STDOUT,start_new_session=True);processes[name]=p.pid;FILE.write_text(json.dumps(processes,indent=2)+'\n');print(name,'PID',p.pid,flush=True)
 def wait_ready():
  credentials=json.loads((ROOT/'config/local-credentials.json').read_text())
@@ -38,11 +38,23 @@ if command=='start':
   spawn('chat',[NODE,'scripts/vcpchat-dev-launcher.mjs','--project-root',str(ROOT/'VCPChat'),'--shallow-doctor','--ready-timeout-ms','60000','--','--remote-debugging-port=17654'],ROOT/'VCPChat')
   subprocess.run([NODE,str(ROOT/'bin/desktop-ready.cjs')],cwd=ROOT,env=environment(),check=True,timeout=55)
 elif command=='stop':
+ chat_pid=processes.get('chat')
+ if chat_pid and alive(chat_pid) and PathLikeUnderRoot(chat_pid):
+  subprocess.run([NODE,str(ROOT/'bin/desktop-stop.cjs')],cwd=ROOT,env=environment(),check=True,timeout=25)
  for name,pid in list(processes.items()):
   try:
    cmd=pathlib.Path('/proc')/str(pid)/'cmdline'
    if alive(pid) and (str(ROOT).encode() in cmd.read_bytes() or PathLikeUnderRoot(pid)):
+    if name=='chat':
+     deadline=time.monotonic()+5
+     while alive(pid) and time.monotonic()<deadline:time.sleep(.1)
+     if alive(pid):raise SystemExit('Desktop launcher still running after guarded quit; not forcing it.')
+     continue
     os.killpg(pid,signal.SIGTERM);print('stopping',name,pid)
   except OSError:pass
+ deadline=time.monotonic()+15
+ for name,pid in processes.items():
+  while alive(pid) and PathLikeUnderRoot(pid) and time.monotonic()<deadline:time.sleep(.1)
+  if alive(pid) and PathLikeUnderRoot(pid):raise SystemExit(name+' is still draining; no forced termination attempted.')
 else:
- for name,pid in processes.items():print(name,pid,'running' if alive(pid) else 'stopped')
+ for name,pid in processes.items():print(name,pid,'running' if alive(pid) and PathLikeUnderRoot(pid) else 'stopped')
