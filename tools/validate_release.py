@@ -13,7 +13,7 @@ def probe(stage):
  env={'PATH':str(pathlib.Path(a.node).parent)+':/usr/bin:/bin','LANG':'C.UTF-8','TZ':'UTC','HOME':str(out)};x=subprocess.run([a.node,str(r/'tests/fixtures/releaseLifecycleProbe.cjs'),str(hosts),str(data),stage],env=env,text=True,capture_output=True,timeout=15);(out/(stage+'-probe.txt')).write_text(x.stdout+x.stderr);assert x.returncode==0,x.stdout+x.stderr;return json.loads(x.stdout)
 seed=probe('seed');state=sha(data/'desktop-state-v3.json');(hosts/'VCPToolBox/Plugin/NativeSync/config.env').write_text('SYNTHETIC_CONFIG_MUST_SURVIVE=1\n');configuration=sha(hosts/'VCPToolBox/Plugin/NativeSync/config.env')
 # All preflight failures must leave the code set untouched.
-first=sorted(new)[0];saved=(hosts/first).read_bytes();(hosts/first).write_bytes(saved+b'\n// synthetic local edit\n')
+first=next(name for name in sorted(new) if name in old);saved=(hosts/first).read_bytes();(hosts/first).write_bytes(saved+b'\n// synthetic local edit\n')
 try:
  try:install(candidate,hosts,out/'dirty-backup',previous);raise RuntimeError('Dirty target accepted')
  except AssertionError as e:assert 'TARGET_DIRTY' in str(e)

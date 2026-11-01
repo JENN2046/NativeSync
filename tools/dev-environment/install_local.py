@@ -75,6 +75,7 @@ def install(package,previous,root,backup):
             f=target(root,row['path']);assert sha(f)==row['before'],'TARGET_CHANGED_DURING_INSTALL'
             if row['after'] is None:f.unlink()
             else:
+                f.parent.mkdir(parents=True,exist_ok=True)
                 temp=f.with_name(f.name+'.nativesync-new');assert not temp.exists(),'TEMP_EXISTS';shutil.copyfile(backup/'new-files'/row['path'],temp);assert sha(temp)==row['after'];os.replace(temp,f)
         journal['state']='installed';write(backup/'INSTALL.json',journal)
     except BaseException:
