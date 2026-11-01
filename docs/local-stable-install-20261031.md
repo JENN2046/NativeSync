@@ -8,6 +8,7 @@ AgentAssistant 原生查询链路；模型回复和外部效果均为本地合�
 候选包含运行载荷（数量以MANIFEST为准）、完整PWA、宿主兼容清单和已声明的桌面补丁。
 若包中包含SETTINGS.md，NativeSync接入管理面板的操作与边界以该文档为准。
 附件使用与Linux PDF兼容条件见包内ATTACHMENTS.md；Linux图片回退需要本机pdfinfo/pdftocairo。
+全量Source接入、授权及兼容回退前提见FULL_SOURCE.md。启用全量自动续聊后，不能直接照搬早期选定话题的降版步骤。
 运行文件逐项SHA见MANIFEST.json，补丁前后SHA见hostPatches，完整本机宿主指纹见
 compat/dev-hosts/linux-full.json。固定宿主的历史源码基础和匹配增量见开发环境原有来源记录；
 不能把该组合冒充另一个完整Git提交。包不包含依赖、凭据、聊天、SQLite或state。
@@ -46,12 +47,15 @@ python3 /absolute/candidate/tools/install_local.py install \
 /home/jenn/NativeSync-Dev/start
 ```
 
-前一包应从对应安装记录核对；本轮固定环境的前一包为.local/release-assembly/attachments-accepted，
-隔离整机升级同时覆盖从早期delivery-a载荷安装新Feature的路径。
+前一包必须从该目标当前安装记录和逐文件摘要核对，不使用文档中的历史包名猜测。
 如当前已经应用桌面提示补丁且其摘要准确匹配，重复安装可为零文件替换；这不等于没有校验。
 新备份必须位于开发根之外，工具拒绝覆盖已有备份。
 
 回退使用该次安装自己的备份，不使用其他版本的历史备份：
+
+如果目标旧包不支持全量自动续聊，必须先完成FULL_SOURCE.md中的排空检查和source_compat.py prepare，
+再执行下面的代码回退。全量阶段实际核验的旧目标为5a4ee82附件修复候选；SCOPE中的9dc099b只用于历史公共夹具组装，
+不能把它当成本轮全量Source的安全降版目标。重新安装新代码后，停止状态下restore同一兼容回执，再启动。
 
 ```sh
 /home/jenn/NativeSync-Dev/stop

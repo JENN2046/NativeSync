@@ -5,7 +5,9 @@
     "shared deterministic contracts",
     "server storage integrity",
     "desktop native sync setup feature",
-    "native attachment identity and local materialization compatibility"
+    "native attachment identity and local materialization compatibility",
+    "Source full-history sync with on-demand background bodies",
+    "Source-authorized frozen single and group continuation"
   ],
   "excludes": [
     "pure execution lifecycle adapter",
@@ -13,9 +15,15 @@
     "poison-row skipping or republication",
     "production configuration and data"
   ],
-  "executionSource": "bulk SQL recovery, equal to 0c5cf07 execution.js",
+  "executionSource": "maintained bulk SQL and Journal recovery with Source-authorized frozen execution snapshots; experimental lifecycle adapters excluded",
   "codeRollbackBaseline": "9dc099b6007e018a9743d72048d5e6fbb43b94e7",
-  "rollbackStateCompatibility": "v3/native-message-intents-v2 only; never restore old state, inbox pages or SQLite",
+  "codeRollbackBaselinePurpose": "historical selected-mode fixture assembly only; not a supported full-Source downgrade",
+  "fullSourceRollback": {
+    "sourceCommit": "5a4ee827e675f54c4f86babbd6b9777c222038e0",
+    "requires": "settled stopped local root, source_compat.py prepare, matching installation backup; preserves Source history and reading, disables new automatic continuation",
+    "evidence": "full-source closeout and per-install receipts; no arbitrary older candidate substitution"
+  },
+  "rollbackStateCompatibility": "v3/native-message-intents-v2; full Source additionally requires the declared config preparation; never restore database, state, cursor, Source scope, bindings or execution snapshots",
   "runtimePrefixes": [
     "VCPChat/modules/services/nativeSync/",
     "VCPToolBox/Plugin/NativeSync/",
