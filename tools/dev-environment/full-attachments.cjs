@@ -29,10 +29,10 @@ module.exports=async function(c){
   await until(()=>phone().evaluate(id=>document.querySelector(`[data-message-id="${id}"]`)?.textContent.includes('ISOLATED_PDF_ATTACHMENT'),d.id),'PWA extracted PDF text');
   await pickMobile('normal',names,'ISOLATED_MOBILE_ATTACHMENTS');await until(()=>job('normal')?.state==='completed','mobile multimodal execution',45000);const m=await nativeAttachments('normal','ISOLATED_MOBILE_ATTACHMENTS');assert.equal(m.attachments.length,3);checkNative(m);
   const model=counts().filter(x=>x.model==='nativesync-normal').at(-1);assert.ok(model.imageHashes.includes(sha(png)));assert.ok(model.attachmentMarkers.includes('ISOLATED_TEXT_ATTACHMENT'));assert.ok(model.attachmentMarkers.includes('ISOLATED_PDF_ATTACHMENT'));
-  await until(()=>desktop().evaluate(()=>document.body.innerText.includes('ISOLATED_MOBILE_ATTACHMENTS')),'native displayed remote message');
+  await until(()=>desktop().evaluate(id=>{const img=document.querySelector(`[data-message-id="${id}"] img.message-attachment-image-thumbnail`);return img?.complete&&img.naturalWidth>0&&img.src.startsWith('file://');},m.id),'native actual image decode after materialization');
   await desktop().screenshot({path:root+'/evidence/attachments-desktop.png',fullPage:true});await phone().screenshot({path:root+'/evidence/attachments-mobile.png',fullPage:true});
   const before=counts().length,ids=(await proof('normal')).ids;await stop('backend');await backend();await restartChat();await proof('normal');assert.deepEqual(history('normal').map(m=>m.id),ids);assert.equal(counts().length,before);checkNative(history('normal').find(x=>x.id===m.id));
-  return {desktopMessageId:d.id,mobileMessageId:m.id,downloads,nativeFilesVerified:3,linuxPdfFallbackAlive:true,desktopPdfFrames:1,offlineOriginalOpIds:originalOps,modelReceivedImageHash:sha(png),textAndPdfExtracted:true,restartNoRedispatch:true,...await proof('normal')};
+  return {desktopMessageId:d.id,mobileMessageId:m.id,downloads,nativeFilesVerified:3,nativeImageDecodedWithoutReload:true,linuxPdfFallbackAlive:true,desktopPdfFrames:1,offlineOriginalOpIds:originalOps,modelReceivedImageHash:sha(png),textAndPdfExtracted:true,restartNoRedispatch:true,...await proof('normal')};
  });
  if(cases.includes('attachment-resume'))await run('attachment-resume',async()=>{
   const topic='offline',before=count('nativesync-offline');control({dropChunkOnce:true});await pickMobile(topic,['resume.txt'],'ISOLATED_ATTACHMENT_RESUME');

@@ -87,7 +87,7 @@ def prepare(root, package, attachments=False):
     return provenance
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--package',type=pathlib.Path,default=REPO/'.local/release-assembly/attachments-final');p.add_argument('--cases',default='normal,offline,lost-response,startup,reply-intent,reply-applied,effect,aa,settings,install,attachment-roundtrip,attachment-resume,attachment-lost-response,attachment-access');p.add_argument('--resume',type=pathlib.Path);p.add_argument('--prepare-only',action='store_true');a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--package',type=pathlib.Path,default=REPO/'.local/release-assembly/attachments-accepted');p.add_argument('--cases',default='normal,offline,lost-response,startup,reply-intent,reply-applied,effect,aa,settings,install,attachment-roundtrip,attachment-resume,attachment-lost-response,attachment-access');p.add_argument('--resume',type=pathlib.Path);p.add_argument('--prepare-only',action='store_true');a=p.parse_args()
     selected=a.cases.split(',');allowed={'normal','offline','lost-response','startup','reply-intent','reply-applied','effect','aa','install','settings','attachment-roundtrip','attachment-resume','attachment-lost-response','attachment-access'}
     if not selected or len(set(selected))!=len(selected) or any(n not in allowed for n in selected):p.error('Unknown or repeated case')
     root=a.resume.resolve() if a.resume else RUNS/datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')

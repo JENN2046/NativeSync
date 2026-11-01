@@ -100,7 +100,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
         if(!response.ok){let code;try{code=(await response.json()).error?.code;}catch{}throw fail(/^ATTACHMENT_[A-Z_]+$/.test(code||'')?code:'ATTACHMENT_DOWNLOAD_FAILED');}
         const chunks=[];let size=0;for await(const chunk of response.body){size+=chunk.length;if(size>20*1024*1024)throw fail('ATTACHMENT_FILE_TOO_LARGE');chunks.push(chunk);}return Buffer.concat(chunks);
     });
-    const attachments=connection?.syncAttachments?new (require('./attachments').DesktopAttachments)({queue,appDataRoot,connection,send,download,storeAttachment}):null;
+    const attachments=connection?.syncAttachments?new (require('./attachments').DesktopAttachments)({queue,appDataRoot,connection,send,download,storeAttachment,onMaterialized:(d,result)=>{adapter.notificationPending.set(adapter.topicKey(d),{agentId:d.itemId,ownerId:d.itemId,ownerType:d.itemType,topicId:d.topicId,revision:result?.revision,source:'native-sync'});adapter.retryNotifications();}}):null;
     const { NativeExecutionStatus, localDelivery } = require('./executionStatus');
     const withLocal = result => ({ ...result, local: localDelivery(adapter, { itemType: result.topic.ownerType, itemId: result.topic.ownerId, topicId: result.topic.topicId }) });
     const executionStatus = connection ? await NativeExecutionStatus.open({

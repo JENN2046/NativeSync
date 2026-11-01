@@ -15,6 +15,7 @@ PWA 在当前话题选择文件后点击发送，上传与提交沿用原有协�
 桌面上传使用原生历史包装内的 FileManager 身份，与既有规范化消息身份一致。
 收到附件后只补本机文件句柄；同步的创建时间、提取文本与图片帧引用保持权威。
 FileManager 的新时间戳、解析器结果与 null 默认值不进入已接受元数据。
+本机句柄落盘后复用既有历史通知与重试，刷新当前桌面图片，无需重新选择话题或重开应用。
 没有更改公开协议、state格式、AA接口或数据库结构。
 
 ## Linux PDF 宿主补丁
@@ -32,7 +33,7 @@ FileManager 的新时间戳、解析器结果与 null 默认值不进入已接�
 
 源码工具 `tools/dev-environment/verify_full_runtime.py` 默认包含原有10项与4项附件场景，
 可用 `--cases attachment-roundtrip,attachment-resume,attachment-lost-response,attachment-access` 定向运行。
-`--package` 应指向本次候选；默认目录为 `.local/release-assembly/attachments-final`。
+`--package` 应指向本次候选；默认目录为 `.local/release-assembly/attachments-accepted`。
 
 每次创建独立本机目录与浏览器配置。测试启用附件和脚本化模型的图片输入能力，
 记录模型实际收到的图片字节哈希与合成文本标记。文件选择框代选、网络故障代理和预加载均只在测试进程中。

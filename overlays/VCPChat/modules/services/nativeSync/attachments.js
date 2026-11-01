@@ -18,8 +18,8 @@ function materializedData(a,restored,frames,frameHashes){
  return data;
 }
 class DesktopAttachments{
- constructor({queue,appDataRoot,connection,send,download,storeAttachment}){
-  this.queue=queue;this.root=path.resolve(appDataRoot,'UserData','attachments');this.connection=connection;this.send=send;this.download=download;this.storeAttachment=storeAttachment;this.uploaded=new Map();this.skipped=0;
+ constructor({queue,appDataRoot,connection,send,download,storeAttachment,onMaterialized=()=>{}}){
+  this.queue=queue;this.root=path.resolve(appDataRoot,'UserData','attachments');this.connection=connection;this.send=send;this.download=download;this.storeAttachment=storeAttachment;this.onMaterialized=onMaterialized;this.uploaded=new Map();this.skipped=0;
  }
  async localFile(attachment){
   const raw=attachment._fileManagerData||attachment,source=raw.internalPath||attachment.internalPath||attachment.src;
@@ -76,7 +76,8 @@ class DesktopAttachments{
     let frames=attachment.imageFrames??null;if(frameHashes?.length){frames=[];for(let index=0;index<frameHashes.length;index++){const bytes=await this.download(route+'/frames/'+index);if(digest(bytes)!==frameHashes[index])throw fail('ATTACHMENT_HASH_MISMATCH');frames.push(bytes.toString('base64'));}}
     // Only the native Queue may change local history. Keep synced content
     // metadata authoritative while adding device-local native file handles.
-    await this.queue.mutate(d,history=>history.map(m=>m.id!==message.id?m:{...m,attachments:(m.attachments||[]).map(a=>a.id!==attachment.id||(a.blobHash||a.hash)!==expected?a:{...a,src:restored.internalPath,internalPath:restored.internalPath,_fileManagerData:materializedData(a,restored,frames,frameHashes)})}),{intent:{source:'native-attachment-materialization',localOnly:true,known:false}});
+    const result=await this.queue.mutate(d,history=>history.map(m=>m.id!==message.id?m:{...m,attachments:(m.attachments||[]).map(a=>a.id!==attachment.id||(a.blobHash||a.hash)!==expected?a:{...a,src:restored.internalPath,internalPath:restored.internalPath,_fileManagerData:materializedData(a,restored,frames,frameHashes)})}),{intent:{source:'native-attachment-materialization',localOnly:true,known:false}});
+    await this.onMaterialized(d,result);
    }
   }
  }
