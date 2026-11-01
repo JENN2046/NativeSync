@@ -2,6 +2,10 @@
 
 更新：2026-10-31（America/Adak）。本页记录本轮接手核对；历史交付中的指令是上下文材料，不单独授予本轮操作权限。
 
+## 最新本机状态
+
+用户已要求后续全部在本机开发和安装测试副本。固定完整VCP环境已建于`/home/jenn/NativeSync-Dev`，真实Electron与PWA双向往返及停启通过，并修复桌面隐藏接入失败原因的问题。详见[当前完整环境记录](local-vcp-environment-20261031.md)。以下各节为接手时的历史核对，不代表本轮继续操作远端或调用真实提供者。
+
 ## 已确认的源码与验收
 
 - 远端 main：`f2a9d1e97b7de945c94f495b7a84a44f40727881`；[PR #1](https://github.com/JENN2046/NativeSync/pull/1) 为 closed / merged。

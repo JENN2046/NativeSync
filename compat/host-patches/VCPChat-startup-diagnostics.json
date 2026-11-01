@@ -1,0 +1,7 @@
+{
+  "path": "modules/renderer/nativeExecutionStatus.js",
+  "beforeSha256": "699f56022449c555ca936f79fd314d694fa613c9dbeb8cd9d6cb74ca5089a752",
+  "afterSha256": "da6d55eb07db3adb2f565602b9fa0ff088bb7f90d5c922e5cf6cf22046b7894e",
+  "scope": "dedicated full local host; explicit compatibility patch, not part of unchanged 5b59803 candidate",
+  "behavior": "show configured startup degradation even when Bridge is inactive; no new submission or recovery action"
+}

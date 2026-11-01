@@ -15,3 +15,7 @@ Bridge专属模块在overlays管理；main/preload、共享History写入边界�
 reviewed-history/windows-host-convergence.patch原字节保留既有已审收敛增量，**仅是历史参考，不是当前所有叠加的单一安装包**。不从旧Git HEAD对整个runtime做diff，把用户其他改动误算成NativeSync。Windows当前完整兼容安装组合仍以#70已接受的15项指纹及配套材料为准。
 
 本仓初始导入不新增宿主补丁、不重构核心，也不提供整文件覆盖生产的自动安装器。
+
+## 本机完整宿主：启动诊断
+
+`host-patches/VCPChat-startup-diagnostics.patch`修正任务面板在Bridge启动失败时隐藏错误的问题；JSON记录准确before/after摘要。只适用于摘要匹配的宿主文件，已在`/home/jenn/NativeSync-Dev`应用和验证。它是独立兼容增量，尚未改变5b59803候选的77文件运行包。
