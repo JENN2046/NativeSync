@@ -50,7 +50,7 @@ function buildPanel(doc) {
         const b = el('button', label, 'sidebar-button small-button');
         b.type = 'button'; b.id = id; return b;
     };
-    const intro = el('p', '把电脑上的已保存话题接续到手机。首次接入会同步所选历史和手机续聊所需的助手设定（包括提示词）；遇到历史冲突会停止，不自动覆盖。访问 Key 沿用现有服务器设置。');
+    const intro = el('p', '把电脑上的已保存话题接续到手机。接入会按确认范围同步历史和手机续聊所需的助手设定（包括提示词）；遇到历史冲突会停止，不自动覆盖。访问 Key 沿用现有服务器设置。');
     const server = el('p'); server.id = 'nativeSyncServer';
     const connection = button('nativeSyncOpenConnection', '打开服务器连接设置');
     connection.onclick = () => requestSettingsSection('server-connection');
@@ -60,7 +60,7 @@ function buildPanel(doc) {
     const enabled = el('input'); enabled.type = 'checkbox'; enabled.id = 'nativeSyncEnabled';
     desired.append(enabled, el('span', '下次启动启用同步'));
     const binding = el('p'); binding.id = 'nativeSyncBinding';
-    const mode=el('select');mode.id='nativeSyncScopeMode';mode.setAttribute('aria-label','同步范围');for(const [value,label] of [['selected','选定话题'],['source','全部 Agent／群聊']]){const option=el('option',label);option.value=value;mode.append(option);}
+    const mode=el('select');mode.id='nativeSyncScopeMode';mode.setAttribute('aria-label','同步范围');for(const [value,label] of [['selected','选定话题'],['source','全部 Agent／群聊'],['managed','Source 管理（只读）']]){const option=el('option',label);option.value=value;mode.append(option);}
     const sourceFields=el('div');sourceFields.id='nativeSyncSourceFields';sourceFields.hidden=true;
     const sourceId=el('input');sourceId.id='nativeSyncSourceId';sourceId.placeholder='服务器预配置的 Source ID';sourceId.setAttribute('aria-label',sourceId.placeholder);
     const deviceId=el('p');deviceId.id='nativeSyncDeviceId';sourceFields.append(sourceId,deviceId);
@@ -87,7 +87,7 @@ function buildPanel(doc) {
     function invalidate() { approval = null; review.hidden = true; confirmed.checked = false; update(); }
     function update() {
         sourceFields.hidden=mode.value!=='source';list.hidden=search.hidden=mode.value==='source';
-        selection.textContent = mode.value==='source' ? '全部原生 Agent、群聊及以后新增的话题' : `已选择 ${selected.size} / 8 个话题`;
+        selection.textContent = mode.value==='managed'?'同步范围由现有 Source 配置管理':mode.value==='source' ? '全部原生 Agent、群聊及以后新增的话题' : `已选择 ${selected.size} / 8 个话题`;
         const blocked = !view || Boolean(view.error) || (view.sourceMode&&!view.fullSource);
         enabled.disabled = busy || blocked;
         preview.disabled = busy || blocked || !enabled.checked || (mode.value==='source'?!sourceId.value.trim():!selected.size);
@@ -122,7 +122,7 @@ function buildPanel(doc) {
             const result = await api.nativeSyncSetupOverview();
             if (!result?.success) throw Error(result?.error || 'SETUP_UNAVAILABLE');
             view = result; enabled.checked = result.enabled;
-            mode.value=result.sourceMode?'source':'selected';sourceId.value=result.sourceId||'';deviceId.textContent='本机设备标识：'+result.deviceId;
+            mode.value=result.sourceMode?(result.fullSource?'source':'managed'):'selected';for(const option of mode.options)if(option.value==='managed')option.hidden=mode.value!=='managed';sourceId.value=result.sourceId||'';deviceId.textContent='本机设备标识：'+result.deviceId;
             selected = new Set(result.topics.map(key)); invalidate();
             server.textContent = `服务器：${result.serverOrigin || result.backendOrigin || '尚未配置 HTTPS 连接'}`;
             const c = result.current;
@@ -133,7 +133,7 @@ function buildPanel(doc) {
             if (!c.active && !result.bindingLocked) counts.textContent = '尚未接入，接入后显示同步进度。';
             if (c.configurationError) counts.textContent += ` · ${explain(c.configurationError)}`;
             if(c.source)counts.textContent+=` · 历史已接入 ${c.source.completedImports} · 待接入 ${c.source.pendingImports} · 目录异常 ${c.source.directoryErrors} · 续聊配置待就绪 ${c.source.configurationPending??'待核对'}`;
-            binding.textContent = result.sourceMode ? '当前采用 Source 来源绑定；范围和身份保持，全量包含以后新增会话。' : result.bindingLocked ? '沿用已有设备和话题绑定。此处可停用或恢复；已有范围的变更需走受控范围流程。' : '首次接入请选择需要同步的话题，检查后再确认。';
+            binding.textContent = result.sourceMode&&!result.fullSource?'当前 Source 范围保持只读，请通过已有受控流程核对或变更。':result.sourceMode ? '当前采用 Source 来源绑定；范围和身份保持，全量包含以后新增会话。' : result.bindingLocked ? '沿用已有设备和话题绑定。此处可停用或恢复；已有范围的变更需走受控范围流程。' : '首次接入请选择需要同步的话题，检查后再确认。';
             notice.textContent = result.error ? explain(result.error) : result.connectionError ? explain(result.connectionError) : '';
             if (!c.active && result.enabled && !result.restartRequired && result.topics[0] && api.getNativeExecutionStatus) {
                 const d = result.topics[0];

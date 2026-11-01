@@ -64,6 +64,7 @@ test('source publication sends only changed topic inputs, updates dependent grou
  const publisher=new SourceExecutionPublication({send,getTopics:()=>f.connection.topics,getDirectory:()=>f.sync.directory,readAgentConfig:f.readAgentConfig,readGroupConfig:f.readGroupConfig});
  for(let i=0;i<8;i++)await publisher.tick();assert.equal(posts.length,5);assert.equal(publisher.errors.size,0);for(let i=0;i<3;i++)await publisher.tick();assert.equal(posts.length,5);
  await update('agent','one',{temperature:0.6});await f.sync.discover();for(let i=0;i<5;i++)await publisher.tick();assert.equal(posts.length,9);assert.equal(posts.slice(5).filter(p=>p.topics[0].ownerType==='group').length,1);
+ await update('agent','one',{apiKey:'SYNTHETIC_DO_NOT_TRANSPORT_CHANGED'});await f.sync.discover();for(let i=0;i<5;i++)await publisher.tick();assert.equal(posts.length,9);
  await update('agent','other',{systemPrompt:'{{VCPChatCanvas}}'});await f.sync.discover();await publisher.tick();assert.equal(publisher.errors.size,1);const other=f.portal.topics.find(t=>t.ownerId==='other');assert.equal(f.portal.engine.configs.public(other.key).configError,'DESKTOP_CONTEXT_REQUIRED');
  await update('agent','other',{systemPrompt:'PORTABLE_other'});await f.sync.discover();await publisher.tick();assert.equal(publisher.errors.size,0);assert.equal(f.portal.engine.configs.public(other.key).configError,undefined);
  assert(posts.every(p=>p.topics.length===1));assert(!JSON.stringify(posts).includes('apiKey'));

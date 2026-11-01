@@ -7,7 +7,7 @@ const env={...process.env,CHOKIDAR_USEPOLLING:'true',CHOKIDAR_INTERVAL:'1000',VC
 const credential=JSON.parse(fs.readFileSync(root+'/config/local-credentials.json')).serverKey;
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 const read=f=>JSON.parse(fs.readFileSync(root+'/'+f));
-function write(f,v){const dest=root+'/'+f;fs.mkdirSync(path.dirname(dest),{recursive:true});fs.writeFileSync(dest,JSON.stringify(v,null,2)+'\n');}
+function write(f,v){const dest=root+'/'+f,temp=dest+'.verification-new';fs.mkdirSync(path.dirname(dest),{recursive:true});assert(!fs.existsSync(temp));fs.writeFileSync(temp,JSON.stringify(v,null,2)+'\n',{mode:0o600});fs.renameSync(temp,dest);}
 function control(v){write('control.json',v);}
 async function until(fn,label,timeout=25000){const end=Date.now()+timeout;let last;do{try{const value=await fn();if(value)return value;}catch(e){last=e.message;}await delay(100);}while(Date.now()<end);throw Error('TIMEOUT '+label+(last?': '+last:''));}
 function launch(name,args,cwd,extra={}){const logOffset=fs.existsSync(root+'/logs/'+name+'.log')?fs.statSync(root+'/logs/'+name+'.log').size:0;const fd=fs.openSync(root+'/logs/'+name+'.log','a');const child=spawn(process.execPath,args,{cwd,env:{...env,...extra},detached:true,stdio:['ignore',fd,fd]});fs.closeSync(fd);child.logOffset=logOffset;children[name]=child;processes[name]=child.pid;write('data/processes.json',processes);return child;}
@@ -20,7 +20,7 @@ const history=(topic,dir='data/chat')=>read(dir+'/UserData/ns-'+topic+'/topics/t
 const state=(dir='data/chat')=>read(dir+'/.native-sync/state.json');
 const syncDone=()=>{const s=state(),head=sql('SELECT coalesce(max(seq),0) AS n FROM journal')[0].n;return !s.outbox.length&&!s.inbox.length&&s.cursor>=head;};
 let desktop,desktopBrowser,mobileBrowser,phone;
-async function backend(){launch('backend',['--require',root+'/bin/full-preload.cjs','server.js'],root+'/VCPToolBox');await until(async()=>{const r=await fetch('http://127.0.0.1:17650/api/v1/sync/status',{headers:{Authorization:'Bearer '+credential}});return r.ok;},'backend ready',45000);write('evidence/backend-ready.json',{pid:children.backend.pid,at:Date.now()});}
+async function backend(){launch('backend',['--require',root+'/bin/full-preload.cjs','server.js'],root+'/VCPToolBox');await until(async()=>{const source=fs.existsSync(root+'/SOURCE_PROFILE.json')?read('SOURCE_PROFILE.json'):null,config=source?read('data/chat/.native-sync/connection.json'):null,route=source?'/api/v1/sync/source/info?'+new URLSearchParams({sourceId:source.sourceId,deviceId:config.deviceId}):'/api/v1/sync/status';const r=await fetch('http://127.0.0.1:17650'+route,{headers:{Authorization:'Bearer '+credential}});if(!r.ok){const body=await r.json();throw Error('readiness '+r.status+' '+(body.error?.code||''));}return true;},'backend ready',45000);write('evidence/backend-ready.json',{pid:children.backend.pid,at:Date.now()});}
 async function chat(dir='data/chat'){
  launch('chat',['scripts/vcpchat-dev-launcher.mjs','--project-root',root+'/VCPChat','--shallow-doctor','--ready-timeout-ms','60000','--','--remote-debugging-port=17654'],root+'/VCPChat',{VCPCHAT_APP_DATA_DIR:root+'/'+dir,VCPCHAT_STATE_DIR:root+'/data/launcher-'+path.basename(dir),NODE_OPTIONS:'--require='+root+'/bin/full-desktop-preload.cjs'});
  await until(async()=>{try{desktopBrowser=await p.connect({browserURL:'http://127.0.0.1:17654',defaultViewport:null});desktop=(await desktopBrowser.pages()).find(x=>x.url()==='file://'+root+'/VCPChat/main.html');if(desktop&&await desktop.$('#messageInput'))return true;await desktopBrowser.disconnect();}catch{}return false;},'Electron renderer',45000);await until(()=>fs.readFileSync(root+'/logs/chat.log').subarray(children.chat.logOffset).toString('utf8').includes('VCPChat 已启动'),'managed desktop ready',45000);
@@ -49,7 +49,12 @@ async function crashAndRecover(stage,topic){control({fault:stage});await sendPho
 async function main(){
  // Wait for the dedicated daily instance to finish graceful shutdown.
  await until(async()=>{try{await fetch('http://127.0.0.1:17654/json/version');return false;}catch{return true;}},'previous owned desktop shutdown');
- launch('support',[root+'/bin/full-support.cjs'],root+'/bin');await backend();launch('admin',['adminServer.js'],root+'/VCPToolBox');await chat();await until(syncDone,'initial sync');
+ launch('support',[root+'/bin/full-support.cjs'],root+'/bin');await backend();launch('admin',['adminServer.js'],root+'/VCPToolBox');await chat();
+ if(cases.includes('source-full')){
+  await require('./full-source.cjs')({root,fs,path,crypto,assert,p,env,read,write,control,until,sql,counts,state,syncDone,call,run,backend,stop,restartChat,closeRuntime,openRuntime,credential,desktop:()=>desktop,currentPhone:()=>phone,children,setMobileBrowser:b=>mobileBrowser=b,setPhone:page=>phone=page});
+  write('RESULT.json',{result:'PASS',rows,source:read('PROVENANCE.json'),scope:'full-source real VCP backend, Electron and Chrome; synthetic models/data; not physical Android',remoteAccess:false});return;
+ }
+ await until(syncDone,'initial sync');
  const cert=new crypto.X509Certificate(fs.readFileSync(root+'/config/tls/localhost-cert.pem')),pin=crypto.createHash('sha256').update(cert.publicKey.export({type:'spki',format:'der'})).digest('base64');
  mobileBrowser=await p.launch({executablePath:'/usr/bin/google-chrome',headless:true,userDataDir:root+'/data/mobile-browser',args:['--ignore-certificate-errors-spki-list='+pin],defaultViewport:{width:414,height:896,isMobile:true,hasTouch:true}});
  phone=await mobileBrowser.newPage();await authenticate(phone);

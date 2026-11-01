@@ -115,7 +115,7 @@ class NativeSyncSettings {
             result.configured = Boolean(config.value);
             result.enabled = config.value?.enabled === true;
             result.sourceMode = config.value?.scopeMode === 'source';
-            result.fullSource=result.sourceMode&&!require('../services/nativeSync/sourceScope').normalizeScope(config.value.sourceScope);
+            result.fullSource=result.sourceMode&&config.value.fullSelectionApproved===true&&typeof config.value.sourceId==='string'&&typeof config.value.spaceId==='string'&&!require('../services/nativeSync/sourceScope').normalizeScope(config.value.sourceScope);
             result.sourceId=config.value?.sourceId||'';result.deviceId=config.value?.deviceId||this.deviceDraft;
             result.topics = (config.value?.topics || []).map(descriptor);
             result.bindingLocked = Boolean(await this.binding(config.value));

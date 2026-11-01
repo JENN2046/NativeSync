@@ -53,7 +53,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  for name,digest in inputs.items():
   if not ref:assert sha((ROOT/name).read_bytes())==digest,'Source changed while building'
  fingerprint=sha(json.dumps(inputs,sort_keys=True,separators=(',',':')).encode())
- manifest={'format':1,'profile':scope['profile'],'kind':'rollback-baseline' if ref else 'candidate','sourceCommit':ref or git('rev-parse','HEAD').decode().strip(),'sourceInputsSha256':fingerprint,'sourceDirty':False if ref else bool(git('status','--porcelain')),'completePwa':not skip_pwa,'node':subprocess.check_output([node,'--version'],text=True).strip(),'buildRecipeSha256':sha(b''.join((ROOT/p).read_bytes() for p in ['tools/assemble_release.py','tools/build_contracts.mjs','release/scope.json','tools/check_sync_storage.cjs','tools/install_release.py','tools/dev-environment/install_local.py'])),'buildDependencies':{name:lock['packages']['node_modules/'+name]['version'] for name in ['vite','vue','@vitejs/plugin-vue','rolldown']},'scope':scope,'files':files,'productionTargetVerified':False,'dataRestoreSupported':False}
+ manifest={'format':1,'profile':scope['profile'],'kind':'rollback-baseline' if ref else 'candidate','sourceCommit':ref or git('rev-parse','HEAD').decode().strip(),'sourceInputsSha256':fingerprint,'sourceDirty':False if ref else bool(git('status','--porcelain')),'completePwa':not skip_pwa,'node':subprocess.check_output([node,'--version'],text=True).strip(),'buildRecipeSha256':sha(b''.join((ROOT/p).read_bytes() for p in ['tools/assemble_release.py','tools/build_contracts.mjs','release/scope.json','tools/check_sync_storage.cjs','tools/install_release.py','tools/dev-environment/install_local.py','tools/dev-environment/source_compat.py'])),'buildDependencies':{name:lock['packages']['node_modules/'+name]['version'] for name in ['vite','vue','@vitejs/plugin-vue','rolldown']},'scope':scope,'files':files,'productionTargetVerified':False,'dataRestoreSupported':False}
  if not ref:
   manifest['hostProfiles']=['linux-full-local']
   manifest['hostPatches']=[{**json.loads((ROOT/'compat/host-patches'/(n+'.json')).read_text()),'patch':'compat/host-patches/'+n+'.patch','patchSha256':sha((ROOT/'compat/host-patches'/(n+'.patch')).read_bytes())} for n in ['VCPChat-startup-diagnostics','VCPChat-linux-pdf','VCPChat-group-parameters']]
@@ -62,6 +62,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  if not ref:(out/'diagnostics').mkdir();shutil.copyfile(ROOT/'tools/check_sync_storage.cjs',out/'diagnostics/check_sync_storage.cjs')
  (out/'tools').mkdir();shutil.copyfile(ROOT/'tools/install_release.py',out/'tools/install_release.py')
  if not ref:shutil.copyfile(ROOT/'tools/dev-environment/install_local.py',out/'tools/install_local.py')
+ if not ref:shutil.copyfile(ROOT/'tools/dev-environment/source_compat.py',out/'tools/source_compat.py')
  write_json(out/'SCOPE.json',scope)
  if (ROOT/'docs/release-assembly-20261031.md').exists():shutil.copyfile(ROOT/'docs/release-assembly-20261031.md',out/'INSTALL.md')
  if not ref:shutil.copyfile(ROOT/'docs/local-stable-install-20261031.md',out/'LOCAL_INSTALL.md')
@@ -69,6 +70,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  if not ref:shutil.copyfile(ROOT/'docs/attachments-local-20261031.md',out/'ATTACHMENTS.md')
  if not ref:shutil.copyfile(ROOT/'docs/groups-local-20261101.md',out/'GROUPS.md')
  if not ref:shutil.copyfile(ROOT/'docs/android-phone-test-20261101.md',out/'ANDROID_TEST.md')
+ if not ref:shutil.copyfile(ROOT/'docs/full-source-local-20261101.md',out/'FULL_SOURCE.md')
  manifest['supportFiles']={f.relative_to(out).as_posix():sha(f.read_bytes()) for f in sorted(out.rglob('*')) if f.is_file() and not f.is_symlink() and not f.is_relative_to(out/'assembled') and not f.is_relative_to(payload) and f.name not in ['MANIFEST.json','pwa-build.txt']}
  write_json(out/'MANIFEST.json',manifest)
  print(json.dumps({'output':str(out),'files':len(files),'sourceInputsSha256':fingerprint,'kind':manifest['kind'],'completePwa':not skip_pwa}),flush=True)

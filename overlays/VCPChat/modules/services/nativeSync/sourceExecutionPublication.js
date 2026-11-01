@@ -6,7 +6,7 @@ const key=t=>JSON.stringify([t.itemType||t.ownerType||'agent',t.itemId||t.ownerI
 
 // Derived scheduling state. Durable versions remain in existing server snapshots.
 class SourceExecutionPublication{
- constructor({send,getTopics,getDirectory,...readers}){Object.assign(this,{send,getTopics,getDirectory,readers});this.versions=new Map();this.sent=new Map();this.errors=new Map();this.cursor='';this.revision='';this.loaded=false;this.pending=null;this.error=null;}
+ constructor({send,getTopics,getDirectory,...readers}){Object.assign(this,{send,getTopics,getDirectory,readers});this.versions=new Map();this.sent=new Map();this.inputHashes=new Map();this.errors=new Map();this.cursor='';this.revision='';this.loaded=false;this.pending=null;this.error=null;}
  async tick(){
   try{
    if(!this.loaded){
@@ -26,9 +26,10 @@ class SourceExecutionPublication{
    if(!this.versions.has(c.key)){this.loaded=false;this.cursor='';this.revision='';return;}
    try{
     const config=await executionConfigFor(c.t,{...this.readers,allowDirectoryTopic:true,readExecutionPolicy:()=>policy,readTavernRules:()=>rules}),prior=this.versions.get(c.key);
+    const inputHash=sha256(stable(JSON.parse(JSON.stringify(config))));if(this.inputHashes.get(c.key)===inputHash&&!this.errors.has(c.key)){this.sent.set(c.key,c.revision);this.pending--;this.error=null;return;}
     const result=await this.send(route,{body:{topics:[{...wireTopic(c.t),expectedVersion:prior.configVersion||0,config}]}}),row=result.topics?.[0];
     if(result.topics?.length!==1||row?.key!==prior.key||!Number.isSafeInteger(row.configVersion)||!row.configHash)throw fail('CONFIG_PUBLICATION_ACK_INVALID');
-    this.versions.set(c.key,{...prior,...row});this.sent.set(c.key,c.revision);this.errors.delete(c.key);this.pending--;this.error=null;
+    this.versions.set(c.key,{...prior,...row});this.sent.set(c.key,c.revision);this.inputHashes.set(c.key,inputHash);this.errors.delete(c.key);this.pending--;this.error=null;
    }catch(error){
     if([400,403,413,415].includes(error.status)||['SELECTED_TOPIC_NOT_IN_AGENT','GROUP_CONFIG_AUTHORITY_REQUIRED','DESKTOP_CONTEXT_REQUIRED','CONFIG_PROMPT_SNAPSHOT_UNAVAILABLE','CONFIG_PROMPT_AUTHORITY_CONFLICT'].includes(error.code))this.errors.set(c.key,{revision:c.revision,code:error.code||'CONFIG_PUBLICATION_FAILED',retryAt:Date.now()+30000});
     if(error.code==='CONFIG_VERSION_CONFLICT'){this.loaded=false;this.cursor='';this.revision='';}
