@@ -69,3 +69,10 @@ test('source publication sends only changed topic inputs, updates dependent grou
  await update('agent','other',{systemPrompt:'PORTABLE_other'});await f.sync.discover();await publisher.tick();assert.equal(publisher.errors.size,0);assert.equal(f.portal.engine.configs.public(other.key).configError,undefined);
  assert(posts.every(p=>p.topics.length===1));assert(!JSON.stringify(posts).includes('apiKey'));
 });
+
+test('all-supported source startup requires both capability and unchanged server space before adopting local state',async t=>{
+ const f=await fixture(t,{scope:{mode:'full'},executionMode:'all-supported'});f.connection.executionMode='all-supported';assert.throws(()=>f.portal.engine.configs.assertRunnable({agentAlias:'synthetic-one'},null),e=>e.code==='AGENT_NOT_EXECUTABLE');await f.adopt();const saved=JSON.stringify(f.adapter.state),{SourceSync}=require(CHAT+'/modules/services/nativeSync/sourceSync');
+ await assert.rejects(SourceSync.verify(f.connection,f.adapter.state,async(...args)=>({...await f.send(...args),spaceId:'different-space'})),e=>e.code==='SOURCE_BINDING_CHANGED');assert.equal(JSON.stringify(f.adapter.state),saved);
+ f.store.sourceCatalog.grants.get('sourceA').executionMode=undefined;await assert.rejects(SourceSync.verify(f.connection,f.adapter.state,f.send),e=>e.code==='SOURCE_EXECUTION_NOT_APPROVED');assert.equal(JSON.stringify(f.adapter.state),saved);
+ const body={opId:'legacy-large-catalog',baseRevision:f.sync.state.revision,agents:Array.from({length:5},(_,i)=>({ownerType:'agent',ownerId:'legacy-'+i,name:'Legacy '+i,avatar:'data:image/png;base64,'+'A'.repeat(23000)})),topics:[],removed:[]};assert(Buffer.byteLength(JSON.stringify(body))>96000);await f.adapter.transaction(next=>{next.source.pendingCatalog=body;});await f.sync.archiveUnacceptedCatalog(body,{code:'BODY_TOO_LARGE',status:413});assert.equal(f.sync.state.pendingCatalog,null);assert.equal(f.sync.state.catalogRejections[body.opId].notAcceptedAtRevision,body.baseRevision);
+});

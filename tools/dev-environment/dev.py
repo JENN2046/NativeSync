@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import pathlib,subprocess,os,json,sys,time,signal,ssl,urllib.request,urllib.error
+import pathlib,subprocess,os,json,sys,time,signal,ssl,urllib.request,urllib.error,urllib.parse
 ROOT=pathlib.Path(__file__).resolve().parents[1];NODE='/home/jenn/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node';FILE=ROOT/'data/processes.json'
 def environment():
  allowed=['PATH','HOME','USER','LOGNAME','LANG','DISPLAY','WAYLAND_DISPLAY','XAUTHORITY','XDG_RUNTIME_DIR','DBUS_SESSION_BUS_ADDRESS','SHELL']
@@ -22,7 +22,9 @@ def wait_ready():
  while time.monotonic()<deadline:
   if not alive(processes['backend']):raise SystemExit('Backend exited before readiness; inspect logs/backend.log.')
   try:
-   for route in ['/v1/models','/api/v1/sync/status']:
+   connection_file=ROOT/'data/chat/.native-sync/connection.json';connection=json.loads(connection_file.read_text()) if connection_file.exists() else {}
+   sync_route='/api/v1/sync/source/info?'+urllib.parse.urlencode({k:connection.get(k,'') for k in ['sourceId','deviceId']}) if connection.get('scopeMode')=='source' else '/api/v1/sync/status'
+   for route in ['/v1/models',sync_route]:
     req=urllib.request.Request('https://127.0.0.1:17653'+route,headers={'Authorization':'Bearer '+credentials['serverKey']})
     with urllib.request.urlopen(req,context=context,timeout=2) as response:
      if response.status!=200:raise RuntimeError('unready')

@@ -36,7 +36,7 @@ class ExecutionConfigs {
     }
     assertRunnable(topic,snapshot) {
         if(snapshot?.authority){this.verify(topic,snapshot);return;}
-        if(!topic?.agentAlias||!this.agentManager.isAgent(topic.agentAlias))throw fail('AGENT_NOT_EXECUTABLE');
+        if(!topic?.agentAlias||!this.agentManager.isAgent(topic.agentAlias)||!(snapshot?.model||topic.model))throw fail('AGENT_NOT_EXECUTABLE');
     }
     async normalize(topic, input) {
         const authority=topic.sourceParent?this.memberAuthority(topic.sourceParent,topic.sourceMemberId):this.authority(topic);
@@ -64,7 +64,7 @@ class ExecutionConfigs {
         if (typeof input.name !== 'string' || !input.name || input.name.length > 200 || typeof input.systemPrompt !== 'string' || input.systemPrompt.length > 128000 || typeof input.model !== 'string' || !input.model.trim() || input.model.length > 200) throw fail('INVALID_EXECUTION_CONFIG',400);
         let prompt=input.systemPrompt.replace(/\{\{AgentName\}\}/g,input.name),promptPolicy='desktop',promptTemplate;
         const references=text=>this.hasAgentReference(text);
-        if(/\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(prompt))throw fail('DESKTOP_CONTEXT_REQUIRED');
+        if(authority&&/\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(prompt))throw fail('DESKTOP_CONTEXT_REQUIRED');
         const refs=references(prompt);
         if(refs.length){
             if(!topic.agentAlias||!this.agentManager.isAgent(topic.agentAlias))throw fail('CONFIG_PROMPT_SNAPSHOT_UNAVAILABLE');

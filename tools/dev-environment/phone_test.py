@@ -21,6 +21,9 @@ def prepare_phone(address,package):
     settings=root/'data/chat/settings.json';value=json.loads(settings.read_text());value.update({'lastOpenItemId':'ns-normal','lastOpenItemType':'agent'});write(settings,value)
     fixtures=root/'fixtures';fixtures.mkdir(exist_ok=True);(fixtures/'phone-test.txt').write_text('NATIVESYNC_ANDROID_SYNTHETIC_FILE\n手机上传测试用合成文件。\n')
     run([NODE,'-e',"require(process.argv[1])({create:{width:96,height:64,channels:3,background:{r:20,g:135,b:200}}}).png().toFile(process.argv[2])",str(root/'VCPToolBox/node_modules/sharp'),str(fixtures/'phone-test.png')])
+    provision_gateway(root,address)
+def provision_gateway(root,address):
+    interface,prefix=network(address)
     folder=root/'config/phone';folder.mkdir(mode=0o700)
     # The signing key is discarded immediately; only this test leaf is issued.
     run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-days','2','-subj','/CN=NativeSync Android Local Test','-addext','basicConstraints=critical,CA:TRUE,pathlen:0','-addext','keyUsage=critical,keyCertSign,cRLSign','-keyout',str(folder/'ca-key.pem'),'-out',str(folder/'ca.pem')])
@@ -32,10 +35,19 @@ def prepare_phone(address,package):
     fingerprint=digest(folder/'ca.crt');origin='https://'+address+':17663'
     cfg={'kind':'nativesync-android-local-test','address':address,'interface':interface,'prefix':prefix,'origin':origin,'certificateUrl':'http://'+address+':17664/','caFingerprint':fingerprint,'expiresAt':int(time.time()*1000)+4*3600*1000,'rootSigningKeyDeleted':True,'realDeviceAcceptance':'pending'};write(root/'PHONE.json',cfg)
     env=root/'VCPToolBox/config.env';lines=env.read_text().splitlines();replace={'NativeMobileOrigin':origin,'NativeMobileBackendUrl':origin,'NativeMobileKeyExchangeEnabled':'false'};env.write_text('\n'.join(k+'='+replace[k] if (k:=line.split('=',1)[0]) in replace else line for line in lines)+'\n')
-    (root/'VCPToolBox/Plugin/IsolatedEffect/plugin-manifest.json').rename(root/'VCPToolBox/Plugin/IsolatedEffect/plugin-manifest.json.block')
+    effect=root/'VCPToolBox/Plugin/IsolatedEffect/plugin-manifest.json'
+    if effect.exists():effect.rename(effect.with_name('plugin-manifest.json.block'))
     for name in ['phone-run.cjs','phone-gateway.cjs']:shutil.copyfile(REPO/'tools/dev-environment'/name,root/'bin'/name)
-    provenance=json.loads((root/'PROVENANCE.json').read_text());provenance['verificationProfile']='phone-four-synthetic-topics';provenance['phoneProfile']={'topics':4,'keyExchange':False,'certificateSha256':fingerprint,'origin':origin};provenance['verificationFiles'].update({n:digest(root/'bin'/n) for n in ['phone-run.cjs','phone-gateway.cjs']});write(root/'PROVENANCE.json',provenance)
+    provenance=json.loads((root/'PROVENANCE.json').read_text());provenance['verificationProfile']='full-source-android' if (root/'SOURCE_PROFILE.json').exists() else 'phone-four-synthetic-topics';provenance['phoneProfile']={'topics':len(json.loads((root/'SOURCE_PROFILE.json').read_text())['topics']) if (root/'SOURCE_PROFILE.json').exists() else 4,'keyExchange':False,'certificateSha256':fingerprint,'origin':origin};provenance['verificationFiles'].update({n:digest(root/'bin'/n) for n in ['phone-run.cjs','phone-gateway.cjs']});write(root/'PROVENANCE.json',provenance)
     print(json.dumps({'root':str(root),'phase':'prepared','origin':origin,'certificateUrl':cfg['certificateUrl'],'caSha256':fingerprint,'lanListenerStarted':False}))
+def attach_source(root,address):
+    from install_local import root_check
+    root=root_check(root);assert root.parent==RUNS and json.loads((root/'ISOLATED.json').read_text())['kind']=='nativesync-full-local-runtime'
+    assert json.loads((root/'SOURCE_PROFILE.json').read_text())['kind']=='synthetic-full-source','SYNTHETIC_SOURCE_REQUIRED'
+    connection=json.loads((root/'data/chat/.native-sync/connection.json').read_text());assert connection['scopeMode']=='source' and connection['executionMode']=='all-supported'
+    assert not (root/'PHONE.json').exists(),'PHONE_ALREADY_ATTACHED'
+    for old,new in [('source.png','phone-test.png'),('source.txt','phone-test.txt')]:shutil.copyfile(root/'fixtures'/old,root/'fixtures'/new)
+    provision_gateway(root,address)
 def manager(root):
     p=json.loads((root/'PHONE_MANAGER.json').read_text())['pid'];proc=pathlib.Path('/proc')/str(p)
     try:
@@ -66,16 +78,23 @@ def stop(root):
     subprocess.run([str(DEV/'start')],check=True);print('phone test stopped; daily development instance restored')
 def pair(root,cfg):
     assert manager(root),'PHONE_NOT_RUNNING';key=json.loads((root/'config/local-credentials.json').read_text())['serverKey']
-    topics=json.loads((root/'data/chat/.native-sync/connection.json').read_text())['topics'];scope=__import__('base64').urlsafe_b64encode(json.dumps([[t['itemType'],t['itemId'],t['topicId']] for t in topics]).encode()).decode().rstrip('=')
-    req=urllib.request.Request('http://127.0.0.1:17650/api/plugins/NativeSync/mobile/pairing',data=b'{}',headers={'Authorization':'Bearer '+key,'Content-Type':'application/json','X-NativeSync-Topics':scope});grant=json.load(urllib.request.urlopen(req,timeout=5));url=cfg['origin']+'/mobile/#pair='+grant['pairingCode']
+    connection=json.loads((root/'data/chat/.native-sync/connection.json').read_text());headers={'Authorization':'Bearer '+key,'Content-Type':'application/json'};body={}
+    if connection.get('scopeMode')=='source':
+        assert connection.get('sourceScope',{}).get('mode')=='full','FULL_SOURCE_REQUIRED'
+        headers.update({'X-NativeSync-Source':connection['sourceId'],'X-NativeSync-Device':connection['deviceId'],'X-NativeSync-Space':connection['spaceId']});body={'scopeMode':'source','sourceId':connection['sourceId']};description='此二维码授权本合成来源及以后新增的话题，不包含后端 Key。'
+    else:
+        topics=connection['topics'];headers['X-NativeSync-Topics']=__import__('base64').urlsafe_b64encode(json.dumps([[t['itemType'],t['itemId'],t['topicId']] for t in topics]).encode()).decode().rstrip('=');description='此二维码只授权四个合成测试话题，不包含后端 Key。'
+    req=urllib.request.Request('http://127.0.0.1:17650/api/plugins/NativeSync/mobile/pairing',data=json.dumps(body).encode(),headers=headers);grant=json.load(urllib.request.urlopen(req,timeout=5));url=cfg['origin']+'/mobile/#pair='+grant['pairingCode']
     code='from reportlab.graphics.barcode.qr import QrCodeWidget; from reportlab.graphics.shapes import Drawing; from reportlab.graphics import renderSVG; import sys; q=QrCodeWidget(sys.stdin.read()); b=q.getBounds(); d=Drawing(320,320,transform=[320/(b[2]-b[0]),0,0,320/(b[3]-b[1]),0,0]); d.add(q); print(renderSVG.drawToString(d))'
     svg=subprocess.check_output([PYTHON,'-c',code],input=url,text=True)
-    card=root/'config/phone/pair-card.html';card.write_text('<meta charset="utf-8"><meta http-equiv="refresh" content="15"><h1>NativeSync 手机测试配对</h1><p>仅在本机显示。三分钟内扫码，并在手机确认连接；过期后由本机重新生成。</p>'+svg+'<p>此二维码只授权四个合成测试话题，不包含后端 Key。</p>');card.chmod(0o600)
+    card=root/'config/phone/pair-card.html';card.write_text('<meta charset="utf-8"><meta http-equiv="refresh" content="15"><h1>NativeSync 手机测试配对</h1><p>仅在本机显示。三分钟内扫码，并在手机确认连接；过期后由本机重新生成。</p>'+svg+'<p>'+description+'</p>');card.chmod(0o600)
     print(json.dumps({'pairCard':'http://127.0.0.1:17652/phone-pair','expiresAt':grant['expiresAt'],'codePrinted':False}))
 def main():
-    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=['prepare','start','stop','status','pair']);parser.add_argument('--address');parser.add_argument('--package',type=pathlib.Path,default=REPO/'.local/release-assembly/phone-readiness');parser.add_argument('--root',type=pathlib.Path);a=parser.parse_args()
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('command',choices=['prepare','attach-source','start','stop','status','pair']);parser.add_argument('--address');parser.add_argument('--package',type=pathlib.Path,default=REPO/'.local/release-assembly/phone-readiness');parser.add_argument('--root',type=pathlib.Path);a=parser.parse_args()
     if a.command=='prepare':assert a.address;prepare_phone(a.address,a.package.resolve());return
-    assert a.root;root,cfg=owned(a.root)
+    assert a.root
+    if a.command=='attach-source':assert a.address;attach_source(a.root.resolve(),a.address);return
+    root,cfg=owned(a.root)
     if a.command=='start':start(root,cfg)
     elif a.command=='stop':stop(root)
     elif a.command=='pair':pair(root,cfg)

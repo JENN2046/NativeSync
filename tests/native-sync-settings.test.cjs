@@ -153,7 +153,7 @@ test('full-source preview explicitly confirms future history and execution while
 });
 test('selected-to-source enrollment preserves state and device; unsettled local work cannot be converted',async t=>{
  const f=await fixture(t,{source:true}),old=await f.bind(),stateFile=path.join(f.root,'.native-sync/state.json'),before=await fs.readFile(stateFile);
- const proof=await f.service.preview({expectedRevision:(await f.service.overview()).revision,scopeMode:'source',sourceId:'sourceA'});await f.save(proof);assert.deepEqual(await fs.readFile(stateFile),before);assert.equal(JSON.parse(await fs.readFile(f.file)).deviceId,old.deviceId);
+ const proof=await f.service.preview({expectedRevision:(await f.service.overview()).revision,scopeMode:'source',sourceId:'sourceA'});await f.save(proof);assert.deepEqual(await fs.readFile(stateFile),before);assert.equal(JSON.parse(await fs.readFile(f.file)).deviceId,old.deviceId);assert.equal((await f.service.overview()).error,undefined);assert.equal((await f.service.overview()).restartRequired,true);
  const g=await fixture(t,{source:true});await g.bind();await g.queue.mutate(d,rows=>[...rows,{id:'pending-local',role:'user',content:'synthetic',timestamp:1}]);const pending=await fs.readFile(path.join(g.root,'.native-sync/state.json'));
  await assert.rejects(g.service.preview({expectedRevision:(await g.service.overview()).revision,scopeMode:'source',sourceId:'sourceA'}),{code:'SOURCE_SCOPE_NOT_SETTLED'});assert.deepEqual(await fs.readFile(path.join(g.root,'.native-sync/state.json')),pending);
 });

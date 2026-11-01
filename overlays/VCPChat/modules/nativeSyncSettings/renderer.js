@@ -133,7 +133,7 @@ function buildPanel(doc) {
             if (!c.active && !result.bindingLocked) counts.textContent = '尚未接入，接入后显示同步进度。';
             if (c.configurationError) counts.textContent += ` · ${explain(c.configurationError)}`;
             if(c.source)counts.textContent+=` · 历史已接入 ${c.source.completedImports} · 待接入 ${c.source.pendingImports} · 目录异常 ${c.source.directoryErrors} · 续聊配置待就绪 ${c.source.configurationPending??'待核对'}`;
-            binding.textContent = result.sourceMode&&!result.fullSource?'当前 Source 范围保持只读，请通过已有受控流程核对或变更。':result.sourceMode ? '当前采用 Source 来源绑定；范围和身份保持，全量包含以后新增会话。' : result.bindingLocked ? '沿用已有设备和话题绑定。此处可停用或恢复；已有范围的变更需走受控范围流程。' : '首次接入请选择需要同步的话题，检查后再确认。';
+            binding.textContent = result.sourceMode&&!result.fullSource?'当前 Source 范围保持只读，请通过已有受控流程核对或变更。':result.sourceMode ? (result.restartRequired?'已保存全量来源配置，重新启动后生效；原绑定与进度保留。':'当前采用 Source 来源绑定；范围和身份保持，全量包含以后新增会话。') : result.bindingLocked ? '沿用已有设备和话题绑定。此处可停用或恢复；已有范围的变更需走受控范围流程。' : '首次接入请选择需要同步的话题，检查后再确认。';
             notice.textContent = result.error ? explain(result.error) : result.connectionError ? explain(result.connectionError) : '';
             if (!c.active && result.enabled && !result.restartRequired && result.topics[0] && api.getNativeExecutionStatus) {
                 const d = result.topics[0];

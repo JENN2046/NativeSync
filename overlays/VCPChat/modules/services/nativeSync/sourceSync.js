@@ -17,7 +17,7 @@ class SourceSync{
  static async verify(connection,state,send){
   const b=bindingFor(connection);
   if(state?.source){
-   if(stable(state.source.binding)===stable(b)){if(connection.executionMode==='all-supported'){const info=await send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));if(info.executionMode!=='all-supported')throw fail('SOURCE_EXECUTION_NOT_APPROVED');}return state.source;}
+   if(stable(state.source.binding)===stable(b)){if(connection.executionMode==='all-supported'){const info=await send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));if(info.executionMode!=='all-supported'||info.executionConfigPaging!==true)throw fail('SOURCE_EXECUTION_NOT_APPROVED');if(info.spaceId!==b.spaceId||info.sourceId!==b.sourceId||info.deviceId!==b.deviceId)throw fail('SOURCE_BINDING_CHANGED');}return state.source;}
    const prior=state.source.binding,{scope:oldScope,...oldIdentity}=prior,{scope:newScope,...newIdentity}=b,t=connection.scopeTransition;
    if(stable(oldIdentity)!==stable(newIdentity)||!t||t.expectedScopeHash!==scopeHash(oldScope))throw fail('SOURCE_BINDING_CHANGED');
    const rootStat=await fs.lstat(connection.sourceRoot);if(!rootStat.isDirectory()||rootStat.isSymbolicLink())throw fail('SOURCE_PATH_ALIAS');
@@ -31,7 +31,7 @@ class SourceSync{
   }
   const info=await send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));
   if(scopeHash(info.scope)!==scopeHash(connection.sourceScope))throw fail('SOURCE_SCOPE_MISMATCH');
-  if(connection.executionMode==='all-supported'&&info.executionMode!=='all-supported')throw fail('SOURCE_EXECUTION_NOT_APPROVED');
+  if(connection.executionMode==='all-supported'&&(info.executionMode!=='all-supported'||info.executionConfigPaging!==true))throw fail('SOURCE_EXECUTION_NOT_APPROVED');
   if(info.spaceId!==b.spaceId||info.sourceId!==b.sourceId||info.deviceId!==b.deviceId)throw fail('SOURCE_BINDING_CHANGED');
   if(state?.source){if(stable(state.source.binding)!==stable(b))throw fail('SOURCE_BINDING_CHANGED');return state.source;}
   if(state){
@@ -181,7 +181,6 @@ class SourceSync{
  }
  async archiveUnacceptedCatalog(body,error){
   const b=this.state.binding,info=await this.send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));
-  if(connection.executionMode==='all-supported'&&info.executionMode!=='all-supported')throw fail('SOURCE_EXECUTION_NOT_APPROVED');
   if(info.spaceId!==b.spaceId||info.deviceId!==b.deviceId||info.sourceId!==b.sourceId)throw fail('SOURCE_BINDING_CHANGED');
   // Catalog commits increase revision monotonically. Equality proves this old
   // oversized operation was never accepted; any uncertainty retains it intact.

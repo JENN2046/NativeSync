@@ -69,7 +69,8 @@ class NativeSyncSettings {
         }
         const state = file.value;
         if (!state || ![1, 2, 3].includes(state.version) || !state.deviceId || !Array.isArray(state.topics)) throw fail('INVALID_SYNC_STATE');
-        if (!config || state.deviceId !== config.deviceId || (!state.source && !sameTopics(state.topics, config.topics || []))) throw fail('SETUP_BINDING_MISMATCH');
+        const stagedSource=config?.scopeMode==='source'&&config.fullSelectionApproved===true&&config.sourceScope?.mode==='full'&&config.sourceRoot===this.root&&typeof config.sourceId==='string'&&typeof config.spaceId==='string';
+        if (!config || state.deviceId !== config.deviceId || (!state.source && !stagedSource && !sameTopics(state.topics, config.topics || []))) throw fail('SETUP_BINDING_MISMATCH');
         if (state.source && config.scopeMode !== 'source') throw fail('SETUP_BINDING_MISMATCH');
         return { deviceId: state.deviceId, topics: state.topics.map(descriptor), source: Boolean(state.source) };
     }
