@@ -17,7 +17,7 @@ class SourceSync{
  static async verify(connection,state,send){
   const b=bindingFor(connection);
   if(state?.source){
-   if(stable(state.source.binding)===stable(b))return state.source;
+   if(stable(state.source.binding)===stable(b)){if(connection.executionMode==='all-supported'){const info=await send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));if(info.executionMode!=='all-supported')throw fail('SOURCE_EXECUTION_NOT_APPROVED');}return state.source;}
    const prior=state.source.binding,{scope:oldScope,...oldIdentity}=prior,{scope:newScope,...newIdentity}=b,t=connection.scopeTransition;
    if(stable(oldIdentity)!==stable(newIdentity)||!t||t.expectedScopeHash!==scopeHash(oldScope))throw fail('SOURCE_BINDING_CHANGED');
    const rootStat=await fs.lstat(connection.sourceRoot);if(!rootStat.isDirectory()||rootStat.isSymbolicLink())throw fail('SOURCE_PATH_ALIAS');
@@ -31,6 +31,7 @@ class SourceSync{
   }
   const info=await send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));
   if(scopeHash(info.scope)!==scopeHash(connection.sourceScope))throw fail('SOURCE_SCOPE_MISMATCH');
+  if(connection.executionMode==='all-supported'&&info.executionMode!=='all-supported')throw fail('SOURCE_EXECUTION_NOT_APPROVED');
   if(info.spaceId!==b.spaceId||info.sourceId!==b.sourceId||info.deviceId!==b.deviceId)throw fail('SOURCE_BINDING_CHANGED');
   if(state?.source){if(stable(state.source.binding)!==stable(b))throw fail('SOURCE_BINDING_CHANGED');return state.source;}
   if(state){
@@ -45,7 +46,7 @@ class SourceSync{
  }
  constructor({adapter,connection,appDataRoot,readAgentConfig,readGroupConfig,send,fault=async()=>{}}){
   Object.assign(this,{adapter,connection,appDataRoot,readAgentConfig,readGroupConfig,send,fault});
-  this.root=path.join(path.dirname(adapter.statePath),'backfill');this.snapshots=new Map();this.lastScan=0;this.dirty=true;this.offset=0;this.errors=[];
+  this.root=path.join(path.dirname(adapter.statePath),'backfill');this.snapshots=new Map();this.snapshotBases=new Map();this.bodySnapshotPeak=0;this.lastScan=0;this.dirty=true;this.offset=0;this.errors=[];
  }
  get state(){return this.adapter.state.source;}
  assertBinding(){if(stable(this.state.binding)!==stable(bindingFor(this.connection)))throw fail('SOURCE_BINDING_CHANGED');}
@@ -57,11 +58,11 @@ class SourceSync{
  async open(){
   const a=this.adapter;
   if(stable(this.state.binding)!==stable(bindingFor(this.connection)))throw fail('SOURCE_BINDING_CHANGED');
-  for(const [key,p]of Object.entries(this.state.plans)){this.assertScope(p.descriptor);if(p.stage!=='capturing'&&p.stage!=='complete')await this.loadSnapshot(key,p);}
+  for(const p of Object.values(this.state.plans))this.assertScope(p.descriptor);
   a.ensureSourceTopic=d=>this.ensureTopic(d);a.ensureSourceSnapshot=d=>this.ensureSnapshot(d);
-  a.sourceBase=(d,id)=>this.snapshots.get(this.topicKey(d))?.get(id)?.base;
-  a.sourceExpected=d=>[...(this.snapshots.get(this.topicKey(d))||[])].map(([id,row])=>[messageKey({...wireTopic(d),msgId:id}),row.base]);
-  a.sourceUnprepared=d=>!this.plan(d)||this.plan(d).stage==='capturing'||this.deleted(d);
+  a.sourceBase=(d,id)=>this.basesFor(d)?.get(id);
+  a.sourceExpected=d=>[...(this.basesFor(d)||[])].map(([id,base])=>[messageKey({...wireTopic(d),msgId:id}),base]);
+  a.sourceUnprepared=d=>!this.plan(d)||this.plan(d).stage==='capturing'||(this.plan(d).stage!=='complete'&&!this.snapshotBases.has(this.topicKey(d)))||this.deleted(d);
   a.sourceOutboundBlocked=d=>this.plan(d)?.stage!=='complete'||this.deleted(d);
   a.sourceInboundBlocked=d=>this.plan(d)?.stage!=='complete'||this.deleted(d);
   a.sourceDeleted=d=>this.deleted(d);a.sourceDiagnostics=()=>this.diagnostics();
@@ -70,7 +71,17 @@ class SourceSync{
   return this;
  }
  async safePage(file){await assertHistoryPath(path.dirname(this.adapter.statePath),file);return JSON.parse(await fs.readFile(file,'utf8'));}
- async loadSnapshot(key,plan){
+ basesFor(d){
+  const key=this.topicKey(d),plan=this.plan(d);if(!plan||plan.stage==='complete')return null;
+  if(!this.snapshotBases.has(key))throw fail('SOURCE_SNAPSHOT_NOT_LOADED');
+  return this.snapshotBases.get(key);
+ }
+ rememberSnapshot(key,rows,retain){
+  this.snapshotBases.set(key,new Map([...rows].map(([id,row])=>[id,row.base])));
+  if(retain){this.snapshots.clear();this.snapshots.set(key,rows);this.bodySnapshotPeak=Math.max(this.bodySnapshotPeak,this.snapshots.size);}
+  return rows;
+ }
+ async loadSnapshot(key,plan,retain=true){
   const manifest=await this.safePage(path.join(this.root,plan.id,'manifest.json'));
   if(manifest.id!==plan.id||manifest.topicKey!==key||manifest.count!==plan.count||manifest.pages.length!==plan.pages)throw fail('BACKFILL_MANIFEST_MISMATCH');
   const rows=new Map();
@@ -79,7 +90,7 @@ class SourceSync{
    if(page.id!==plan.id||page.index!==i||page.rows.length>PAGE||sha256(stable(page.rows))!==manifest.pages[i])throw fail('BACKFILL_PAGE_MISMATCH');
    for(const row of page.rows){if(rows.has(row.message.id))throw fail('DUPLICATE_MESSAGE_ID');rows.set(row.message.id,row);}
   }
-  if(rows.size!==manifest.count)throw fail('BACKFILL_COUNT_MISMATCH');this.snapshots.set(key,rows);return rows;
+  if(rows.size!==manifest.count)throw fail('BACKFILL_COUNT_MISMATCH');return this.rememberSnapshot(key,rows,retain);
  }
  async ensureTopic(d){
   this.assertScope(d);if(this.paused)throw fail('SOURCE_IMPORT_PAUSED');
@@ -88,10 +99,10 @@ class SourceSync{
   await this.adapter.addSourceTopic(d);this.dirty=true;
  }
  // Caller holds this Topic's existing Queue. No network is awaited here.
- async ensureSnapshot(d){
+ async ensureSnapshot(d,{retain=false}={}){
   this.assertScope(d);if(this.paused&&(!this.plan(d)||this.plan(d).stage==='capturing'))throw fail('SOURCE_IMPORT_PAUSED');
   if(this.deleted(d))throw fail('SOURCE_DIRECTORY_DELETED');
-  const key=this.topicKey(d);let p=this.plan(d);if(p&&p.stage!=='capturing')return;
+  const key=this.topicKey(d);let p=this.plan(d);if(p&&p.stage!=='capturing'){if(p.stage!=='complete'&&(!this.snapshotBases.has(key)||(retain&&!this.snapshots.has(key))))await this.loadSnapshot(key,p,retain);return;}
   if(!p){
    p={id:randomUUID(),descriptor:{...d,itemType:d.itemType||'agent'},stage:'capturing',localIndex:0,remoteAfter:0};
    await this.adapter.transaction(n=>{n.source.plans[key]=p;});
@@ -113,7 +124,7 @@ class SourceSync{
   const manifest={id:p.id,topicKey:key,revision:this.adapter.queue.revision(history),count:rows.length,pages:hashes};
   await durableJson(path.join(folder,'manifest.json'),manifest);
   await this.adapter.transaction(n=>{Object.assign(n.source.plans[key],{stage:'remote',pages:hashes.length,count:rows.length,snapshotRevision:manifest.revision});delete n.drift[key];});
-  this.snapshots.set(key,new Map(rows.map(row=>[row.message.id,row])));
+  this.rememberSnapshot(key,new Map(rows.map(row=>[row.message.id,row])),retain);
   await this.fault('plan-durable',{id:p.id,topic:wireTopic(d)});
  }
  async discover(){
@@ -121,7 +132,8 @@ class SourceSync{
   const result=await sourceDirectory(this);this.errors=result.errors;this.lastScan=Date.now();this.dirty=false;
   this.directory=result;
   for(const t of result.topics){const d=descriptor(t);if(this.deleted(d))continue;try{await this.adapter.addSourceTopic(d);
-   if(t.sourceState==='available'&&(!this.plan(d)||this.plan(d).stage==='capturing'))await this.adapter.queue.run(d,()=>this.ensureSnapshot(d));}catch(e){if(e.syncStatePersistenceFailure)throw e;this.errors.push({...wireTopic(d),code:e.code||'SOURCE_SNAPSHOT_FAILED'});}
+   // Discovery records metadata only; admit History later.
+   }catch(e){if(e.syncStatePersistenceFailure)throw e;this.errors.push({...wireTopic(d),code:e.code||'SOURCE_SNAPSHOT_FAILED'});}
   }
   // Share the growing array with existing attachment/config consumers. It is
   // never used as the binding identity of a full-source execution cache.
@@ -169,6 +181,7 @@ class SourceSync{
  }
  async archiveUnacceptedCatalog(body,error){
   const b=this.state.binding,info=await this.send(ROOT+'/info?'+new URLSearchParams({sourceId:b.sourceId,deviceId:b.deviceId}));
+  if(connection.executionMode==='all-supported'&&info.executionMode!=='all-supported')throw fail('SOURCE_EXECUTION_NOT_APPROVED');
   if(info.spaceId!==b.spaceId||info.deviceId!==b.deviceId||info.sourceId!==b.sourceId)throw fail('SOURCE_BINDING_CHANGED');
   // Catalog commits increase revision monotonically. Equality proves this old
   // oversized operation was never accepted; any uncertainty retains it intact.
@@ -206,7 +219,8 @@ class SourceSync{
  }
  async step(d){
   this.assertScope(d);if(this.paused)return;
-  const key=this.topicKey(d);let p=this.plan(d);if(!p||p.stage==='capturing'||p.stage==='complete'||this.deleted(d)||!this.state.published[sourceEntityKey(wireTopic(d))])return;
+  const key=this.topicKey(d);let p=this.plan(d);if(p?.stage==='complete'||this.deleted(d)||!this.state.published[sourceEntityKey(wireTopic(d))])return;
+  if(!p||p.stage==='capturing'){const known=this.directory?.topics.find(t=>sourceEntityKey(t)===sourceEntityKey(wireTopic(d)));if(known?.sourceState!=='available')return;await this.adapter.queue.run(d,()=>this.ensureSnapshot(d,{retain:true}));p=this.plan(d);}
   if(!this.snapshots.has(key))await this.loadSnapshot(key,p);
   if(!p.remote){const remote=await this.send(ROOT+'/baselines',{body:{planId:p.id,...wireTopic(d)}});if(remote.planId!==p.id||stable(remote.topic)!==stable(wireTopic(d))||!Number.isSafeInteger(remote.watermark))throw fail('BACKFILL_REMOTE_IDENTITY');await this.adapter.transaction(n=>{n.source.plans[key].remote=remote;});p=this.plan(d);}
   if(p.stage==='remote'){
@@ -231,7 +245,7 @@ class SourceSync{
      await this.adapter.transaction(n=>{n.acked[mk]={...row.base,seq:r.seq,metadataVersion:r.metadataVersion||0,metadataHash:r.metadataHash||emptyHash()};n.source.plans[key].localIndex++;delete n.source.plans[key].error;});
     }else await this.adapter.transaction(n=>{n.source.plans[key].localIndex++;delete n.source.plans[key].error;});
    }
-   if(this.plan(d).localIndex===rows.length){await this.send(ROOT+'/baselines/'+p.remote.id+'/complete',{body:{}});await this.adapter.transaction(n=>{n.source.plans[key].stage='complete';delete n.source.plans[key].error;});this.snapshots.delete(key);this.dirty=true;}
+   if(this.plan(d).localIndex===rows.length){await this.send(ROOT+'/baselines/'+p.remote.id+'/complete',{body:{}});await this.adapter.transaction(n=>{n.source.plans[key].stage='complete';delete n.source.plans[key].error;});this.snapshots.delete(key);this.snapshotBases.delete(key);this.dirty=true;}
   }
  }
  async tick(){
@@ -241,11 +255,11 @@ class SourceSync{
   try{await this.publish();this.directoryPublicationError=null;}
   catch(error){if(error.syncStatePersistenceFailure)throw error;this.directoryPublicationError={code:error.code||'SOURCE_DIRECTORY_PUBLICATION_FAILED',status:error.status||null};}
   const pending=this.adapter.topics.filter(d=>this.plan(d)?.stage!=='complete'&&!this.deleted(d));
-  for(let i=0;i<Math.min(4,pending.length);i++){
+  for(let i=0;i<Math.min(1,pending.length);i++){
    const d=pending[(this.offset+i)%pending.length];
    try{await this.step(d);}catch(e){if(e.syncStatePersistenceFailure)throw e;await this.adapter.transaction(n=>{const p=n.source.plans[this.topicKey(d)];if(p)p.error={code:e.code||'BACKFILL_FAILED',status:e.status||null};});}
   }
-  this.offset=pending.length?(this.offset+4)%pending.length:0;
+  this.offset=pending.length?(this.offset+1)%pending.length:0;
   try{await this.releaseCompletedPayloads();this.cleanupError=null;}
   catch(error){if(error.syncStatePersistenceFailure)throw error;this.cleanupError=error.code||'BACKFILL_PAYLOAD_RELEASE_FAILED';}
  }
@@ -266,7 +280,7 @@ class SourceSync{
    await this.adapter.transaction(n=>{n.source.plans[key].releasePage=next;n.source.plans[key].payloadReleased=next>p.pages;});
   }
  }
- diagnostics(){const plans=Object.values(this.state.plans).filter(p=>!this.deleted(p.descriptor));return {mode:'source',scopeMode:this.state.binding.scope?'limited':'full',importsPaused:this.paused,directoryPublicationError:this.directoryPublicationError||null,cleanupError:this.cleanupError||null,directoryErrors:this.errors,agents:this.directory?.agents.length??null,topics:this.directory?.topics.length??null,pendingImports:plans.filter(p=>p.stage!=='complete').length,completedImports:plans.filter(p=>p.stage==='complete').length,conflicts:plans.filter(p=>p.error).map(p=>({topic:wireTopic(p.descriptor),code:p.error.code})),pendingDirectory:Boolean(this.state.pendingCatalog),pendingDeletes:Object.values(this.state.deletions).filter(r=>!['published','aborted'].includes(r.stage)).length};}
+ diagnostics(){const plans=Object.values(this.state.plans).filter(p=>!this.deleted(p.descriptor));return {mode:'source',scopeMode:this.state.binding.scope?'limited':'full',importsPaused:this.paused,directoryPublicationError:this.directoryPublicationError||null,cleanupError:this.cleanupError||null,directoryErrors:this.errors,agents:this.directory?.agents.length??null,topics:this.directory?.topics.length??null,bodySnapshotsResident:this.snapshots.size,bodySnapshotPeak:this.bodySnapshotPeak,pendingImports:this.adapter.topics.filter(d=>this.plan(d)?.stage!=='complete'&&!this.deleted(d)).length,completedImports:plans.filter(p=>p.stage==='complete').length,conflicts:plans.filter(p=>p.error).map(p=>({topic:wireTopic(p.descriptor),code:p.error.code})),pendingDirectory:Boolean(this.state.pendingCatalog),pendingDeletes:Object.values(this.state.deletions).filter(r=>!['published','aborted'].includes(r.stage)).length};}
  async report(){
   const d=this.diagnostics(),body={pendingImports:d.pendingImports,pendingOperations:this.adapter.state.outbox.length,conflicts:d.conflicts.length+this.adapter.state.outbox.filter(o=>o.status).length,directoryErrors:(this.directoryPublicationError?1:0)+this.errors.length+(this.directory?.topics.filter(t=>t.sourceState!=='available').length||0),attachmentsPending:this.adapter.attachmentError?null:(this.adapter.attachmentSkipped??null)};
   const hash=sha256(stable(body)),now=Date.now();if(this.reportHash===hash&&now-this.reportedAt<30000)return;

@@ -18,7 +18,7 @@ class SourceCatalog{
   const grants=JSON.parse(config.NativeSyncFullSources||'[]');
   if(!Array.isArray(grants)||grants.length>32)throw fail('INVALID_SOURCE_GRANTS',400);
   this.grants=new Map();
-  for(const grant of grants){fields(grant,['sourceId','deviceId','label','scope','approvedScope']);if(!opaque(grant.sourceId)||!opaque(grant.deviceId)||this.grants.has(grant.sourceId)||(grant.label!==undefined&&(typeof grant.label!=='string'||grant.label.length>100)))throw fail('INVALID_SOURCE_GRANTS',400);if(grant.approvedScope!==undefined)expansion(grant.scope,grant.approvedScope);this.grants.set(grant.sourceId,{...grant,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{})});}
+  for(const grant of grants){fields(grant,['sourceId','deviceId','label','scope','approvedScope','executionMode','imageModels']);if(!opaque(grant.sourceId)||!opaque(grant.deviceId)||this.grants.has(grant.sourceId)||(grant.label!==undefined&&(typeof grant.label!=='string'||grant.label.length>100)))throw fail('INVALID_SOURCE_GRANTS',400);if(grant.executionMode!==undefined&&grant.executionMode!=='all-supported')throw fail('INVALID_SOURCE_GRANTS',400);if(grant.imageModels!==undefined&&(!Array.isArray(grant.imageModels)||grant.imageModels.length>128||grant.imageModels.some(m=>typeof m!=='string'||!m||m.length>200)))throw fail('INVALID_SOURCE_GRANTS',400);if(grant.approvedScope!==undefined)expansion(grant.scope,grant.approvedScope);this.grants.set(grant.sourceId,{...grant,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{})});}
   this.staticTopics=JSON.parse(config.NativeMobileTopics||'[]');if(!Array.isArray(this.staticTopics))throw fail('INVALID_SOURCE_GRANTS',400);
   this.db.exec('BEGIN IMMEDIATE');
   try{
@@ -64,7 +64,7 @@ class SourceCatalog{
   if(binding){this.binding(binding);this.assertScope(binding.sourceId,op);}
   else if([...this.grants.values()].some(g=>g.deviceId===op?.deviceId&&normalizeScope(g.scope)))throw fail('SOURCE_BINDING_REQUIRED',403);
  }
- info(sourceId,deviceId,hash){const grant=this.grants.get(sourceId);if(!grant||grant.deviceId!==deviceId)throw fail('SOURCE_NOT_APPROVED',403);const pin=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceScope:'+sourceId);if(!pin||pin.value!==stable(normalizeScope(grant.scope)))throw fail('SOURCE_SCOPE_CHANGED',403);if((hash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);return {version:1,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{}),sourceId,deviceId,spaceId:this.spaceId,revision:this.revision(sourceId)};}
+ info(sourceId,deviceId,hash){const grant=this.grants.get(sourceId);if(!grant||grant.deviceId!==deviceId)throw fail('SOURCE_NOT_APPROVED',403);const pin=this.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceScope:'+sourceId);if(!pin||pin.value!==stable(normalizeScope(grant.scope)))throw fail('SOURCE_SCOPE_CHANGED',403);if((hash||null)!==scopeHash(grant.scope))throw fail('SOURCE_SCOPE_MISMATCH',403);return {version:1,executionMode:grant.executionMode||'selected',executionConfigPaging:true,...(normalizeScope(grant.scope)?{scope:normalizeScope(grant.scope)}:{}),sourceId,deviceId,spaceId:this.spaceId,revision:this.revision(sourceId)};}
  transition(value,body){
   fields(body,['opId','expectedScopeHash','newScope']);
   if(!opaque(body.opId)||!/^([a-f0-9]{64})$/.test(body.expectedScopeHash||''))throw fail('INVALID_SCOPE_TRANSITION',400);

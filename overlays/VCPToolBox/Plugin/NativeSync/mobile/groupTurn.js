@@ -129,7 +129,7 @@ async function run(engine,initial){
    if(engine.draining)throw fail('EXECUTION_INTERRUPTED_REVIEW_REQUIRED');
    if(engine.get(job.id).cancel_requested)break;
    if(candidate.state!=='queued'||plan[candidate.step_index]!==candidate.agent_id)throw fail('GROUP_PLAN_REVIEW_REQUIRED');
-   const member=config.agents.find(a=>a.id===candidate.agent_id&&!a.unavailable);if(!member||!engine.agentManager.isAgent(member.agentAlias))throw fail('EXECUTION_CONFIG_IDENTITY_MISMATCH');
+   const member=config.agents.find(a=>a.id===candidate.agent_id&&!a.unavailable);if(!member||(!config.authority&&!engine.agentManager.isAgent(member.agentAlias)))throw fail('EXECUTION_CONFIG_IDENTITY_MISMATCH');
    // Request construction cannot call a model or a tool. A failure remains a
    // visible blocked step; filtering never falls open to unfiltered content.
    let prepared;

@@ -20,7 +20,7 @@ class ConversationExecution {
         if (!Number.isSafeInteger(executionTimeoutMs) || executionTimeoutMs < 1000 || executionTimeoutMs > 300000) throw error('INVALID_EXECUTION_TIMEOUT');
         this.store = store; this.db = store.db; this.topics = new Map(topics.map(t => [t.key, t]));
         this.agentManager = agentManager; this.startDelayMs = startDelayMs; this.fault = fault;
-        this.configs = new (require('./executionConfigs').ExecutionConfigs)(this.db, topics, agentManager, configRequired);
+        this.configs = new (require('./executionConfigs').ExecutionConfigs)(this.db, topics, agentManager, configRequired, store.sourceCatalog);
         this.active = new Map(); this.quiescing = false; this.draining = false; this.endpoint = null;
         this.maxConcurrency = maxConcurrency; this.runningTopics = new Set(); this.inFlight = new Set();
         if(!Number.isSafeInteger(groupIdleTimeoutMs)||groupIdleTimeoutMs<1000||groupIdleTimeoutMs>300000)throw error('INVALID_GROUP_IDLE_TIMEOUT');
@@ -79,7 +79,6 @@ class ConversationExecution {
         const topic = this.topics.get(topicKey);
         if (!topic) throw error('TOPIC_NOT_ALLOWED', 403);
         if(topic.ownerType==='group'){if(!historyReady(this.db,topic))throw error('HISTORY_IMPORT_PENDING',409);return require('./groupTurn').accept(this,sessionId,{topicKey,requestId,text,attachments});}
-        if (!topic.agentAlias || (!topic.model&&!this.configs.latest(topic.key)) || !this.agentManager.isAgent(topic.agentAlias)) throw error('AGENT_NOT_EXECUTABLE', 409);
         if(!historyReady(this.db,topic))throw error('HISTORY_IMPORT_PENDING',409);
         if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{8,80}$/.test(requestId) || typeof text !== 'string' || (!text.trim()&&!attachments.length) || text.length > 12000 || !Array.isArray(attachments) || attachments.length>8 || attachments.some(id=>typeof id!=='string')) throw error('INVALID_TEXT_SUBMISSION');
         const id = 'job_' + digest(sessionId + '\0' + requestId).slice(0, 32);
@@ -94,6 +93,7 @@ class ConversationExecution {
         if (this.dependencyHeld(topicKey)) throw error('DEPENDENCY_REVIEW_REQUIRED', 409);
         if (this.db.prepare('SELECT count(*) AS n FROM mobile_executions WHERE session_id=? AND created_at>?').get(sessionId, Date.now() - 60000).n >= 20) throw error('SUBMISSION_RATE_LIMIT', 429);
         const config = this.configs.snapshot(topic);
+        this.configs.assertRunnable(topic,config);
         const now = Date.now(), msgId = 'mobile_' + id;
         const files=attachments.length?(this.attachments?this.attachments.claim('mobile:'+sessionId,topicKey,attachments):(()=>{throw error('ATTACHMENTS_NOT_ENABLED');})()):[];
         const op = { ownerType: topic.ownerType, ownerId: topic.ownerId, topicId: topic.topicId, msgId, deviceId: 'mobile:' + sessionId, opId: 'submit:' + id, action: 'upsert', baseHash: null, message: { id: msgId, role: 'user', content: text, timestamp: now,...(files.length?{attachments:files}:{}) } };
@@ -157,7 +157,8 @@ class ConversationExecution {
             published = row.config_snapshot ? JSON.parse(row.config_snapshot) : null;
             if(published)this.configs.verify(this.topics.get(row.topic_key),published);
             const topic = {...this.topics.get(row.topic_key),...(published||{})};
-            if (!topic || !this.agentManager.isAgent(topic.agentAlias)) throw error('AGENT_NOT_CONFIGURED');
+            if (!topic) throw error('AGENT_NOT_CONFIGURED');
+            this.configs.assertRunnable(topic,published);
             if (!published && this.configs.required) throw error('EXECUTION_CONFIG_REQUIRED');
             const prompt = published ? published.systemPrompt : await this.agentManager.getAgentPrompt(topic.agentAlias);
             // Keep later submissions outside this task's snapshot, but include

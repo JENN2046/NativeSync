@@ -24,9 +24,10 @@ async function readConnection({ appDataRoot, readSettings }) {
 // Shared semantic validation for the desktop setup preview; it does not persist.
 async function resolveConnection(config, { appDataRoot, readSettings }) {
     if (config.enabled !== true) return null;
-    const fields = ['version', 'enabled', 'historySelectionApproved', 'deviceId', 'topics', 'serverUrl', 'credentialSource', 'approvedHistory', 'publishCatalog', 'publishExecutionConfigs', 'syncAttachments', 'scopeMode', 'sourceId', 'spaceId', 'sourceRoot', 'fullSelectionApproved', 'executionTopics', 'sourceScope', 'sourcePaused', 'scopeTransition'];
+    const fields = ['version', 'enabled', 'historySelectionApproved', 'deviceId', 'topics', 'serverUrl', 'credentialSource', 'approvedHistory', 'publishCatalog', 'publishExecutionConfigs', 'syncAttachments', 'scopeMode', 'sourceId', 'spaceId', 'sourceRoot', 'fullSelectionApproved', 'executionTopics', 'sourceScope', 'sourcePaused', 'scopeTransition', 'executionMode'];
     if (Object.keys(config).some(key => !fields.includes(key))) throw fail('UNEXPECTED_SYNC_CONNECTION_FIELD');
     const full=config.scopeMode==='source';
+    if(config.executionMode!==undefined&&(!full||!['selected','all-supported'].includes(config.executionMode)))throw fail('INVALID_EXECUTION_SELECTION');
     const sourceScope=normalizeScope(config.sourceScope);
     if(config.scopeTransition!==undefined){const t=config.scopeTransition;if(!full||(!sourceScope&&config.sourceScope?.mode!=='full')||!t||Object.keys(t).some(k=>!['opId','expectedScopeHash'].includes(k))||!/^[A-Za-z0-9_-]{1,96}$/.test(t.opId||'')||!/^[a-f0-9]{64}$/.test(t.expectedScopeHash||''))throw fail('INVALID_SCOPE_TRANSITION');}
     if((sourceScope||config.sourcePaused!==undefined)&&!full)throw fail('INVALID_SYNC_SCOPE');
@@ -35,6 +36,7 @@ async function resolveConnection(config, { appDataRoot, readSettings }) {
     if(full){
         if(config.version!==1||config.fullSelectionApproved!==true||!['sourceId','spaceId'].every(k=>typeof config[k]==='string'&&/^[A-Za-z0-9_-]{1,96}$/.test(config[k]))||typeof config.sourceRoot!=='string'||path.resolve(config.sourceRoot)!==path.resolve(appDataRoot))throw fail('FULL_SOURCE_BINDING_REQUIRED');
         if(!Array.isArray(config.topics)||config.topics.length)throw fail('FULL_SOURCE_USES_NATIVE_DIRECTORY');
+        if(config.executionMode==='all-supported'&&(!config.publishExecutionConfigs||(config.executionTopics||[]).length))throw fail('INVALID_EXECUTION_SELECTION');
         if(!Array.isArray(config.executionTopics||[])||(config.executionTopics||[]).length>128)throw fail('INVALID_EXECUTION_SELECTION');
         for(const t of config.executionTopics||[]){identity({ownerType:t.itemType||'agent',ownerId:t.itemId,topicId:t.topicId,msgId:'_'});if(sourceScope&&!require('./sourceScope').permits(sourceScope,t))throw fail('SOURCE_SCOPE_MISMATCH');}
     }
@@ -51,7 +53,7 @@ async function resolveConnection(config, { appDataRoot, readSettings }) {
     try { backend = new URL(settings.vcpServerUrl); } catch { throw fail('DESKTOP_BACKEND_IDENTITY_MISMATCH'); }
     if (backend.origin !== endpoint.origin || backend.username || backend.password || backend.search || backend.hash) throw fail('DESKTOP_BACKEND_IDENTITY_MISMATCH');
     if (typeof settings.vcpApiKey !== 'string' || !settings.vcpApiKey) throw fail('EXISTING_DESKTOP_KEY_REQUIRED');
-    return { scopeMode:full?'source':'selected', ...(full?{sourceId:config.sourceId,spaceId:config.spaceId,sourceRoot:path.resolve(appDataRoot),executionTopics:config.executionTopics||[],...(sourceScope?{sourceScope,sourcePaused:config.sourcePaused===true,...(config.scopeTransition?{scopeTransition:config.scopeTransition}:{})}:(config.scopeTransition?{sourceScope:{mode:'full'},scopeTransition:config.scopeTransition}:{}))}:{}), syncAttachments:config.syncAttachments===true,url: endpoint.origin, token: settings.vcpApiKey, deviceId: config.deviceId, topics: config.topics, approvedHistory: config.approvedHistory, publishExecutionConfigs: config.publishExecutionConfigs === true, publishCatalog: config.publishCatalog !== false };
+    return { scopeMode:full?'source':'selected', ...(full?{sourceId:config.sourceId,spaceId:config.spaceId,sourceRoot:path.resolve(appDataRoot),executionTopics:config.executionTopics||[],...(config.executionMode?{executionMode:config.executionMode}:{}),...(sourceScope?{sourceScope,sourcePaused:config.sourcePaused===true,...(config.scopeTransition?{scopeTransition:config.scopeTransition}:{})}:(config.scopeTransition?{sourceScope:{mode:'full'},scopeTransition:config.scopeTransition}:{}))}:{}), syncAttachments:config.syncAttachments===true,url: endpoint.origin, token: settings.vcpApiKey, deviceId: config.deviceId, topics: config.topics, approvedHistory: config.approvedHistory, publishExecutionConfigs: config.publishExecutionConfigs === true, publishCatalog: config.publishCatalog !== false };
 }
 // A legacy server may ignore an unfamiliar header. Explicit full-source paths
 // therefore fail closed on old servers even for an already paired device.
