@@ -9,17 +9,18 @@ def PathLikeUnderRoot(pid):
  except OSError:return False
 processes=json.loads(FILE.read_text()) if FILE.exists() else {}
 def alive(pid):
- try:os.kill(pid,0);return True
+ try:os.kill(pid,0);return pathlib.Path('/proc/'+str(pid)+'/stat').read_text().rsplit(')',1)[1].split()[0]!='Z'
  except OSError:return False
 def spawn(name,args,cwd):
  old=processes.get(name)
  if old and alive(old):return
- log=(ROOT/'logs'/f'{name}.log').open('ab');p=subprocess.Popen(args,cwd=cwd,env=environment(),stdout=log,stderr=subprocess.STDOUT,start_new_session=True);processes[name]=p.pid;FILE.write_text(json.dumps(processes,indent=2)+'\n');print(name,'PID',p.pid)
+ log=(ROOT/'logs'/f'{name}.log').open('ab');p=subprocess.Popen(args,cwd=cwd,env=environment(),stdout=log,stderr=subprocess.STDOUT,start_new_session=True);processes[name]=p.pid;FILE.write_text(json.dumps(processes,indent=2)+'\n');print(name,'PID',p.pid,flush=True)
 def wait_ready():
  credentials=json.loads((ROOT/'config/local-credentials.json').read_text())
  context=ssl.create_default_context(cafile=str(ROOT/'config/tls/localhost-cert.pem'))
  deadline=time.monotonic()+45
  while time.monotonic()<deadline:
+  if not alive(processes['backend']):raise SystemExit('Backend exited before readiness; inspect logs/backend.log.')
   try:
    for route in ['/v1/models','/api/v1/sync/status']:
     req=urllib.request.Request('https://127.0.0.1:17653'+route,headers={'Authorization':'Bearer '+credentials['serverKey']})

@@ -49,11 +49,16 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  for name,digest in inputs.items():
   if not ref:assert sha((ROOT/name).read_bytes())==digest,'Source changed while building'
  fingerprint=sha(json.dumps(inputs,sort_keys=True,separators=(',',':')).encode())
- manifest={'format':1,'profile':scope['profile'],'kind':'rollback-baseline' if ref else 'candidate','sourceCommit':ref or git('rev-parse','HEAD').decode().strip(),'sourceInputsSha256':fingerprint,'sourceDirty':False if ref else bool(git('status','--porcelain')),'completePwa':not skip_pwa,'node':subprocess.check_output([node,'--version'],text=True).strip(),'buildRecipeSha256':sha(b''.join((ROOT/p).read_bytes() for p in ['tools/assemble_release.py','tools/build_contracts.mjs','release/scope.json','tools/check_sync_storage.cjs','tools/install_release.py'])),'buildDependencies':{name:lock['packages']['node_modules/'+name]['version'] for name in ['vite','vue','@vitejs/plugin-vue','rolldown']},'scope':scope,'files':files,'productionTargetVerified':False,'dataRestoreSupported':False}
+ manifest={'format':1,'profile':scope['profile'],'kind':'rollback-baseline' if ref else 'candidate','sourceCommit':ref or git('rev-parse','HEAD').decode().strip(),'sourceInputsSha256':fingerprint,'sourceDirty':False if ref else bool(git('status','--porcelain')),'completePwa':not skip_pwa,'node':subprocess.check_output([node,'--version'],text=True).strip(),'buildRecipeSha256':sha(b''.join((ROOT/p).read_bytes() for p in ['tools/assemble_release.py','tools/build_contracts.mjs','release/scope.json','tools/check_sync_storage.cjs','tools/install_release.py','tools/dev-environment/install_local.py'])),'buildDependencies':{name:lock['packages']['node_modules/'+name]['version'] for name in ['vite','vue','@vitejs/plugin-vue','rolldown']},'scope':scope,'files':files,'productionTargetVerified':False,'dataRestoreSupported':False}
+ if not ref:
+  manifest['hostProfiles']=['linux-full-local']
+  patch=json.loads((ROOT/'compat/host-patches/VCPChat-startup-diagnostics.json').read_text())
+  manifest['hostPatches']=[{**patch,'patch':'compat/host-patches/VCPChat-startup-diagnostics.patch'}]
  write_json(out/'MANIFEST.json',manifest);write_json(out/'SOURCE_INPUTS.json',inputs)
  shutil.copytree(ROOT/'compat',out/'compat');shutil.copytree(ROOT/'LICENSES',out/'LICENSES');shutil.copyfile(ROOT/'NOTICE.md',out/'NOTICE.md')
  if not ref:(out/'diagnostics').mkdir();shutil.copyfile(ROOT/'tools/check_sync_storage.cjs',out/'diagnostics/check_sync_storage.cjs')
  (out/'tools').mkdir();shutil.copyfile(ROOT/'tools/install_release.py',out/'tools/install_release.py')
+ if not ref:shutil.copyfile(ROOT/'tools/dev-environment/install_local.py',out/'tools/install_local.py')
  write_json(out/'SCOPE.json',scope)
  if (ROOT/'docs/release-assembly-20261031.md').exists():shutil.copyfile(ROOT/'docs/release-assembly-20261031.md',out/'INSTALL.md')
  manifest['supportFiles']={f.relative_to(out).as_posix():sha(f.read_bytes()) for f in sorted(out.rglob('*')) if f.is_file() and not f.is_symlink() and not f.is_relative_to(out/'assembled') and not f.is_relative_to(payload) and f.name not in ['MANIFEST.json','pwa-build.txt']}

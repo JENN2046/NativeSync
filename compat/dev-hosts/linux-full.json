@@ -1,0 +1,50 @@
+{
+  "id": "linux-full-local",
+  "scope": "fixed owned local VCP environment; not a production or Windows profile",
+  "files": [
+    {
+      "path": "VCPChat/main.js",
+      "sha256": "86fca03166db08e7c2fa513af8e3efcd73f67ae23fa790de3d90bcc2d5d7c922"
+    },
+    {
+      "path": "VCPChat/preloads/api/chat.js",
+      "sha256": "c1a7a266b60e64954c694eeddc82865eead14b9459b46dd253b1e228121c81c0"
+    },
+    {
+      "path": "VCPChat/modules/ipc/nativeHistoryHandlers.js",
+      "sha256": "c87400068ed62aef08a89b504031b6e0cbe1a3444db8993086258567323e74b9"
+    },
+    {
+      "path": "VCPChat/modules/services/historyMutationQueue.js",
+      "sha256": "d6606731d89e7339aa803bd82676c107c0bcc5b0fcb29a9560ec8d0dc8c9bb26"
+    },
+    {
+      "path": "VCPToolBox/server.js",
+      "sha256": "a78f4e75d17a785fc21f05d3ebe4a70782c785a70d3b3df41541f3a702c17854"
+    },
+    {
+      "path": "VCPToolBox/Plugin.js",
+      "sha256": "e344779d372995dc8282d8d0b819c0c82cfa34964c3be10350d57d27310dddbb"
+    },
+    {
+      "path": "VCPToolBox/Plugin/AgentAssistant/AgentAssistant.js",
+      "sha256": "9d6c94b166054762849126330861fa468a6aeca8e03f652f029ff114ccb23e08"
+    },
+    {
+      "path": "VCPToolBox/modules/nativeConversationTransport.js",
+      "sha256": "39add96d9dfd6c7fece63ee953aeb2add6575060df003a4adb4abf840a98677d"
+    },
+    {
+      "path": "VCPToolBox/modules/pluginRuntimeEnvSandbox.js",
+      "sha256": "c0adf2c55c7bfa9c6d0fcbd9b0e68a7496d64073d815398ff434ab8a7313ef1c"
+    },
+    {
+      "path": "VCPToolBox/rust-vexus-lite/vexus-lite.linux-x64-gnu.node",
+      "sha256": "4e75da75de414a0f392d1f417bf629bdc8c4232e28556491ed925a07b59c6f13"
+    },
+    {
+      "path": "VCPChat/audio_engine/audio_server",
+      "sha256": "73c2b3c4801c0ae97c8aeb36b59533f3f8f6e85ad1d61f7a68a293adc15ab25f"
+    }
+  ]
+}

@@ -10,3 +10,25 @@
 
 这些脚本不生成或携带凭据，不建立服务器连接，也不是通用VCP安装器。完整源码/依赖来源、
 启动方式与限制见 `docs/local-vcp-environment-20261031.md`。config和data不纳入Git。
+
+## 完整应用恢复验收
+
+```sh
+python3 tools/dev-environment/verify_full_runtime.py --package /absolute/candidate
+# 定向复现；默认全部九个场景
+python3 tools/dev-environment/verify_full_runtime.py --package /absolute/candidate --cases effect,aa
+```
+
+该入口会正常停止固定开发实例，在`/var/tmp/nativesync-full-runtime-<uid>/runs/`建立新源码、
+数据、证书和浏览器配置，运行真实server.js/adminServer.js/Electron/PWA，结束后恢复固定开发实例。
+`RESULT.json`、`PROVENANCE.json`、`logs/`及`evidence/`保留，包括失败现场。`--prepare-only`不停止应用。
+`--resume`仅用于继续已有测试实例，不重置其数据；需要重测首次接入或一次性故障时使用新实例。
+
+`full-support.cjs`是仅限隔离目录的模型/HTTPS代理测试夹具，支持断同步与丢弃已接受响应；
+`full-preload.cjs`只通过测试启动命令的`--require`加载，复用现有执行故障钩子；
+IsolatedEffect是该实例新生成的direct hybridservice插件，只写入并fsync一个合成效果标记。
+它们不进入产品运行载荷，没有增加产品故障接口。
+
+`install_local.py`用于固定开发根及本入口生成的实例，要求停止本套进程，核对完整宿主和前一包摘要，
+只替换包内代码及已声明的桌面补丁；拒绝未知目标和脏文件。回退仅恢复备份代码，不回退数据库或状态。
+候选包内`tools/install_local.py`与`tools/install_release.py`可独立配合使用，公共夹具安装器限制保持原样。
