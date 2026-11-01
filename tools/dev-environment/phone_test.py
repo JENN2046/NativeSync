@@ -19,6 +19,8 @@ def prepare_phone(address,package):
     interface,prefix=network(address);root=RUNS/datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     prepare(root,package,attachments=True,groups=True,phone=True)
     settings=root/'data/chat/settings.json';value=json.loads(settings.read_text());value.update({'lastOpenItemId':'ns-normal','lastOpenItemType':'agent'});write(settings,value)
+    fixtures=root/'fixtures';fixtures.mkdir(exist_ok=True);(fixtures/'phone-test.txt').write_text('NATIVESYNC_ANDROID_SYNTHETIC_FILE\n手机上传测试用合成文件。\n')
+    run([NODE,'-e',"require(process.argv[1])({create:{width:96,height:64,channels:3,background:{r:20,g:135,b:200}}}).png().toFile(process.argv[2])",str(root/'VCPToolBox/node_modules/sharp'),str(fixtures/'phone-test.png')])
     folder=root/'config/phone';folder.mkdir(mode=0o700)
     # The signing key is discarded immediately; only this test leaf is issued.
     run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-days','2','-subj','/CN=NativeSync Android Local Test','-addext','basicConstraints=critical,CA:TRUE,pathlen:0','-addext','keyUsage=critical,keyCertSign,cRLSign','-keyout',str(folder/'ca-key.pem'),'-out',str(folder/'ca.pem')])
