@@ -1,0 +1,122 @@
+{
+  "date": "2026-10-31 America/Adak",
+  "candidateSourceCommit": "7274711aaba7dece0aa9ed6b910d2692c6532e17",
+  "candidateManifestSha256": "0f41dac24df49fe40a78694beb86ea926bd71539a80414d088952cebb1ee0858",
+  "zip": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.artifacts/NativeSync_Local_Stable_Delivery_20261031.zip",
+  "zipSha256": "cc208198c29f6129d42a2a44bec63e86f17dfa313ce5e2b4c75ae4a0eaed8a08",
+  "fullRuntime": {
+    "result": "PASS",
+    "evidence": "/var/tmp/nativesync-full-runtime-1000/runs/20261101T054715291512Z",
+    "scenarios": [
+      {
+        "case": "normal",
+        "result": "PASS"
+      },
+      {
+        "case": "offline",
+        "result": "PASS"
+      },
+      {
+        "case": "lost-response",
+        "result": "PASS"
+      },
+      {
+        "case": "startup",
+        "result": "PASS"
+      },
+      {
+        "case": "reply-intent",
+        "result": "PASS"
+      },
+      {
+        "case": "reply-applied",
+        "result": "PASS"
+      },
+      {
+        "case": "effect",
+        "result": "PASS"
+      },
+      {
+        "case": "aa",
+        "result": "PASS"
+      },
+      {
+        "case": "install",
+        "result": "PASS"
+      }
+    ],
+    "verificationFiles": {
+      "dev.py": "b26b83979c23d2cb6eb15ffeb84468ddd7282d8214fe2c0774b3f142d571bb6a",
+      "desktop-stop.cjs": "5f1681d433e7be2a9834e24823bcac828eb79972bd0ea1083eb10b0873ed92f1",
+      "full-browser.cjs": "e333147b8efbd18723c559d40c4da05ff490cc8dcc8537e69632269bb9898206",
+      "full-support.cjs": "b4b2013037ebd79f0591a40b03cdad590d4766e28b5bf307dd2edaa5ce99aab8",
+      "full-preload.cjs": "2c542068ffad4fcb9d274d291a2c5102a7346146e0c89ae1afc094d43110a934"
+    },
+    "runtimeCursor": 21,
+    "outbox": 0,
+    "inbox": 0,
+    "normalDesktopFatalLogCount": 0
+  },
+  "publicFixtureValidation": {
+    "evidence": "/home/jenn/.codex/worktrees/nativesync-contract-experiment/NativeSync/.local/stable-local-validation-delivery",
+    "integration": {
+      "tests": 220,
+      "pass": 220,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "installationChecks": 8
+  },
+  "fixedDevelopmentInstance": {
+    "result": "PASS",
+    "candidateManifestSha256": "0f41dac24df49fe40a78694beb86ea926bd71539a80414d088952cebb1ee0858",
+    "zipSha256": "cc208198c29f6129d42a2a44bec63e86f17dfa313ce5e2b4c75ae4a0eaed8a08",
+    "sourceCommit": "7274711aaba7dece0aa9ed6b910d2692c6532e17",
+    "payloadFiles": 77,
+    "changedFiles": 0,
+    "reason": "Runtime payload and narrow renderer patch already matched exactly; idempotent verified install.",
+    "existingMessagesRetained": 6,
+    "existingTaskIdentitiesAndAttemptsRetained": true,
+    "cursor": 6,
+    "outbox": 0,
+    "inbox": 0,
+    "desktopAndBackendReady": true,
+    "processExitUsedGuardedQuit": true,
+    "serversAccessed": false
+  },
+  "storageChecks": {
+    "fullRuntime": {
+      "messages": 21,
+      "journal": 21,
+      "applied_ops": 21,
+      "issues": 0
+    },
+    "fixedDevelopment": {
+      "messages": 6,
+      "journal": 6,
+      "applied_ops": 6,
+      "issues": 0
+    }
+  },
+  "systemChange": {
+    "parameter": "fs.inotify.max_user_watches",
+    "previous": 262144,
+    "current": 1048576,
+    "persistent": false,
+    "explicitUserApproval": true
+  },
+  "scope": [
+    "local Linux Electron and Chrome mobile viewport",
+    "native AgentAssistant with local scripted model",
+    "synthetic fsync effect only"
+  ],
+  "notPerformed": [
+    "main-branch merge",
+    "push",
+    "server connection or deployment",
+    "real model/business tool acceptance",
+    "physical phone or Windows acceptance"
+  ]
+}

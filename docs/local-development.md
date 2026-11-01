@@ -45,3 +45,5 @@ python3 tools/validate_local.py --profile tencent-ce904c47 --prepare-only
 在本机生成新候选，再更新本机配置中的包路径。
 
 本轮已在本机 `jenn-System-Product-Name` 实际安装目标版本副本：220/220联合检查及8项安装/回退场景通过。最新本机回执位于 `.local/local-validation/runs/tencent-ce904c47/20261031T162120827352Z/`；该结果不是复用远端通过记录。
+
+最新稳定候选、完整应用恢复验证入口和本机安装方式见[稳定交付验收](local-stable-closeout-20261031.md)及[操作说明](local-stable-install-20261031.md)。本机CONFIG中的候选已更新为stable-local-delivery。
