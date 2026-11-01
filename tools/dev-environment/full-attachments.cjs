@@ -22,7 +22,7 @@ module.exports=async function(c){
   await desktop().type('#messageInput','ISOLATED_DESKTOP_ATTACHMENTS');await desktop().click('#sendMessageBtn');
   const d=await until(()=>history('normal').find(m=>m.role==='user'&&m.content==='ISOLATED_DESKTOP_ATTACHMENTS'),'desktop attachment history');assert.equal(d.attachments.length,4);const scan=d.attachments.find(a=>a.name==='scan.pdf');assert.equal((scan._fileManagerData||scan).imageFrames?.length,1);
   await until(()=>state().outbox.length>=2&&history('normal').some(m=>m.role==='assistant'),'offline attachment outbox');const originalOps=state().outbox.map(x=>x.opId);await restartChat();assert.deepEqual(state().outbox.map(x=>x.opId),originalOps);control({});
-  await selectPhone('normal');await until(()=>phone().evaluate(id=>document.querySelector(`[data-message-id="${id}"] .attachment a`)?.href,d.id),'PWA downloadable desktop attachment',45000);
+  await selectPhone('normal');await until(()=>phone().evaluate(id=>Boolean(document.querySelector(`[data-message-id="${id}"] .attachment-open`)),d.id),'PWA downloadable desktop attachment',45000);
   await until(()=>history('normal').find(m=>m.id===d.id)?.attachments.find(a=>a.name==='scan.pdf')?.frameHashes?.length===1,'PDF frame synchronized',45000);
   const downloads=[];for(const a of require(root+'/VCPChat/modules/services/nativeSync/protocol').canonicalMessage(d).attachments){const result=await bytes(phone(),downloadRoute('normal',d,a));assert.equal(result.status,200);assert.equal(result.hash,sha(files[a.name]));downloads.push({name:a.name,...result});}
   await until(()=>phone().evaluate(id=>[...document.querySelectorAll(`[data-message-id="${id}"] .attachment img`)].some(i=>i.complete&&i.naturalWidth>0),d.id),'PWA actual image decode');

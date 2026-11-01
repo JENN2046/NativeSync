@@ -43,7 +43,7 @@ class MobilePortal {
         this.router = express.Router();
         this.router.use((req, res, next) => {
             if (!protectedHttps(req)) return res.status(403).json({error:{code:'HTTPS_REQUIRED'}});
-            res.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+            res.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
             res.set('X-Content-Type-Options', 'nosniff'); res.set('Referrer-Policy', 'no-referrer'); next();
         });
         this.router.use('/api', (req, res, next) => {
