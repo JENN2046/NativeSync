@@ -68,6 +68,7 @@ def build(out,node,deps,ref=None,skip_pwa=False):
  if not ref:shutil.copyfile(ROOT/'docs/desktop-sync-settings-20261031.md',out/'SETTINGS.md')
  if not ref:shutil.copyfile(ROOT/'docs/attachments-local-20261031.md',out/'ATTACHMENTS.md')
  if not ref:shutil.copyfile(ROOT/'docs/groups-local-20261101.md',out/'GROUPS.md')
+ if not ref:shutil.copyfile(ROOT/'docs/android-phone-test-20261101.md',out/'ANDROID_TEST.md')
  manifest['supportFiles']={f.relative_to(out).as_posix():sha(f.read_bytes()) for f in sorted(out.rglob('*')) if f.is_file() and not f.is_symlink() and not f.is_relative_to(out/'assembled') and not f.is_relative_to(payload) and f.name not in ['MANIFEST.json','pwa-build.txt']}
  write_json(out/'MANIFEST.json',manifest)
  print(json.dumps({'output':str(out),'files':len(files),'sourceInputsSha256':fingerprint,'kind':manifest['kind'],'completePwa':not skip_pwa}),flush=True)

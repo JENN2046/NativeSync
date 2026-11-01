@@ -8,6 +8,7 @@ function record(name,value){const fd=fs.openSync(root+'/evidence/'+name,'a',0o60
 function calls(){try{return fs.readFileSync(root+'/evidence/provider.jsonl','utf8').trim().split('\n').filter(Boolean).map(JSON.parse);}catch{return [];}}
 http.createServer(async(req,res)=>{
  try{
+  if(req.method==='GET'&&req.url==='/phone-pair'&&fs.existsSync(root+'/PHONE.json')){res.setHeader('Content-Type','text/html; charset=utf-8');res.setHeader('Cache-Control','no-store');res.setHeader('Referrer-Policy','no-referrer');res.setHeader('Content-Security-Policy',"default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:");return res.end(fs.existsSync(root+'/config/phone/pair-card.html')?fs.readFileSync(root+'/config/phone/pair-card.html'):'<meta charset="utf-8"><p>等待本机生成一次性配对码。</p>');}
   if(req.url==='/health'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({mode:'isolated-local-scripted',calls:calls().length}));}
   if(req.url==='/v1/models'){res.setHeader('Content-Type','application/json');return res.end(JSON.stringify({data:['normal','offline','lost-response','reply-intent','reply-applied','effect','aa','startup',...['sequential','invite','nature','recovery','effect'].flatMap(g=>['group-'+g+'-a','group-'+g+'-b'])].map(n=>({id:'nativesync-'+n,object:'model',owned_by:'local-test'}))}));}
   let raw='';for await(const part of req)raw+=part;const body=JSON.parse(raw);

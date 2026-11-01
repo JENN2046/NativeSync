@@ -3,6 +3,7 @@ import {ref,computed,onMounted,onUnmounted,nextTick} from 'vue';
 import {createExecutionPager} from './executionPages.js';
 import {readDirectoryPages,readHistoryBaseline} from './directoryHistory.js';
 import {createAttachmentStatusPager} from './attachmentStatus.js';
+import {consumePairingLink} from './pairingLink.js';
 import {uploadAttachment} from './attachmentUpload.js';
 import {createSubmissionRecovery,validSessionRecovery,SUBMISSION_STORAGE_KEY} from './submissionRecovery.js';
 import {projectNativeWork,verifyNativeResult,nativeTaskLabels,toolLabels,resultHash} from './nativeTasks.js';
@@ -15,6 +16,9 @@ const drafts=new Map(),composerDraft=ref({text:'',files:[],revision:0});let comp
 const text=computed({get:()=>composerDraft.value.text,set:value=>{composerDraft.value.text=value;composerDraft.value.revision++;}});
 const pendingFiles=computed({get:()=>composerDraft.value.files,set:value=>{composerDraft.value.files=value;}});
 const nativeResult=ref(null),nativeResultPanel=ref(null);let nativeResultRequest=0;
+let incomingPairing=consumePairingLink({location:window.location,history:window.history,secureContext:window.isSecureContext});
+let connectionInitialized=false;
+const pairingLinkOpen=ref(false);
 const paired=ref(false),pairCode=ref(''),topics=ref([]),selected=ref(''),agentId=ref(''),messages=ref([]),jobs=ref([]),busy=ref(false),notice=ref('正在连接…'),online=ref(false),history=ref(null);
 const directoryAgents=ref(null),directoryNotice=ref(''),sourceProgress=ref([]);
 let directoryPaged=false,directoryRevision='',directoryLoading=false,directoryRequest=0,baselineReady=false,baselineRequestId='';
@@ -227,28 +231,30 @@ async function showNativeResult(job,task){
 }
 async function abandon(j){if(!canResolveReview(j)||!reviewChecks.value[j.id])return;try{await api('executions/'+j.id+'/resolve',{action:'acknowledge_and_abandon_remaining'});notice.value='已记录人工核对并解除本次暂停；旧请求不会重跑。这不代表已取消 AA 或撤回工具副作用。';await refresh();}catch(e){notice.value=e.message;}}
 async function cancel(id){try{await api('executions/'+id+'/cancel',{});await refresh();}catch(e){notice.value=e.message;}}
-function clearTransientKey(){accessKey.value='';pairCode.value='';}
+function applyPairingLink(code){if(!code)return;if(!connectionInitialized){incomingPairing=code;return;}if(paired.value)return;pairCode.value=code;pairingLinkOpen.value=true;settingsOpen.value=true;notice.value='已读取一次性配对码，请确认连接会话。';}
+function pairingHashChanged(){applyPairingLink(consumePairingLink({location:window.location,history:window.history,secureContext:window.isSecureContext}));}
+function clearTransientKey(){accessKey.value='';pairCode.value='';incomingPairing=null;}
 function storageChanged(event){if(event.key===SUBMISSION_STORAGE_KEY||event.key===null){loadRecovery();recoveryDetail.value='';}}
 async function refreshView(){try{await refreshDirectory();}catch{}await refresh();}
 function reconnect(){loadRecovery();refreshView();}
-onMounted(async()=>{loadRecovery();window.addEventListener('pagehide',clearTransientKey);window.addEventListener('storage',storageChanged);window.addEventListener('online',reconnect);await connectionInfo();await session();timer=setInterval(refreshView,2000);});
-onUnmounted(()=>{clearInterval(timer);window.removeEventListener('pagehide',clearTransientKey);window.removeEventListener('storage',storageChanged);window.removeEventListener('online',reconnect);clearTransientKey();});
+onMounted(async()=>{loadRecovery();window.addEventListener('hashchange',pairingHashChanged);window.addEventListener('pagehide',clearTransientKey);window.addEventListener('storage',storageChanged);window.addEventListener('online',reconnect);await connectionInfo();await session();connectionInitialized=true;applyPairingLink(incomingPairing);incomingPairing=null;timer=setInterval(refreshView,2000);});
+onUnmounted(()=>{clearInterval(timer);window.removeEventListener('hashchange',pairingHashChanged);window.removeEventListener('pagehide',clearTransientKey);window.removeEventListener('storage',storageChanged);window.removeEventListener('online',reconnect);clearTransientKey();});
 </script>
 <template>
  <div class="shell">
   <header><img :src="'/mobile/icon.svg'" alt=""><div><strong>VCP Mobile</strong><small>同一段会话，随时接续</small></div><span class="connection" :class="{offline:!online}">{{online?(paired?'已连接':'服务可达'):'离线'}}</span><button id="open-settings" class="settings-toggle" @click="settingsOpen=!settingsOpen">设置</button></header>
   <main v-if="settingsOpen||!paired" class="pairing settings">
-   <div class="intro">连接你的会话</div><p>输入 VCPToolBox API Key。服务器和连接参数已自动配置。</p>
+   <div class="intro">连接你的会话</div><p v-if="server?.credentialExchangeAllowed===false">此入口使用电脑生成的一次性配对码，无需输入后端 Key。</p><p v-else>输入 VCPToolBox API Key。服务器和连接参数已自动配置。</p>
    <form @submit.prevent="connect">
     <details :open="settingsOpen"><summary>连接设置</summary><label for="server-address">后端地址</label><input id="server-address" v-model="serverUrl" type="url" required @input="tested=false;accessKey=''" :disabled="busy">
     <button id="test-connection" type="button" @click="testConnection" :disabled="busy">测试连接</button>
     <p v-if="server" id="server-info">{{server.service}} · {{server.plugin}}<br>{{server.serverUrl||'尚未配置正式后端'}}</p></details>
-    <p v-if="!keyAllowed" id="connection-blocker">安全接入尚未确认，访问凭据输入暂不可用。</p>
+    <p v-if="!keyAllowed" id="connection-blocker">{{server?.credentialExchangeAllowed===false?'请使用下方一次性配对入口。':'安全接入尚未确认，访问凭据输入暂不可用。'}}</p>
     <label for="server-key">访问凭据 · VCPToolBox API Key</label><input id="server-key" v-model="accessKey" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" :disabled="busy||!keyAllowed||!tested" :placeholder="keyAllowed&&tested?'只需输入你的 Key':'HTTPS 安全入口就绪后可输入'" :required="keyAllowed&&tested">
     <button id="save-connection" :disabled="busy||!tested||!keyAllowed||!accessKey">{{paired?'重新认证并保存连接':'保存服务器连接'}}</button>
    </form>
    <div v-if="paired" class="device-actions"><button id="disconnect" @click="disconnect" :disabled="busy">断开连接</button><button id="clear-session" @click="disconnect" :disabled="busy">清除设备会话</button><button id="close-settings" @click="settingsOpen=false">返回会话</button></div>
-   <details v-if="!paired"><summary>使用一次性配对码</summary><form @submit.prevent="pair"><label for="pair-code">一次性配对码</label><input id="pair-code" v-model="pairCode" type="password" autocomplete="off" required><button id="pair-submit" :disabled="busy">连接会话</button></form></details>
+   <details v-if="!paired" :open="pairingLinkOpen"><summary>使用一次性配对码</summary><form @submit.prevent="pair"><label for="pair-code">一次性配对码</label><input id="pair-code" v-model="pairCode" type="password" autocomplete="off" required><button id="pair-submit" :disabled="busy">连接会话</button></form></details>
    <p v-if="recoveryRecords.length" id="saved-submissions">此设备保留 {{recoveryRecords.length}} 条待确认提交。重新连接后会核对原记录，不会自动重发。</p><p v-if="recoveryError" role="alert">{{recoveryError}}</p><p role="status">{{notice}}</p>
   </main>
   <template v-else>

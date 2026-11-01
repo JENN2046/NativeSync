@@ -9,7 +9,7 @@ def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def write(p, value):
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(value, ensure_ascii=False, indent=2)+'\n')
-def prepare(root, package, attachments=False, groups=False):
+def prepare(root, package, attachments=False, groups=False, phone=False):
     root.mkdir(mode=0o700, parents=True)
     write(root/'ISOLATED.json', {'kind':'nativesync-full-local-runtime','source':str(DEV)})
     manifests = json.loads((DEV/'matched-overlays.json').read_text())
@@ -58,7 +58,7 @@ def prepare(root, package, attachments=False, groups=False):
     os.chmod(root/'config/local-credentials.json',0o600)
     subprocess.run(['openssl','req','-x509','-newkey','rsa:2048','-nodes','-days','7','-subj','/CN=NativeSync isolated local test','-addext','subjectAltName=DNS:localhost,IP:127.0.0.1','-addext','basicConstraints=critical,CA:TRUE','-keyout',str(root/'config/tls/localhost-key.pem'),'-out',str(root/'config/tls/localhost-cert.pem')],check=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     os.chmod(root/'config/tls/localhost-key.pem',0o600)
-    cases=['normal','offline','lost-response'] if groups else ['normal','offline','lost-response','reply-intent','reply-applied','effect','aa','startup']
+    cases=['normal'] if phone else ['normal','offline','lost-response'] if groups else ['normal','offline','lost-response','reply-intent','reply-applied','effect','aa','startup']
     topics=[];selected=[];approved=[];aliases={'NSDEV':'Development.txt'};now=int(datetime.datetime.now().timestamp()*1000)
     for case in cases:
         owner='ns-'+case;model='nativesync-'+case
@@ -68,7 +68,7 @@ def prepare(root, package, attachments=False, groups=False):
         prompt='本地合成测试。'+('允许本轮指定测试工具。' if case in ['effect','aa'] else '[[VCPToolUse=Forbidden]]')
         write(root/'data/chat/Agents'/owner/'config.json',{'id':owner,'name':'NS '+case,'systemPrompt':prompt,'model':model,'maxOutputTokens':1024,'contextTokenLimit':32000,'temperature':0,'topics':[{'id':'test-topic','name':case,'createdAt':now}],'useThemeColorsInChat':True})
     if groups:
-        for case in ['group-sequential','group-invite','group-nature','group-recovery','group-effect']:
+        for case in (['group-sequential','group-invite','group-nature'] if phone else ['group-sequential','group-invite','group-nature','group-recovery','group-effect']):
             owner='ns-'+case;members=[owner+'-'+suffix for suffix in ['a','b']];member_aliases={}
             for index,member in enumerate(members):
                 alias='NS_'+case.replace('-','_').upper()+'_'+str(index);aliases[alias]='Development.txt';member_aliases[member]=alias
@@ -78,7 +78,7 @@ def prepare(root, package, attachments=False, groups=False):
             d={'itemId':owner,'itemType':'group','topicId':'test-topic'};selected.append(d)
             h=root/'data/chat/UserData'/owner/'topics/test-topic/history.json';write(h,[]);approved.append({**d,'rawFileSha256':digest(h)})
             topics.append({'key':case,'ownerType':'group','ownerId':owner,'topicId':'test-topic','memberAliases':member_aliases})
-        assert len(selected)==8
+        assert len(selected)==(4 if phone else 8)
         provenance['verificationProfile']='groups-five-groups-three-agent-topics'
     write(root/'data/chat/settings.json',{'vcpServerUrl':'https://127.0.0.1:17653/v1/chat/completions','vcpApiKey':key,'userName':'本机合成测试','uiMode':'next','ChatDataServiceEnabled':False,'enableDistributedServer':False,'lastOpenAgentId':'ns-normal','lastOpenTopicId':'test-topic'})
     write(root/'data/chat/.native-sync/connection.json',{'version':1,'enabled':True,'historySelectionApproved':True,'deviceId':'isolated-'+secrets.token_hex(8),'scopeMode':'selected','topics':selected,'approvedHistory':approved,'serverUrl':'https://127.0.0.1:17653','credentialSource':'existing-vcp-settings','publishCatalog':True,'publishExecutionConfigs':True,'syncAttachments':attachments})
