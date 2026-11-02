@@ -1,0 +1,1009 @@
+{
+  "format": 1,
+  "kind": "read-only-deployment-preflight-not-execution-authorization",
+  "recordedAt": "2026-11-02T17:33:35.178981+08:00",
+  "status": "preflight-complete-target-installation-and-rollback-validation-required-before-production-approval",
+  "target": {
+    "sshAlias": "tencent-prod",
+    "hostname": "VM-0-13-ubuntu",
+    "user": "ubuntu",
+    "root": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox",
+    "dataDir": "/opt/AGENTS_OS_Workspace/runtime-data/NativeSync/r21",
+    "hostGitAnchor": "77aa55797057800261d8417fea6ca2156c81c7bb",
+    "trackedDifferencesCount": 729,
+    "runtime": {
+      "node": "24.22.1",
+      "abi": "137",
+      "sqlite": "3.53.4",
+      "arch": "x64",
+      "platform": "linux"
+    },
+    "services": {
+      "vcptoolbox.service": {
+        "ActiveState": "active",
+        "SubState": "running",
+        "InvocationID": "128c7f7bcd5b47b195ac13494063d29b",
+        "MainPID": "1251194",
+        "ExecMainStartTimestamp": "Mon 2026-11-02 17:16:51 CST"
+      },
+      "vcptoolbox-admin.service": {
+        "ActiveState": "active",
+        "SubState": "running",
+        "InvocationID": "a0bc1715d16340f8bd126be22dd341ca",
+        "MainPID": "1233828",
+        "ExecMainStartTimestamp": "Mon 2026-11-02 16:41:41 CST"
+      }
+    }
+  },
+  "candidate": {
+    "zip": "NativeSync_Online_Read_Integrity_20261101.zip",
+    "zipSha256": "35b7e67055fb07b8d27221f231d77e8d9fb771b1774a0957055b187ec8c2cd30",
+    "manifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+    "runtimeCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320",
+    "localReviewCommit": "425482250e0b3642279b561cf838d9397c7d4eb2"
+  },
+  "targetMappingCounts": {
+    "verify-only": 36,
+    "create": 5,
+    "replace": 15
+  },
+  "files": [
+    {
+      "source": "VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js",
+      "relativeTarget": "Plugin/AgentAssistant/delegationContinuity.js",
+      "operation": "verify-only",
+      "beforeSha256": "bb2e19aefa3cf7834591feb22c3dbc86e2d49c7e5bc39b0c2bd910b446ee79d7",
+      "beforeBytes": 7318,
+      "afterSha256": "bb2e19aefa3cf7834591feb22c3dbc86e2d49c7e5bc39b0c2bd910b446ee79d7",
+      "afterBytes": 7318,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/config.env.example",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/config.env.example",
+      "relativeTarget": "Plugin/NativeSync/config.env.example",
+      "operation": "create",
+      "beforeSha256": null,
+      "beforeBytes": null,
+      "afterSha256": "f3d6450eebce3eed6375ff88f4ea86f18aaac172eec7caadb7c91b0de1b748b3",
+      "afterBytes": 290,
+      "rollback": "remove-only-if-still-matches-installed-hash",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/attachmentRoutes.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/attachmentRoutes.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/attachmentRoutes.js",
+      "operation": "verify-only",
+      "beforeSha256": "ab28b125e9cb20ee221c0f1dd1beeea4a5fad2b0d387f9e5aa379d422099bee4",
+      "beforeBytes": 2452,
+      "afterSha256": "ab28b125e9cb20ee221c0f1dd1beeea4a5fad2b0d387f9e5aa379d422099bee4",
+      "afterBytes": 2452,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/attachments.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/attachments.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/attachments.js",
+      "operation": "replace",
+      "beforeSha256": "bfe10e265aaf77902ddce59d3b00e9ee84e9c94f1a6b772fa77eece72441cba1",
+      "beforeBytes": 22233,
+      "afterSha256": "3771cb0ab46aa76bd0d28a01d5824d9899d21e20c4617c67b42f1b8db16cf17a",
+      "afterBytes": 22621,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/connection.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/connection.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/connection.js",
+      "operation": "verify-only",
+      "beforeSha256": "756c9020775c68f33077a434d95e2f8ef2623b41c6ee0c5a9976f9b37bb0d7b5",
+      "beforeBytes": 2999,
+      "afterSha256": "756c9020775c68f33077a434d95e2f8ef2623b41c6ee0c5a9976f9b37bb0d7b5",
+      "afterBytes": 2999,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/effectiveContext.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/effectiveContext.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/effectiveContext.js",
+      "operation": "verify-only",
+      "beforeSha256": "4bf4d55e1889dfa9c4038f4d0253b5ae180aba21464441b7bf67f634bef7f1cf",
+      "beforeBytes": 1850,
+      "afterSha256": "4bf4d55e1889dfa9c4038f4d0253b5ae180aba21464441b7bf67f634bef7f1cf",
+      "afterBytes": 1850,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/execution.js",
+      "operation": "replace",
+      "beforeSha256": "696b31da32b0e441fae8ad2f78f4f64dad9c1b1dea814cd39b988545d0e492ca",
+      "beforeBytes": 26920,
+      "afterSha256": "96a20792770f31bb7d6f9627f53eceb26f8471b7d9b50ba6343afe3ab7d8737d",
+      "afterBytes": 29290,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/executionConfigs.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/executionConfigs.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/executionConfigs.js",
+      "operation": "replace",
+      "beforeSha256": "b443b1b38f0fb1dd1dcf36746cc0c3ff23e0f3ba9135b83cc8cdc4e36fbeecb9",
+      "beforeBytes": 11451,
+      "afterSha256": "3cc77fe467823c9352692c92639caa5302295cce0002b9875e9861d1f5a5b08a",
+      "afterBytes": 14466,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/executionPages.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/executionPages.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/executionPages.js",
+      "operation": "create",
+      "beforeSha256": null,
+      "beforeBytes": null,
+      "afterSha256": "5f8d7eee0f491e358866f134ddf569ff661585f7c74544debfa5ca4bbb73fbd4",
+      "afterBytes": 2287,
+      "rollback": "remove-only-if-still-matches-installed-hash",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/groupRequest.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/groupRequest.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/groupRequest.js",
+      "operation": "verify-only",
+      "beforeSha256": "c509d2689ff626d194196665e225ea283f29638e45b19c80a8a4b25d3612f024",
+      "beforeBytes": 5607,
+      "afterSha256": "c509d2689ff626d194196665e225ea283f29638e45b19c80a8a4b25d3612f024",
+      "afterBytes": 5607,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/groupTurn.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/groupTurn.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/groupTurn.js",
+      "operation": "replace",
+      "beforeSha256": "002c41cbc3b92567f3768514109d9c8490264bbc732818fb51e3c7370b4cf2cf",
+      "beforeBytes": 24346,
+      "afterSha256": "048e6667c92a1e7dae4a68cce5a5bdd1bbd9b3afe270775b6fc7b6f317b50b4e",
+      "afterBytes": 24773,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/nativePacket.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/nativePacket.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/nativePacket.js",
+      "operation": "verify-only",
+      "beforeSha256": "ad778a263041749c32b2037cd9212f8ff11b21e5ec42e4c920aa57ea0d49077c",
+      "beforeBytes": 533,
+      "afterSha256": "ad778a263041749c32b2037cd9212f8ff11b21e5ec42e4c920aa57ea0d49077c",
+      "afterBytes": 533,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/nativeResponse.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/nativeResponse.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/nativeResponse.js",
+      "operation": "verify-only",
+      "beforeSha256": "3851bb47d59b9897699aa8c8670f9c234bb26d917ceeece8141998d76b2d8956",
+      "beforeBytes": 3911,
+      "afterSha256": "3851bb47d59b9897699aa8c8670f9c234bb26d917ceeece8141998d76b2d8956",
+      "afterBytes": 3911,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/nativeTasks.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/nativeTasks.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/nativeTasks.js",
+      "operation": "verify-only",
+      "beforeSha256": "eb22c597feeeae23308099fcc56f57e12f4999ecda12241f4c582e8b71e2f6b1",
+      "beforeBytes": 18609,
+      "afterSha256": "eb22c597feeeae23308099fcc56f57e12f4999ecda12241f4c582e8b71e2f6b1",
+      "afterBytes": 18609,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/pdfText.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/pdfText.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/pdfText.js",
+      "operation": "verify-only",
+      "beforeSha256": "d0e4af4acddf651c635abf372177e19613d97ad64607bac8008bc25245b5c7fa",
+      "beforeBytes": 549,
+      "afterSha256": "d0e4af4acddf651c635abf372177e19613d97ad64607bac8008bc25245b5c7fa",
+      "afterBytes": 549,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/portal.js",
+      "operation": "replace",
+      "beforeSha256": "da7e1a57960bb6ba199c438194682e253f74061a08c500a1c6874900c8a42320",
+      "beforeBytes": 25951,
+      "afterSha256": "5901c7058ccd1ff48ae907d5f0e2669e6333e8a081f36cc44007859ae53d337f",
+      "afterBytes": 28440,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/snapshotPrompt.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/snapshotPrompt.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/snapshotPrompt.js",
+      "operation": "verify-only",
+      "beforeSha256": "7d10c8ae439888c32ecba739fbee64f2f094f3e3fd3509c9ec68811aafd8a9af",
+      "beforeBytes": 997,
+      "afterSha256": "7d10c8ae439888c32ecba739fbee64f2f094f3e3fd3509c9ec68811aafd8a9af",
+      "afterBytes": 997,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile/submissionRecovery.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/mobile/submissionRecovery.js",
+      "relativeTarget": "Plugin/NativeSync/mobile/submissionRecovery.js",
+      "operation": "replace",
+      "beforeSha256": "e2ae8d70b7af64301a5ea68ce1e7422599f95925869107bb6d950f4454eb18d4",
+      "beforeBytes": 2752,
+      "afterSha256": "0b718827b383e385f73bdec22140d55ef42ef41b513e710abf099ba8f0f193e2",
+      "afterBytes": 2819,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-BcpsuVsp.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/assets/index-BcpsuVsp.js",
+      "relativeTarget": "apps/mobile/dist/assets/index-BcpsuVsp.js",
+      "operation": "create",
+      "beforeSha256": null,
+      "beforeBytes": null,
+      "afterSha256": "17b5f2aba78d1b76e46481e08c64c12a4594dcb4eaaca7245ec3108423b6a815",
+      "afterBytes": 121613,
+      "rollback": "retain-inert-immutable-asset",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-RI3Q4bWS.css",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/assets/index-RI3Q4bWS.css",
+      "relativeTarget": "apps/mobile/dist/assets/index-RI3Q4bWS.css",
+      "operation": "create",
+      "beforeSha256": null,
+      "beforeBytes": null,
+      "afterSha256": "072013480e5cbe7907b4a6adc6026d5103908e68f175479fe61ab2110999b7bd",
+      "afterBytes": 6710,
+      "rollback": "retain-inert-immutable-asset",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/icon-192.png",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/icon-192.png",
+      "relativeTarget": "apps/mobile/dist/icon-192.png",
+      "operation": "verify-only",
+      "beforeSha256": "3294b329f7230778b3da55db4d1124d12ff77b3dc3a03fc1d3015dd4b6049f88",
+      "beforeBytes": 5052,
+      "afterSha256": "3294b329f7230778b3da55db4d1124d12ff77b3dc3a03fc1d3015dd4b6049f88",
+      "afterBytes": 5052,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/icon-512.png",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/icon-512.png",
+      "relativeTarget": "apps/mobile/dist/icon-512.png",
+      "operation": "verify-only",
+      "beforeSha256": "39704b707d37d98ef42a91fb8ac1e7197d9772a87d795258cfa1a9e758f58a62",
+      "beforeBytes": 16515,
+      "afterSha256": "39704b707d37d98ef42a91fb8ac1e7197d9772a87d795258cfa1a9e758f58a62",
+      "afterBytes": 16515,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/icon.svg",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/icon.svg",
+      "relativeTarget": "apps/mobile/dist/icon.svg",
+      "operation": "verify-only",
+      "beforeSha256": "16e5a8d331ce6eac59372018e9d320d34fdaa99cda1f5108f18b424b8d4fdf92",
+      "beforeBytes": 296,
+      "afterSha256": "16e5a8d331ce6eac59372018e9d320d34fdaa99cda1f5108f18b424b8d4fdf92",
+      "afterBytes": 296,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/index.html",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/index.html",
+      "relativeTarget": "apps/mobile/dist/index.html",
+      "operation": "replace",
+      "beforeSha256": "5890219e7267dfcb571f11cfe2b6084ad82ec88007d26d12064d9de1ba75df2d",
+      "beforeBytes": 564,
+      "afterSha256": "0e036a2609112a5d2ab73e8c5fb584a1e2b8d17b36b0d85216dc4117ff40e7e4",
+      "afterBytes": 564,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/manifest.webmanifest",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/manifest.webmanifest",
+      "relativeTarget": "apps/mobile/dist/manifest.webmanifest",
+      "operation": "verify-only",
+      "beforeSha256": "fb11d99176f326ae1c0d49ff8a7b890c599dff37522594f6a8159402bbea7456",
+      "beforeBytes": 433,
+      "afterSha256": "fb11d99176f326ae1c0d49ff8a7b890c599dff37522594f6a8159402bbea7456",
+      "afterBytes": 433,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/mobile-dist/sw.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/sw.js",
+      "relativeTarget": "apps/mobile/dist/sw.js",
+      "operation": "verify-only",
+      "beforeSha256": "ca561071e5877f6aa8d346682c7544d99a61b796daebf119e2878a3e0e1e8480",
+      "beforeBytes": 1088,
+      "afterSha256": "ca561071e5877f6aa8d346682c7544d99a61b796daebf119e2878a3e0e1e8480",
+      "afterBytes": 1088,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": true
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/native-sync.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/native-sync.js",
+      "relativeTarget": "Plugin/NativeSync/native-sync.js",
+      "operation": "replace",
+      "beforeSha256": "6e2afb6402cd73f98a922cc514fe9ed176dc082d8df8feba239e0233c515592c",
+      "beforeBytes": 11178,
+      "afterSha256": "97f8647c6beb1a6d336d9f4b19ed958eb2f8f975c68c9d065d937062f5aad9a7",
+      "afterBytes": 13344,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/groupChatUrl.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/groupChatUrl.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/groupChatUrl.js",
+      "operation": "verify-only",
+      "beforeSha256": "b1fc3e79467705eef02da96710ebf9d9daadfa06ad57ed1957f2086e291b3855",
+      "beforeBytes": 691,
+      "afterSha256": "b1fc3e79467705eef02da96710ebf9d9daadfa06ad57ed1957f2086e291b3855",
+      "afterBytes": 691,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/groupContextWindow.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/groupContextWindow.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/groupContextWindow.js",
+      "operation": "verify-only",
+      "beforeSha256": "50348c483de22cbe2335cbdf66eea1e713d6504166ac47651990eb479e48ba32",
+      "beforeBytes": 1740,
+      "afterSha256": "50348c483de22cbe2335cbdf66eea1e713d6504166ac47651990eb479e48ba32",
+      "afterBytes": 1740,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modelSelection.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modelSelection.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/modelSelection.js",
+      "operation": "verify-only",
+      "beforeSha256": "1fc60600dacf29ec4601c45e9a167284db3de2a2c6df87cce0eae1fe8926298f",
+      "beforeBytes": 631,
+      "afterSha256": "1fc60600dacf29ec4601c45e9a167284db3de2a2c6df87cce0eae1fe8926298f",
+      "afterBytes": 631,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/baseChatMode.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/baseChatMode.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/modes/baseChatMode.js",
+      "operation": "verify-only",
+      "beforeSha256": "e76f53930084405516709b5b6e8314202f29300a1e3e84017de5feb89a072fad",
+      "beforeBytes": 2281,
+      "afterSha256": "e76f53930084405516709b5b6e8314202f29300a1e3e84017de5feb89a072fad",
+      "afterBytes": 2281,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/inviteOnlyMode.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/inviteOnlyMode.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/modes/inviteOnlyMode.js",
+      "operation": "verify-only",
+      "beforeSha256": "1e77da13df87a8d12bddd0b8d474bbc8b90dfaf4d7ae2934d2814f8b33ba553c",
+      "beforeBytes": 1049,
+      "afterSha256": "1e77da13df87a8d12bddd0b8d474bbc8b90dfaf4d7ae2934d2814f8b33ba553c",
+      "afterBytes": 1049,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/natureRandomMode.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/natureRandomMode.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/modes/natureRandomMode.js",
+      "operation": "verify-only",
+      "beforeSha256": "eeea58c6e70acb435d38d906707aeb6e97118ede6f0f687715614de53aa9ac64",
+      "beforeBytes": 13178,
+      "afterSha256": "eeea58c6e70acb435d38d906707aeb6e97118ede6f0f687715614de53aa9ac64",
+      "afterBytes": 13178,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/sequentialMode.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/modes/sequentialMode.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/modes/sequentialMode.js",
+      "operation": "verify-only",
+      "beforeSha256": "7d4a3a2e89aeb8e3dd7c13dbc6427c29f4d2b85d46f04a0ae0f233d662cb06c4",
+      "beforeBytes": 1880,
+      "afterSha256": "7d4a3a2e89aeb8e3dd7c13dbc6427c29f4d2b85d46f04a0ae0f233d662cb06c4",
+      "afterBytes": 1880,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/streamDelta.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/streamDelta.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/streamDelta.js",
+      "operation": "verify-only",
+      "beforeSha256": "e8984983e8b8938e32b411565c08481d3f66d02291598fdfb187af3d775d6e80",
+      "beforeBytes": 2312,
+      "afterSha256": "e8984983e8b8938e32b411565c08481d3f66d02291598fdfb187af3d775d6e80",
+      "afterBytes": 2312,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/streamWatchdog.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/Groupmodules/streamWatchdog.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/Groupmodules/streamWatchdog.js",
+      "operation": "verify-only",
+      "beforeSha256": "139d1b568ba40264a740c636cf65bf7e2dc20f8ba2e6d85d8bf68c8092efec60",
+      "beforeBytes": 3701,
+      "afterSha256": "139d1b568ba40264a740c636cf65bf7e2dc20f8ba2e6d85d8bf68c8092efec60",
+      "afterBytes": 3701,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/contextCompactionState.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/contextCompactionState.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/modules/chat/contextCompactionState.js",
+      "operation": "verify-only",
+      "beforeSha256": "ca2a2e8b9fd59445dd986a6cfcae47dafebdcb6bb4dc27fb616e3a5f3116906f",
+      "beforeBytes": 830,
+      "afterSha256": "ca2a2e8b9fd59445dd986a6cfcae47dafebdcb6bb4dc27fb616e3a5f3116906f",
+      "afterBytes": 830,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/requestEnvelope.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/requestEnvelope.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/modules/chat/requestEnvelope.js",
+      "operation": "verify-only",
+      "beforeSha256": "f311d0ce8e7becd4f97b4f1180a51e4051f3f66d7a7c1f1fd2df7403bc25ef96",
+      "beforeBytes": 2900,
+      "afterSha256": "f311d0ce8e7becd4f97b4f1180a51e4051f3f66d7a7c1f1fd2df7403bc25ef96",
+      "afterBytes": 2900,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/requestMetadata.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/modules/chat/requestMetadata.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/modules/chat/requestMetadata.js",
+      "operation": "verify-only",
+      "beforeSha256": "f1b7064e896fe05e22359d86a2a1a8305ae817f08ed3dfa0ab1186432931615b",
+      "beforeBytes": 529,
+      "afterSha256": "f1b7064e896fe05e22359d86a2a1a8305ae817f08ed3dfa0ab1186432931615b",
+      "afterBytes": 529,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/modules/contextSanitizer.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/modules/contextSanitizer.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/modules/contextSanitizer.js",
+      "operation": "verify-only",
+      "beforeSha256": "ddbef2472d52fb641b25d64690bde04bfc074294a8457561b5b1ed6eeacd057f",
+      "beforeBytes": 18585,
+      "afterSha256": "ddbef2472d52fb641b25d64690bde04bfc074294a8457561b5b1ed6eeacd057f",
+      "afterBytes": 18585,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/modules/renderer/markdownCodeDomainScanner.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/modules/renderer/markdownCodeDomainScanner.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/modules/renderer/markdownCodeDomainScanner.js",
+      "operation": "verify-only",
+      "beforeSha256": "512b3b8364d7b2e6d53d80e5c86c57a51007cf270a5e43c3987be90aacb1ada7",
+      "beforeBytes": 8517,
+      "afterSha256": "512b3b8364d7b2e6d53d80e5c86c57a51007cf270a5e43c3987be90aacb1ada7",
+      "afterBytes": 8517,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/modules/renderer/toolResultRegions.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/modules/renderer/toolResultRegions.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/modules/renderer/toolResultRegions.js",
+      "operation": "verify-only",
+      "beforeSha256": "f684a4be9a7ff2f76dc6e97e498883c088bbf618591d6cdc5fb8eec7a00888aa",
+      "beforeBytes": 8990,
+      "afterSha256": "f684a4be9a7ff2f76dc6e97e498883c088bbf618591d6cdc5fb8eec7a00888aa",
+      "afterBytes": 8990,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/nativeRules/modules/tavernRulesEngine.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/nativeRules/modules/tavernRulesEngine.js",
+      "relativeTarget": "Plugin/NativeSync/nativeRules/modules/tavernRulesEngine.js",
+      "operation": "verify-only",
+      "beforeSha256": "ede855fbe40b70cd7b13684671047d040180cef2b354a6e8677a1b1b5c1c51bb",
+      "beforeBytes": 10711,
+      "afterSha256": "ede855fbe40b70cd7b13684671047d040180cef2b354a6e8677a1b1b5c1c51bb",
+      "afterBytes": 10711,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/plugin-manifest.json",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/plugin-manifest.json",
+      "relativeTarget": "Plugin/NativeSync/plugin-manifest.json",
+      "operation": "verify-only",
+      "beforeSha256": "7366fbb4e684f33ec32c2bc147743fb4f259eef1db8100c1974de7a08f74fa6d",
+      "beforeBytes": 1369,
+      "afterSha256": "7366fbb4e684f33ec32c2bc147743fb4f259eef1db8100c1974de7a08f74fa6d",
+      "afterBytes": 1369,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/canonical/canonical.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/canonical/canonical.js",
+      "relativeTarget": "Plugin/NativeSync/sync/canonical/canonical.js",
+      "operation": "verify-only",
+      "beforeSha256": "4421dc2c11f7211d22d5d8e9ee6fe32cc7a19b4c83068a66d8d3dfd95c405672",
+      "beforeBytes": 11913,
+      "afterSha256": "4421dc2c11f7211d22d5d8e9ee6fe32cc7a19b4c83068a66d8d3dfd95c405672",
+      "afterBytes": 11913,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/canonical/hash.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/canonical/hash.js",
+      "relativeTarget": "Plugin/NativeSync/sync/canonical/hash.js",
+      "operation": "verify-only",
+      "beforeSha256": "1d8accca65491332f2462cc8c735998444be782dfd59e7933195155a09489d37",
+      "beforeBytes": 4355,
+      "afterSha256": "1d8accca65491332f2462cc8c735998444be782dfd59e7933195155a09489d37",
+      "afterBytes": 4355,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/centralStore.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/centralStore.js",
+      "relativeTarget": "Plugin/NativeSync/sync/centralStore.js",
+      "operation": "replace",
+      "beforeSha256": "7300ed7af9970e05bc561895aed74e7031712329aab038b6db09bc279317e660",
+      "beforeBytes": 10652,
+      "afterSha256": "25600315fdbd675fffd6a185856794d47c09e52333d01ce4a874da6e8b5de89b",
+      "afterBytes": 18794,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/contracts.generated.cjs",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/contracts.generated.cjs",
+      "relativeTarget": "Plugin/NativeSync/sync/contracts.generated.cjs",
+      "operation": "create",
+      "beforeSha256": null,
+      "beforeBytes": null,
+      "afterSha256": "91ec9dbd605f0b4476572f3db19df3d622d6a9b662dfff2dfaf072b40964f1bd",
+      "afterBytes": 13395,
+      "rollback": "remove-only-if-still-matches-installed-hash",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "relativeTarget": "Plugin/NativeSync/sync/httpService.js",
+      "operation": "replace",
+      "beforeSha256": "5fe1190232f78c246f0e4c889b802f6b2f497019b5fc8400a6bb853cf356cf3c",
+      "beforeBytes": 4648,
+      "afterSha256": "92309b48a14225db971d5fe31fe2c68fbfe82bbee7dc82d50e001cb0307e04a1",
+      "afterBytes": 5764,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/messageCausality.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/messageCausality.js",
+      "relativeTarget": "Plugin/NativeSync/sync/messageCausality.js",
+      "operation": "verify-only",
+      "beforeSha256": "9161e09d16f37c15fcca92ab9fd5c518ae6969d3c44f9359976ed9663e88e3b7",
+      "beforeBytes": 606,
+      "afterSha256": "9161e09d16f37c15fcca92ab9fd5c518ae6969d3c44f9359976ed9663e88e3b7",
+      "afterBytes": 606,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/metadata.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/metadata.js",
+      "relativeTarget": "Plugin/NativeSync/sync/metadata.js",
+      "operation": "replace",
+      "beforeSha256": "3f9ec708152f0f856c86cbd060eec707cc5b868000f82c0c03836710ae809cec",
+      "beforeBytes": 7781,
+      "afterSha256": "d63f9549e47139cf3b01eb9686e1726d31ab52990d56eb7d9dc1a0ccefcbfdbd",
+      "afterBytes": 187,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/protocol.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/protocol.js",
+      "relativeTarget": "Plugin/NativeSync/sync/protocol.js",
+      "operation": "replace",
+      "beforeSha256": "d3e522948d2676a3b4f6e3d931ec0435fd1387bd62fd2c6f422f75569df25b0f",
+      "beforeBytes": 2023,
+      "afterSha256": "d3af5e76cb85bcd6130674d6519684edaa2391e24e6fbf070ef15c2fde4b8126",
+      "afterBytes": 518,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "relativeTarget": "Plugin/NativeSync/sync/sourceCatalog.js",
+      "operation": "replace",
+      "beforeSha256": "dcb4ad38a58fccaefe4525a33f13c00bf7eea5d172d3a94f6cd0b85b8367b31e",
+      "beforeBytes": 19368,
+      "afterSha256": "efa70c1ab0c08ef2906dc4e04274cdc8dbba6f4c761a44b2dccddc833618f501",
+      "afterBytes": 26433,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/sourceHttp.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/sourceHttp.js",
+      "relativeTarget": "Plugin/NativeSync/sync/sourceHttp.js",
+      "operation": "replace",
+      "beforeSha256": "19dc66a35a57a5becc090dbc82240b5e7e4d3b07caaf977094d80b219de99ae9",
+      "beforeBytes": 4547,
+      "afterSha256": "d8b53d58f9988d914a2e7a7aa6950ae380d667e404755bd89f10dfec11cc260a",
+      "afterBytes": 4662,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/Plugin/NativeSync/sync/sourceScope.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/sync/sourceScope.js",
+      "relativeTarget": "Plugin/NativeSync/sync/sourceScope.js",
+      "operation": "replace",
+      "beforeSha256": "33b5bdbe01391ac90841064f0a9c64ca5af6825d62aad0cfa66a92d583a53f29",
+      "beforeBytes": 1639,
+      "afterSha256": "2632ec09959e689671373328092d7227fa4a4f0bcc99775a96455cad32e731b4",
+      "afterBytes": 108,
+      "rollback": "restore-exact-before-bytes",
+      "pwaRemappedFromPackage": false
+    },
+    {
+      "source": "VCPToolBox/modules/requestExecutionContext.js",
+      "target": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/modules/requestExecutionContext.js",
+      "relativeTarget": "modules/requestExecutionContext.js",
+      "operation": "verify-only",
+      "beforeSha256": "f8202d450806d8962888c2f7153eea92b0b13dfb4ea8942a4b5f53b30866a7ee",
+      "beforeBytes": 5984,
+      "afterSha256": "f8202d450806d8962888c2f7153eea92b0b13dfb4ea8942a4b5f53b30866a7ee",
+      "afterBytes": 5984,
+      "rollback": "verify-original",
+      "pwaRemappedFromPackage": false
+    }
+  ],
+  "protectedHostFiles": [
+    {
+      "path": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/server.js",
+      "sha256": "591d2855e40a195716d5fee9dd959d2b3085a0e357aaf5cffe46c23def497f60",
+      "action": "preserve-and-verify"
+    },
+    {
+      "path": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin.js",
+      "sha256": "66b25fc9d9080dea90df9b8465b836925e9d1096dcf7de6e6f02d235c6ac452c",
+      "action": "preserve-and-verify"
+    },
+    {
+      "path": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/AgentAssistant/AgentAssistant.js",
+      "sha256": "4b44db2f318fa5fe539324e5bed816ddc4b39759712f458817e19ef68b0ff15b",
+      "action": "preserve-and-verify"
+    },
+    {
+      "path": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/AgentAssistant/delegationContinuity.js",
+      "sha256": "bb2e19aefa3cf7834591feb22c3dbc86e2d49c7e5bc39b0c2bd910b446ee79d7",
+      "action": "preserve-and-verify"
+    },
+    {
+      "path": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/modules/requestExecutionContext.js",
+      "sha256": "f8202d450806d8962888c2f7153eea92b0b13dfb4ea8942a4b5f53b30866a7ee",
+      "action": "preserve-and-verify"
+    }
+  ],
+  "additionalProtectedPaths": [
+    "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/config.env",
+    "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/Plugin/NativeSync/config.env",
+    "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/.state",
+    "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/.runtime",
+    "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/node_modules",
+    "/opt/AGENTS_OS_Workspace/runtime-data/NativeSync/r21",
+    "/etc/systemd/system/vcptoolbox.service",
+    "/etc/systemd/system/vcptoolbox-admin.service"
+  ],
+  "oldPwaAssetsToKeep": [
+    "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/assets/index--gXYP5bX.css",
+    "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox/apps/mobile/dist/assets/index-DI5CQjGO.js"
+  ],
+  "configurationBoundary": {
+    "sourceGrantCount": 1,
+    "sourceMode": "limited",
+    "sourceTopicCount": 2,
+    "mobileConfiguredTopics": 1,
+    "allSupportedModeEnabled": false,
+    "attachmentsEnabled": false,
+    "origin": "https://vcp.skmt617.top",
+    "preserveConfigurationAndCredentials": true,
+    "nonSecretProjectionUnchangedAcrossObservedRestart": true
+  },
+  "schemaOnFirstCandidateStart": {
+    "newIndexes": [
+      {
+        "name": "idx_journal_message",
+        "table": "journal",
+        "columns": [
+          "owner_type",
+          "owner_id",
+          "topic_id",
+          "msg_id",
+          "seq"
+        ]
+      },
+      {
+        "name": "idx_mobile_execution_topic",
+        "table": "mobile_executions",
+        "columns": [
+          "topic_key"
+        ]
+      },
+      {
+        "name": "idx_mobile_execution_request",
+        "table": "mobile_executions",
+        "columns": [
+          "topic_key",
+          "request_id"
+        ]
+      }
+    ],
+    "newJsonTriggers": 6,
+    "newTables": 0,
+    "newColumns": 0,
+    "noDatabaseStateRestorationOnCodeRollback": true
+  },
+  "databaseEvidence": {
+    "checkedAtUtc": "2026-11-02T09:16:06.420Z",
+    "checkedCounts": {
+      "messages": 20,
+      "journal": 23,
+      "applied_ops": 23
+    },
+    "offlineChecker": {
+      "mode": "read-only",
+      "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+      "checked": {
+        "messages": 20,
+        "journal": 23,
+        "applied_ops": 23
+      },
+      "issues": 0,
+      "samples": [],
+      "sampleLimit": 20,
+      "ok": true
+    },
+    "candidateReadBarrier": {
+      "journalChecked": 23,
+      "messagesChecked": 20,
+      "issues": 0,
+      "samples": [],
+      "ok": true
+    },
+    "laterSnapshot": {
+      "sampledAtUtc": "2026-11-02T09:22:36.713732+00:00",
+      "counts": {
+        "messages": 23,
+        "journal": 26,
+        "applied_ops": 26,
+        "mobile_executions": 1,
+        "mobile_native_tasks": 0,
+        "mobile_native_invocations": 0
+      },
+      "headSeq": 26,
+      "note": "live increments after the checked snapshot; later rows not declared integrity-checked"
+    },
+    "nativeDataFootprint": {
+      "regularFiles": 3,
+      "totalBytes": 5246528,
+      "symlinks": []
+    },
+    "backupCreatedByThisPreflight": false,
+    "productionChatBodiesExported": false
+  },
+  "readOnlyMethods": {
+    "sshCodeFromStdinOnly": true,
+    "sqliteReadOnlyAndQueryOnly": true,
+    "candidateModulesLoadedInMemoryWithoutConstructor": true,
+    "businessRowsAndSchemaWritten": false,
+    "volatileWalReaderLocksMayBeMaintained": true,
+    "staticGetOnly": true,
+    "syncModelToolPairingOrSendApiCalled": false
+  },
+  "productionServiceObservation": {
+    "unit": {
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "128c7f7bcd5b47b195ac13494063d29b",
+      "RestartUSec": "5s",
+      "MainPID": "1251194",
+      "Result": "success",
+      "NRestarts": "0",
+      "OOMPolicy": "stop",
+      "ExecMainStartTimestamp": "Mon 2026-11-02 17:16:51 CST",
+      "ExecMainCode": "0",
+      "ExecMainStatus": "0"
+    },
+    "serviceManagerEvents": [
+      {
+        "__REALTIME_TIMESTAMP": "1793611011750051",
+        "MESSAGE": "Stopping vcptoolbox.service - vcptoolbox..."
+      },
+      {
+        "__REALTIME_TIMESTAMP": "1793611011826008",
+        "MESSAGE": "vcptoolbox.service: Deactivated successfully."
+      },
+      {
+        "__REALTIME_TIMESTAMP": "1793611011826319",
+        "MESSAGE": "Stopped vcptoolbox.service - vcptoolbox."
+      },
+      {
+        "__REALTIME_TIMESTAMP": "1793611011826455",
+        "MESSAGE": "vcptoolbox.service: Consumed 35.825s CPU time over 35min 10.540s wall clock time, 735.6M memory peak, 34.2M memory swap peak."
+      },
+      {
+        "__REALTIME_TIMESTAMP": "1793611011830011",
+        "MESSAGE": "Starting vcptoolbox.service - vcptoolbox..."
+      },
+      {
+        "__REALTIME_TIMESTAMP": "1793611011849547",
+        "MESSAGE": "Started vcptoolbox.service - vcptoolbox."
+      }
+    ],
+    "journalReadExitCode": 0,
+    "memory": {
+      "MemTotal": "3807288 kB",
+      "MemAvailable": "2282564 kB",
+      "SwapTotal": "2097148 kB",
+      "SwapFree": "1541804 kB"
+    }
+  },
+  "publicStaticRoute": {
+    "url": "https://vcp.skmt617.top/mobile/",
+    "method": "GET",
+    "credentialsSent": false,
+    "cookiesSent": false,
+    "onlyStaticShellRequested": true,
+    "recordedAtUtc": "2026-11-02T09:26:21.858322+00:00",
+    "status": 200,
+    "tlsDefaultCertificateValidationPassed": true,
+    "finalOrigin": "https://vcp.skmt617.top",
+    "bytes": 931,
+    "sha256": "91c4d7d57b119016d360b801ff4f1a39fd9f70048c8915ec237fa0956d479a1e",
+    "cacheControl": "public, max-age=0",
+    "matchesProductionPwaIndex": false
+  },
+  "publicStaticAssets": {
+    "status": 200,
+    "headers": {
+      "Server": "cloudflare",
+      "CF-Cache-Status": "DYNAMIC",
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "public, max-age=0",
+      "Content-Encoding": null
+    },
+    "references": [
+      {
+        "kind": "manifest",
+        "path": "/mobile/manifest.webmanifest"
+      },
+      {
+        "kind": "icon",
+        "path": "/mobile/icon.svg"
+      },
+      {
+        "kind": "script",
+        "path": "/mobile/assets/index-DI5CQjGO.js"
+      },
+      {
+        "kind": "stylesheet",
+        "path": "/mobile/assets/index--gXYP5bX.css"
+      },
+      {
+        "kind": "script",
+        "path": "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      }
+    ],
+    "containsExpectedProductionJs": true,
+    "containsExpectedProductionCss": true,
+    "credentiallessStaticReadOnly": true
+  },
+  "disk": {
+    "/opt/AGENTS_OS_Workspace": {
+      "availableBytes": 1093693440,
+      "totalBytes": 41601839104,
+      "freeInodes": 1953994,
+      "writableByUbuntu": true,
+      "device": 64771
+    },
+    "/home/ubuntu": {
+      "availableBytes": 1093693440,
+      "totalBytes": 41601839104,
+      "freeInodes": 1953994,
+      "writableByUbuntu": true,
+      "device": 64771
+    },
+    "/var/tmp": {
+      "availableBytes": 1093693440,
+      "totalBytes": 41601839104,
+      "freeInodes": 1953994,
+      "writableByUbuntu": true,
+      "device": 64771
+    }
+  },
+  "installationWindow": {
+    "mainServiceToStopAndStart": "vcptoolbox.service",
+    "adminServiceRestartRequired": false,
+    "adminRequirement": "no configuration edits or plugin reload notifications during the maintenance window",
+    "stopTimeoutSeconds": 45,
+    "hostForceShutdownTimeoutSeconds": 60,
+    "allHostWorkMustBeSettledBeforeStop": true,
+    "uniqueOperatorAndFreshBaselineRequired": true
+  },
+  "proposedStageRoot": "/home/ubuntu/nativesync-release-stage/144e0dc-20261102-r1",
+  "proposedBackupRoot": "/opt/AGENTS_OS_Workspace/backups/NativeSync/144e0dc-20261102-r1",
+  "pathsCreatedRemotely": false,
+  "rollbackSupport": "planned only; current production baseline is not the previously tested local full-Source downgrade baseline",
+  "releaseBlockers": [
+    "existing local/fixture installers do not support this production target or PWA mapping; a bounded target-specific install/rollback entry is required",
+    "one targeted upgrade/rollback verification against the observed host baseline and older selected/limited-source client path remains",
+    "maintenance window, fresh code/config/data baseline and explicit production risk/scope approval remain"
+  ],
+  "knownAcceptedLocalButNotYetProductionBoundary": "shared msg_id plus reassigned historical journal owner can pass existing online and offline checks",
+  "noKernelOrAppArmorChangeForHeadlessServerRequired": true,
+  "noDependencyInstallOrFullHostSealUploadRequired": true
+}
