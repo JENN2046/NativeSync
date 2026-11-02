@@ -1,0 +1,201 @@
+{
+  "status": "production-single-topic-real-roundtrip-passed-full-source-awaits-original-desktop",
+  "runtimeSourceCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320",
+  "authorization": "User explicitly authorized preceding ordered production adoption plan; original desktop subsequently confirmed powered off",
+  "configRepair": {
+    "backup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/production-adoption-20261102-alias",
+    "configBefore": "0a7a05672616c636f84feb4602164d8a3966535ef26c081525b7df3d29930572",
+    "configAfter": "92225a32cacd34dfcc9ff3a55f08ce84f8f7f5e1707d62cc40e3600aeedb68fc",
+    "change": "Only add agentAlias=Nova to existing r21_readonly_20261028 topic",
+    "serviceBefore": {
+      "ActiveState": "active",
+      "InvocationID": "66d501524edf48279d560bcfeab672ca",
+      "MainPID": "1290317",
+      "Result": "success"
+    },
+    "serviceAfter": {
+      "ActiveState": "active",
+      "InvocationID": "7d61fee812934bc8ab38c724058f7bfe",
+      "MainPID": "1327992",
+      "Result": "success"
+    },
+    "adminPidPreserved": true,
+    "dataRestored": false
+  },
+  "backupIntegrity": {
+    "ok": true,
+    "snapshotSha256": "f38f8af0273b0cce7a84867283239c5fbdc2ff1f8a1c5bb8dcf7957595e4eee2",
+    "headSeq": 48
+  },
+  "realRequest": {
+    "atUtc": "2026-11-02T13:06:45.009Z",
+    "matchingExecutions": 1,
+    "executions": [
+      {
+        "id": "job_a932d3b66ba2256f8e7bbfa9ae6ffa08",
+        "topic_key": "r21_readonly_20261028",
+        "request_id": "dc9b30df-7289-4b7b-9fd3-7ff703b8d6fe",
+        "state": "completed",
+        "attempts": 1,
+        "error_code": null,
+        "tool_started": 0,
+        "request_dispatched": 1,
+        "user_message_id": "mobile_job_a932d3b66ba2256f8e7bbfa9ae6ffa08",
+        "reply_message_id": "reply_job_a932d3b66ba2256f8e7bbfa9ae6ffa08",
+        "user_seq": 49,
+        "configVersion": 1,
+        "configHash": "70d78de70cd78ec13e6148c78440206cf2c325d2fe0464689ff883f129ee75f7"
+      }
+    ],
+    "nativeTasks": 0,
+    "nativeInvocations": 0,
+    "messages": [
+      {
+        "id": "mobile_job_a932d3b66ba2256f8e7bbfa9ae6ffa08",
+        "seq": 49,
+        "hash": "aed8cc67f9b933c32d5f326081b07f0e0e549942dc20da206e41766cd49170c4",
+        "role": "user",
+        "containsMarker": true,
+        "exactReply": false
+      },
+      {
+        "id": "reply_job_a932d3b66ba2256f8e7bbfa9ae6ffa08",
+        "seq": 50,
+        "hash": "8ac5c3ba5f835de360d9d5b182211f924e053d7a46c9da16c6cc97ac8467f53b",
+        "role": "assistant",
+        "containsMarker": true,
+        "exactReply": true
+      }
+    ],
+    "storage": {
+      "ok": true,
+      "issues": 0,
+      "checked": {
+        "messages": 47,
+        "journal": 50,
+        "applied_ops": 50
+      }
+    },
+    "sourcePull": {
+      "status": 200,
+      "nextSeq": 50,
+      "events": 2,
+      "probeMessagesMatched": true,
+      "actualDesktopAppliedVerified": false
+    }
+  },
+  "physicalAndroid": {
+    "method": "Authorized ADB Chrome DevTools; existing phone session, UI Send clicked once",
+    "replyMarkerMatched": true,
+    "reloadAuthenticated": true,
+    "reloadProbeMessagesRetained": true,
+    "nativeHomeScreenRelaunchOfThisNewReplyVerified": false
+  },
+  "fullSource": {
+    "originalDesktopPoweredOffUserConfirmed": true,
+    "desktopWritebackVerified": false,
+    "lastKnownPendingOperations": 1,
+    "scopeExpanded": false,
+    "fullInventoryAvailable": false
+  },
+  "attachments": {
+    "atUtc": "2026-11-02T13:04:46.632169+00:00",
+    "storageAvailableBytes": 950341632,
+    "attachmentDirectoryExists": false,
+    "pdfinfoAvailable": false,
+    "pdftotextAvailable": false,
+    "sharpInstalled": true,
+    "physicalSourceOfflineUserConfirmed": true,
+    "fullSourceInventoryAvailable": false,
+    "enabled": false,
+    "productionAttachmentAcceptanceCompleted": false,
+    "singleFileLimitBytes": 20971520,
+    "implementationStorageBudgetBytes": 536870912
+  },
+  "evidenceFiles": [
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/ALIAS_DIAGNOSIS.json",
+      "sha256": "74f71d93601608dfba98bb6b417c20910dcc3d6c9c48703bf5130f30b0d701ad"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/ALIAS_REPAIR.json",
+      "sha256": "b1a7d48eb680ad589a3f0d0f9654f971c6d04c8c8e76a31720c47ea28e6f2e4a"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/SEND_ONCE.json",
+      "sha256": "d998cf505ff79fc51b9958ff772a9a5539e94a7d11b5edf56ec9ac6d1dc0b1a2"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/PHONE_SEND_OBSERVATION.json",
+      "sha256": "96fe2aabc5df2261a0836cf9d4d6a3f75a7024a66574eed311b5aea781bc982b"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/PHONE_RELOAD_PROOF.json",
+      "sha256": "557c82420226e83c07b9514143abf4de7c7a1458695b301ebd295da8eda29ba0"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/SEND_SERVER_PROOF.json",
+      "sha256": "5d7864c2cbbc3382eb1cc01bd1819cb6b2a08aab5f801eb418b10c8a01ac9267"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/READINESS.json",
+      "sha256": "745791514d5218f7b1aa766ac0e738f11c41dd6f284d84fc2fde523c6ab89a2c"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/RUNTIME_BEFORE.json",
+      "sha256": "19b6e02d295a54ff8933861ce36469a5d0bdbf0edf69b3503d53bd0b2a39c370"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/production-adoption-20261102/RUNTIME_AFTER.json",
+      "sha256": "1cb2b230c7e71142d5ea99e89140f83f79a0beca182d8e8b899946acf216df9c"
+    }
+  ],
+  "afterReloadNoDuplicateExecution": true,
+  "runtimeAfter": {
+    "atUtc": "2026-11-02T13:06:45.152Z",
+    "hostname": "VM-0-13-ubuntu",
+    "user": "ubuntu",
+    "mainPort": 6005,
+    "queryOnly": true,
+    "lifecycle": {
+      "httpStatus": 200,
+      "state": {
+        "state": "RUNNING",
+        "reason": null,
+        "startedAt": null,
+        "uptimeMsInState": 0,
+        "activeRequestCount": 0
+      }
+    },
+    "agentAssistant": {
+      "httpStatus": 200,
+      "activeCount": 0
+    },
+    "accepted": {
+      "messages": 47,
+      "journal": 50,
+      "applied_ops": 50,
+      "source_bindings": 1,
+      "mobile_executions": 2,
+      "mobile_native_tasks": 0,
+      "mobile_native_invocations": 0
+    },
+    "pending": {
+      "mobile": 0,
+      "nativeTasks": 0,
+      "nativeInvocations": 0
+    },
+    "headSeq": 50,
+    "sourceProgress": [
+      {
+        "observedAt": 1793617860433,
+        "pendingImports": 0,
+        "pendingOperations": 1,
+        "conflicts": 0,
+        "directoryErrors": 0,
+        "attachmentsPending": null
+      }
+    ],
+    "toolRecords": []
+  }
+}
