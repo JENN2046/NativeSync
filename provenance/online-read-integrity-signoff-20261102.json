@@ -1,0 +1,200 @@
+{
+  "recordedAt": "2026-11-02T16:42:50.311489+08:00",
+  "authorization": "Explicit formal user sign-off plus separate approval of exact-path AppArmor userns profile",
+  "acceptedBoundaries": [
+    "shared-msg-id old-history ownership blind spot",
+    "one-time existing-database message index construction cost"
+  ],
+  "mainBranch": "fix/architecture-recovery",
+  "mainBefore": "9dc099b6007e018a9743d72048d5e6fbb43b94e7",
+  "mainFastForwardedTo": "0da22c4d357febb1ab01dde24c332c78c9f72655",
+  "runtimeSourceCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320",
+  "candidateZipSha256": "35b7e67055fb07b8d27221f231d77e8d9fb771b1774a0957055b187ec8c2cd30",
+  "candidateManifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+  "installation": {
+    "result": "PASS",
+    "changedCodeFiles": 6,
+    "runtimeFilesVerified": 84,
+    "protectedFilesUnchanged": 15,
+    "candidateManifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+    "codeBackup": "/home/jenn/NativeSync-Dev-Backups/online-integrity-signoff-20261102T082820Z/code",
+    "dataTouchedByInstaller": false
+  },
+  "backup": {
+    "root": "/home/jenn/NativeSync-Dev-Backups/online-integrity-signoff-20261102T082820Z",
+    "databases": [
+      {
+        "path": "data/native-sync/central.sqlite",
+        "consistentSqliteBackup": "/home/jenn/NativeSync-Dev-Backups/online-integrity-signoff-20261102T082820Z/sqlite-backups/data/native-sync/central.sqlite",
+        "sha256": "18f932eff0dabeef7360f3152ef0de871873f5a8a9cae0ffde0f7b0fd15270cb",
+        "rawFiles": [
+          {
+            "name": "central.sqlite",
+            "bytes": 307200,
+            "sha256": "446a728db1f03bb60333530406a9018c3625adf1476ce58e002f78e8b687247c"
+          }
+        ],
+        "includesCommittedWal": true
+      },
+      {
+        "path": "data/backend/vector-store/knowledge_base.sqlite",
+        "consistentSqliteBackup": "/home/jenn/NativeSync-Dev-Backups/online-integrity-signoff-20261102T082820Z/sqlite-backups/data/backend/vector-store/knowledge_base.sqlite",
+        "sha256": "460518859cef1dff72d3fe39385b5fb3fc278864da66302e1c1a92a36553beb7",
+        "rawFiles": [
+          {
+            "name": "knowledge_base.sqlite",
+            "bytes": 4096,
+            "sha256": "31b0f6669e49303bea772658c76cd8557d01840c6b7b51f2eed54c4c0a44d4ff"
+          },
+          {
+            "name": "knowledge_base.sqlite-wal",
+            "bytes": 2562672,
+            "sha256": "b07a2b52fac7daab16eff79faa64e34338358980b86b55a0e5fb090345ffa098"
+          },
+          {
+            "name": "knowledge_base.sqlite-shm",
+            "bytes": 32768,
+            "sha256": "a26033399319455b10e33d02909db50492847eb70d3513eed94a1b810cc9989e"
+          }
+        ],
+        "includesCommittedWal": true
+      }
+    ]
+  },
+  "checks": {
+    "current": {
+      "mode": "read-only",
+      "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+      "checked": {
+        "messages": 14,
+        "journal": 14,
+        "applied_ops": 14
+      },
+      "issues": 0,
+      "samples": [],
+      "sampleLimit": 20,
+      "ok": true
+    },
+    "backup": {
+      "mode": "read-only",
+      "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+      "checked": {
+        "messages": 14,
+        "journal": 14,
+        "applied_ops": 14
+      },
+      "issues": 0,
+      "samples": [],
+      "sampleLimit": 20,
+      "ok": true
+    },
+    "after": {
+      "mode": "read-only",
+      "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+      "checked": {
+        "messages": 14,
+        "journal": 14,
+        "applied_ops": 14
+      },
+      "issues": 0,
+      "samples": [],
+      "sampleLimit": 20,
+      "ok": true
+    }
+  },
+  "running": {
+    "mainProcess": {
+      "pid": 1652008,
+      "exe": "/home/jenn/NativeSync-Dev/.dependencies/VCPChat/node_modules/electron/dist/electron",
+      "cwd": "/home/jenn/NativeSync-Dev/VCPChat",
+      "apparmorProfile": "nativesync-dev-electron (unconfined)",
+      "globalNoSandboxArgument": false,
+      "existingHostRendererSandboxPolicyUnchanged": true
+    },
+    "desktopReady": {
+      "cursor": 14,
+      "outboxSize": 0,
+      "inboundBuffered": 0,
+      "degraded": null,
+      "configurationError": null,
+      "source": {
+        "scopeMode": "full",
+        "pendingImports": 0,
+        "configurationPending": 0,
+        "configurationErrors": 0
+      },
+      "ownedMainPage": true
+    },
+    "postcheck": {
+      "result": "PASS",
+      "nativeDataFactsUnchanged": {
+        "messages": {
+          "rows": 14,
+          "sha256": "02c809d2ec1af8bb2265be01b4fa36a548830712e604249b8ca801444aa15d6e"
+        },
+        "journal": {
+          "rows": 14,
+          "sha256": "5b4e239be9e7184baf9d567b310f435044e9f0e76ba6c6ba4411c533e92dc0de"
+        },
+        "applied_ops": {
+          "rows": 14,
+          "sha256": "5b4a6d09d9c73646fe471570411a006b1dcdc543913b14e9dd688cc0f0aff6ca"
+        },
+        "mobile_executions": {
+          "rows": 3,
+          "sha256": "22af8a1eaf36926a6f7c6ffcb8baa7a034cbe181b3172f628fa5be6626146237"
+        },
+        "mobile_native_tasks": {
+          "rows": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "deviceSpaceSourceBindingPreserved": true,
+      "connectionIdentityPreserved": true,
+      "cursorBefore": 14,
+      "cursorAfter": 14,
+      "sourcePull": {
+        "status": 200,
+        "events": 14,
+        "hashesMatchAcceptedJournal": true,
+        "hasMore": false
+      },
+      "messageIndexExists": true,
+      "jsonGuards": 6,
+      "modelCallsSinceStartup": 0,
+      "runtimeFilesVerified": 84,
+      "protectedHistoryIdentityAndConfigurationUnchanged": true,
+      "permittedDerivedStatusCacheChanges": [
+        "data/chat/.native-sync/execution-status.json"
+      ],
+      "statusCacheBindingAndJobStatesValidated": true,
+      "databaseStateOrCursorRestored": false
+    }
+  },
+  "systemProfile": {
+    "userApprovedInConversation": true,
+    "path": "/etc/apparmor.d/nativesync-dev-electron",
+    "profile": "nativesync-dev-electron",
+    "attachedExecutable": "/home/jenn/NativeSync-Dev/.dependencies/VCPChat/node_modules/electron/dist/electron",
+    "rule": "userns,",
+    "flags": "unconfined",
+    "profileSha256": "0498a49c9caafb71dceb66e5900d504c1d891b0405bea0891641e9d00be8b0ab",
+    "kernelLoadSucceeded": true,
+    "globalUserNamespaceSysctlChanged": false,
+    "electronNoSandboxAdded": false,
+    "syntaxCheckSucceeded": true
+  },
+  "displayRecovery": {
+    "source": "existing same-user graphical Codex session PID 583001; selected display variables only",
+    "display": ":0",
+    "waylandDisplay": "wayland-0",
+    "xauthorityPath": "/run/user/1000/.mutter-Xwaylandauth.6GIXX3",
+    "hostConfigChanged": false,
+    "reason": "current command executor does not inherit graphical DISPLAY/XAUTHORITY"
+  },
+  "runtimeExperimentsExcluded": true,
+  "databaseStateOrCursorRestored": false,
+  "pushed": false,
+  "remoteOrProductionChanged": false,
+  "evidenceRun": "/home/jenn/NativeSync/.local/online-integrity-signoff-20261102T082820Z"
+}
