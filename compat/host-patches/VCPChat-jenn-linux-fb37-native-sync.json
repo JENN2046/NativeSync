@@ -1,0 +1,170 @@
+{
+  "scope": "Exact daily Linux VCPChat host at observed fb37badf base plus preserved local changes; not general upstream patch",
+  "target": "/home/jenn/AGENTS_OS_Workspace/runtime/VCPChat",
+  "patchSha256": "f57eb7ed8c8a7f9c1fc68729ccfd3170c68c7043be202b93e84f79924e0663f7",
+  "files": [
+    {
+      "path": "main.js",
+      "before": "d320a74f701f05fcee36bf27d43fdad19e22a60c6716b5a6e4fd4ec0c2a03cd2",
+      "after": "c9a1571e53c0e65432e9df080af4491677aefda3f7b1bd880c0d0c9b42cd230b",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "renderer.js",
+      "before": "d0ac67f2f134e5c57f35d7c0c4f52a63295a0fc4914abba4aa9cd5282c5ca37c",
+      "after": "a783df7a4c64b6c129a0036b0876a6dcb3a5c8ec13119c5c30071eaff837f0a9",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "Groupmodules/groupchat.js",
+      "before": "e150c6c70719a53d12a61f50d9f82f0b7c8c3cd6f88fb3545cb64458e1e0c6e5",
+      "after": "077a8dcda909d857235997c5c2074cd2bf72b9e57ff01259a95abc241a5ac6cb",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/event-listeners.js",
+      "before": "e5367161b9d4c943dd015fb1dee727fe905ca1b45aec269abd4411e960783236",
+      "after": "e90b7a2b87cc79361ed86bbfdf0b310797500d8e78672b3837b490b31210e084",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/services/historyMutationQueue.js",
+      "before": "0b0c1fef60e4652d4f312aa9cc906fa87488f025c6beaeeb77d995a4c7ad86ed",
+      "after": "d0d1454985f8c6424c541a4ea776f401bfb9de12c9eaf5f37df127388ad0c94d",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/services/syncWriterBoundary.js",
+      "before": null,
+      "after": "e856b396ab7efa703c7d34a767105d26a2b736eef6827c71a29ceffabd8c0479",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/services/pluginAgentOperationService.js",
+      "before": "3cacc2b26a032b1aef4ec7d0ee44e639f0c898f06c811cdb093145c6fb69d250",
+      "after": "d14f88c73f021801b92e99948e73e8511ff9ceb061d44da376367571a2e799d1",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/chat/chatHistoryMutationAuthority.js",
+      "before": "5f0b8a47b483ba9eae2a296930bcc0fb6e16a40a1d6e88aaf4bfa870bf9362b7",
+      "after": "db1e1368f80c6f04c28b9bcc5d6828842ec23d689340c7df93f9728f955b2ebf",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/chat/singleChatRequestOrchestrator.js",
+      "before": "3aed0da5e6b7dbe3c7eee63fc861978cf7f9cacba84a7286a196fc0864c69a10",
+      "after": "14627de9191eafb591d9b4036c3fc07646cece29b2c1d4ef242700d31b928d83",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/chat/chatRepository.js",
+      "before": "24fbe3cd62e68362bb711f56cd30cc09298709fb5706a0646afcbb49d72cf555",
+      "after": "bbd7ec0d5b530b4d5d5a1ce643431797eddc025bd3df99dc147070038a55479d",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/chat/historyMessageIntent.mjs",
+      "before": null,
+      "after": "c31c25e43ba0f7b65aee49742af61a77735f456dc4b5d157a8fe02412b325017",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/chat/nativeHistoryRefresh.js",
+      "before": null,
+      "after": "5371bfa1fcaf07e7474902937ed7ede849d88dc359777b45c65353fc4cb8479d",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/utils/durableJson.js",
+      "before": null,
+      "after": "30450602e92726ce5f122eff97e7b10cd1697a7e3b0b875a867e71c6b2b6b007",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/ipc/sideChatHandlers.js",
+      "before": "624af9681b753462956805cddaa0ea4bd417f93d9a762dae58290f631d3ee285",
+      "after": "d0bc86cb0c3f2869d4185c3a393e370fe54721278f1f627ab1b4a8fe8332e094",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/ipc/groupChatHandlers.js",
+      "before": "47b672b7ca9f674679501f3c0f66c5fb451b556de5d90f5dda327b4e1a814dec",
+      "after": "8243cf1fb932ea6e103b395374ff2b5176d08a1193202306f154d6b392301732",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/ipc/chatHandlers.js",
+      "before": "f343dec8fe3fe2a47c7c07c69e8dccfd73bf28cae1a3ec3f06b01921cd973be2",
+      "after": "345531e972e1366384e44fc8f00463ed8c45f5b782de03059ca6f6920bba17b4",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/ipc/nativeHistoryHandlers.js",
+      "before": null,
+      "after": "c87400068ed62aef08a89b504031b6e0cbe1a3444db8993086258567323e74b9",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/ipc/agentHandlers.js",
+      "before": "26b3bafe3818a97e55217cfab53d6ddc2a6140b9b59c77de29bf4c0b670b20a3",
+      "after": "3fc8218aee4ee556b95be60fadb7092b7d3ae9a2655fe93861aeca36625c4311",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/renderer/messageContextMenu.js",
+      "before": "54b64fddf40275da7acd81c6d655d2252667ec7fa4086a986b2ef42d6ad3eb63",
+      "after": "1d7ce6e7ce84a198df4d1550103038fc19d0e5196668f64a45fbcbdea7376edd",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "modules/renderer/nativeExecutionStatus.js",
+      "before": null,
+      "after": "da6d55eb07db3adb2f565602b9fa0ff088bb7f90d5c922e5cf6cf22046b7894e",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "VCPDistributedServer/Plugin/VCPMobileSync/index.js",
+      "before": "1d0ddee1aab74371709956ccb14392c81b837db582ac4a34f377015c4e0bbdfe",
+      "after": "e22268b81b30dad7f1c65d555633c1c984783f55eb3305370e30d3e0aa035f2e",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "VCPDistributedServer/Plugin/VCPMobileSync/error-contract.js",
+      "before": "fcb79d0bf903aad3fa270a4722d9fd55ac148951963938512a483ff7a5961cae",
+      "after": "7235e8de88f5f1023531236091281db2a1de0e9c2bcc801501d54bd190795d93",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "VCPDistributedServer/Plugin/VCPMobileSync/transport/routes.js",
+      "before": "d57260d3998fa5a8ec44ce827598b15915890a659506d23b9c927de89d4afeb5",
+      "after": "9c9d80261130c770d1b60742c65c27b27d27a3858cac683c7496fbdb4c0a0a9d",
+      "kind": "host-adaptation"
+    },
+    {
+      "path": "preloads/api/chat.js",
+      "before": "8a6a7d18d4663160d9242230bc03a4ff0e396f067e2b22b6a23f7ea5a866d59b",
+      "after": "b66420d0eca4c6c23c80ea8b5a4ef3be94fd8d09a3efd109b84212041bf1c32e",
+      "kind": "host-adaptation"
+    }
+  ],
+  "runtimePayloadCount": 28,
+  "candidateManifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+  "preservedDailyFeatures": [
+    "credentialVault startup",
+    "original audio port",
+    "conversationContext and per-owner overrides",
+    "portraitOptimizer",
+    "music injection preference",
+    "existing uncommitted main.js changes"
+  ],
+  "tests": {
+    "syntaxTargets": 52,
+    "nativeSyncSettingsPassed": 15,
+    "hostHistoryAndRequestPassed": 13
+  },
+  "isolatedPatchApplyVerified": true,
+  "patchFile": "VCPChat-jenn-linux-fb37-native-sync.patch.gz",
+  "compressedSha256": "865eb14ed13b60b1dc3044cd10b0822e6e2ed2546f217db1a45d99a24d10750a",
+  "apply": "Decompress with gzip -dc and apply only to the exact before hashes; the original raw patch was independently applied and all after hashes verified."
+}

@@ -74,6 +74,7 @@ class ExecutionConfigs {
             if(typeof prompt!=='string'||!prompt||references(prompt).length||prompt.startsWith('[AgentManager:')||prompt===input.systemPrompt)throw fail('CONFIG_PROMPT_SNAPSHOT_UNAVAILABLE');
             promptPolicy='native-alias-snapshot';
         }
+        if(authority&&/\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(prompt))throw fail('DESKTOP_CONTEXT_REQUIRED');
         const value = {name:input.name,systemPrompt:prompt,...(authority?{authority}:{}),...(promptTemplate?{promptTemplate}:{}),model:input.model.trim(),executionPolicy:this.policy(input.executionPolicy),streamOutput:input.streamOutput===true||input.streamOutput==='true',promptPolicy,...(topic.agentAlias?{agentAlias:topic.agentAlias}:{}),imageSupported:Array.isArray(imageModels)&&imageModels.includes(input.model),tavernRules:this.rules(input.tavernRules)};
         for (const [key,min,max] of [['temperature',0,2],['contextTokenLimit',1,2000000],['maxOutputTokens',1,2000000]]) {
             if (input[key] !== undefined) {
@@ -139,6 +140,7 @@ class ExecutionConfigs {
         if(config.authority){
             const expected=this.authority(topic);
             if(!expected||stable(expected)!==stable(config.authority))throw fail('EXECUTION_CONFIG_IDENTITY_MISMATCH');
+            for(const value of [config,...(config.agents||[])])if(/\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(value.systemPrompt||''))throw fail('DESKTOP_CONTEXT_REQUIRED');
             for(const member of config.agents||[])if(!member.unavailable&&stable(member.authority)!==stable(this.memberAuthority(topic,member.id)))throw fail('EXECUTION_CONFIG_IDENTITY_MISMATCH');
         }
         return snapshot;
