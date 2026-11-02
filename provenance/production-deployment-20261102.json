@@ -1,6 +1,6 @@
 {
   "recordedAt": "2026-11-02T19:28:32.641119+08:00",
-  "status": "production-code-deployed-technical-checks-passed-phone-session-acceptance-pending",
+  "status": "production-code-deployed-technical-checks-and-phone-pairing-history-accepted",
   "authorization": {
     "productionUpgrade": "Explicit user approval of production maintenance and launch; user confirmed window starts now, new requests paused and work closing",
     "newPhonePairing": "Explicit user approval for exact two-topic snapshot; no future scope expansion"
@@ -262,12 +262,12 @@
     "oldPairWasExpiredAndUnused": true,
     "serverErrorMessageForInvalidPairingIsGeneric": true,
     "latestPairStatus": {
-      "used": 0,
-      "expired": true,
+      "used": 1,
+      "expired": false,
       "scopeCount": 2,
-      "atUtc": "2026-11-02T11:28:32.616Z"
+      "atUtc": "2026-11-02T12:51:39.827Z"
     },
-    "pairedPhoneHistoryAcceptanceCompleted": false,
+    "pairedPhoneHistoryAcceptanceCompleted": true,
     "scopeSnapshotTopics": 2,
     "noPairCodeCookieOrKeyInThisRecord": true,
     "publicPairRouteProbe": {
@@ -279,7 +279,9 @@
       "seconds": 2.98,
       "reachedPairingApi": true
     },
-    "pairingCodesAreExpiredPendingUserReady": true
+    "pairingCodesAreExpiredPendingUserReady": false,
+    "userConfirmedTopicsAndHistory": true,
+    "productionSendAttachmentsAndStandaloneReopenAcceptanceCompleted": false
   },
   "maintenanceNotes": {
     "adminServiceNotRestarted": true,
