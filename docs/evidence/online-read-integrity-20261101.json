@@ -1,0 +1,188 @@
+{
+  "date": "2026-11-01 America/Adak",
+  "status": "bounded-hardening-and-independent-cold-start-complete; merge-signature-pending",
+  "candidate": {
+    "verifiedIndependentZip": true,
+    "zipSha256": "35b7e67055fb07b8d27221f231d77e8d9fb771b1774a0957055b187ec8c2cd30",
+    "manifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+    "sourceCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320",
+    "sourceDirty": false,
+    "sourceInputsSha256": "5d9d72597609be3f142aeb13c3dcc0b66e90f40a9449bdec6b70c7060f3983d6",
+    "runtimeFiles": 84,
+    "runtimeChangesFromAcceptedC": [
+      "VCPToolBox/Plugin/NativeSync/mobile/attachments.js",
+      "VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "VCPToolBox/Plugin/NativeSync/mobile/groupTurn.js",
+      "VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "VCPToolBox/Plugin/NativeSync/sync/centralStore.js",
+      "VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js"
+    ],
+    "pwaUnchanged": true,
+    "hostFingerprintCount": 17,
+    "hostFingerprintUnchanged": true,
+    "compatPatchManifestUnchanged": true,
+    "coldRuntimeMatchesAllCandidatePayload": true,
+    "experimentsAbsentFromRuntime": true
+  },
+  "mainCheckout": {
+    "path": "/home/jenn/NativeSync",
+    "branch": "fix/architecture-recovery",
+    "head": "9dc099b6007e018a9743d72048d5e6fbb43b94e7",
+    "mergePerformed": false
+  },
+  "dailyRuntime": "Original full-source C restored; new package was exercised only in reconstructed cold host",
+  "cold": {
+    "root": "/var/tmp/nativesync-independent-cold-1000/20261102T042444849122Z",
+    "result": {
+      "result": "PASS",
+      "manifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+      "initialSchema": {
+        "messages": 0,
+        "journal": 0,
+        "appliedOps": 0,
+        "jsonTriggers": [
+          "nativesync_json_applied_ops_insert",
+          "nativesync_json_applied_ops_update",
+          "nativesync_json_journal_insert",
+          "nativesync_json_journal_update",
+          "nativesync_json_messages_insert",
+          "nativesync_json_messages_update"
+        ],
+        "messageIndex": 1
+      },
+      "finalSchema": {
+        "messages": 1,
+        "journal": 1,
+        "appliedOps": 1,
+        "jsonTriggers": [
+          "nativesync_json_applied_ops_insert",
+          "nativesync_json_applied_ops_update",
+          "nativesync_json_journal_insert",
+          "nativesync_json_journal_update",
+          "nativesync_json_messages_insert",
+          "nativesync_json_messages_update"
+        ],
+        "messageIndex": 1
+      },
+      "desktop": {
+        "result": "PASS",
+        "sourceMode": "full",
+        "sourceId": "cold-source-3a71eb81",
+        "deviceId": "cold-device-bde6cfb4d76a472f",
+        "messageId": "cold-message-0a67073680b114bf",
+        "desktopMessageHash": "f99f0c756acafe6ef81b8e7bcc2b606e973131183a33f259178f10165a4f9cdd",
+        "cursor": 1,
+        "outbox": 0,
+        "inboundBuffered": 0,
+        "configurationPending": 0,
+        "configurationErrors": 0,
+        "submittedThrough": "real Electron native-history:messages IPC",
+        "modelRequestSubmitted": false
+      },
+      "pull": {
+        "status": 200,
+        "seq": 1,
+        "hash": "f99f0c756acafe6ef81b8e7bcc2b606e973131183a33f259178f10165a4f9cdd"
+      },
+      "provider": {
+        "kind": "independent-cold-mock",
+        "chats": 0,
+        "embeddings": 0
+      },
+      "independentlyResolvedModulePaths": 1267,
+      "noOldDevRuntimeBorrow": true,
+      "freshCredentialsAndConfiguration": true,
+      "realBackendAndElectronStarted": true,
+      "modelCalls": 0,
+      "normalExitAndDailyRestore": true
+    },
+    "lifecycle": {
+      "coldProcessesStopped": true,
+      "dailyRestored": true
+    },
+    "nativeVersions": {
+      "VCPToolBox": {
+        "node": "24.22.1",
+        "electron": null,
+        "modulesAbi": "137",
+        "sqlite": "3.50.4"
+      },
+      "VCPChat": {
+        "node": "24.22.0",
+        "electron": "44.9.3",
+        "modulesAbi": "149",
+        "sqlite": "3.53.4"
+      }
+    },
+    "baselineArchiveSha256": "c16a81d1338dc9d5febad066a4190846a4c6f699f2a8685bb9d4b8ada5781bfd",
+    "inputScriptHashes": {
+      "module-audit.cjs": "b5a1bc6208fccc1cda4b751dcb25491d294b7ca67cf4e4d38bf0bcdf3f619259",
+      "proxy.cjs": "2774b8fad259cc4af3500ef54407aaee3c58ea58519ea88938ae47d5322006f6",
+      "desktop.cjs": "8f6208682aea0351a1366ff5bbf549447a726fea381143c3911a5208e4069dd3",
+      "provider.cjs": "a685ba1bca0d9188b489f5a224d0c7ad8c8ad71de75d8bbf9d19eebf4f662962",
+      "cold-smoke.py": "9a5fd02d430f88fd928874b0936d7f37c2cbe86dfcd750a8854f6d482d93de27"
+    },
+    "limitations": [
+      "CommonJS path audit plus environment/symlink/code checks, not a system-wide file-access trace",
+      "npm diagnostic toolchain uses /usr/share/nodejs; application modules resolve within the new root",
+      "host audio shutdown uses fallback SIGTERM after HTTP404",
+      "individual child OS exit codes were waited but not separately persisted"
+    ]
+  },
+  "targetedTestReceipts": {
+    "affected-regressions.tap": "38e868316238b836a63370290cf04d6e219c57e463756e1a7831ad4e8f89c216",
+    "attachment-regressions-retry.tap": "4337834a90b00372032b0e0e02d7919134e4f7917323744e16be141f1ff4bb28",
+    "republication-barrier.tap": "62afc3a92430c08ee07841d817d42857a791feb0b708375a82a5210c6b671454",
+    "storage-first.tap": "7e28b0585437e013869bfc60770248b3e533e3229bd4e2e2b76b4fed0deb179e",
+    "storage-owner-exact.tap": "4e58f5ba4259605c26d24d83ddd82c294a3555932e243442fa035ba53503b260",
+    "storage-routing-retry.tap": "19dbf325f457d4637fc6a935aa368b3ccf130d32112fa89108759bc14e59afdb",
+    "storage-targeted-1.tap": "4c3f9dbc4ac626b32a4f9509e812a3443eefd3045ad00e2aca26daff339f3187"
+  },
+  "testEvidenceInterpretation": {
+    "storageTargeted": "15/16 initially; only failing path fixed and retried successfully, then owner_id-only case passed",
+    "affectedPaths": "58 passed with two fixture-loading failures; after setup correction three actual attachment cases passed",
+    "republicationBarrier": "1 targeted case passed",
+    "noGrandTotal": true,
+    "noNewAndroidAcceptance": true
+  },
+  "remainingBoundary": {
+    "kind": "known-unresolved-boundary",
+    "fixedSourceCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320",
+    "candidateManifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+    "mutation": "Only journal seq=1 owner_id changed from A to F; both topics legitimately share msg_id; A also has a newer v2",
+    "currentOnlinePullReturnedOldWrongOwnerContent": true,
+    "returnedSeq": 1,
+    "foreignProjectionHead": 2,
+    "offlineChecker": {
+      "mode": "read-only",
+      "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+      "checked": {
+        "messages": 2,
+        "journal": 3,
+        "applied_ops": 3
+      },
+      "issues": 0,
+      "samples": [],
+      "sampleLimit": 20,
+      "ok": true
+    },
+    "scope": "Synthetic data only. Not an accepted security property or a complete ownership fix."
+  },
+  "claimsExcluded": [
+    "complete historical ownership authentication",
+    "coordinated consistent tamper detection",
+    "golden baseline",
+    "main branch merge",
+    "new candidate installed in daily Dev",
+    "production or remote acceptance"
+  ],
+  "sourceRuntimeFiles": {
+    "VCPToolBox/Plugin/NativeSync/mobile/attachments.js": "3771cb0ab46aa76bd0d28a01d5824d9899d21e20c4617c67b42f1b8db16cf17a",
+    "VCPToolBox/Plugin/NativeSync/mobile/execution.js": "96a20792770f31bb7d6f9627f53eceb26f8471b7d9b50ba6343afe3ab7d8737d",
+    "VCPToolBox/Plugin/NativeSync/mobile/groupTurn.js": "048e6667c92a1e7dae4a68cce5a5bdd1bbd9b3afe270775b6fc7b6f317b50b4e",
+    "VCPToolBox/Plugin/NativeSync/mobile/portal.js": "5901c7058ccd1ff48ae907d5f0e2669e6333e8a081f36cc44007859ae53d337f",
+    "VCPToolBox/Plugin/NativeSync/sync/centralStore.js": "25600315fdbd675fffd6a185856794d47c09e52333d01ce4a874da6e8b5de89b",
+    "VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js": "efa70c1ab0c08ef2906dc4e04274cdc8dbba6f4c761a44b2dccddc833618f501"
+  },
+  "deliveryEvidenceZip": "/home/jenn/下载/NativeSync_Online_Read_Integrity_Evidence_20261101.zip"
+}

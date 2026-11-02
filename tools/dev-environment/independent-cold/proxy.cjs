@@ -1,0 +1,3 @@
+'use strict';
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),https=require('node:https'),root=path.resolve(__dirname,'..');
+https.createServer({key:fs.readFileSync(root+'/config/cold-key.pem'),cert:fs.readFileSync(root+'/config/cold-cert.pem')},(req,res)=>{const upstream=http.request({host:'127.0.0.1',port:17650,path:req.url,method:req.method,headers:{...req.headers,'x-forwarded-proto':'https','x-forwarded-host':req.headers.host}},response=>{res.writeHead(response.statusCode,response.headers);response.pipe(res);});upstream.on('error',()=>{if(!res.headersSent)res.writeHead(502);res.end();});req.pipe(upstream);}).listen(17653,'127.0.0.1');

@@ -20,7 +20,7 @@ test('current Journal has no topic sequence/op id and same accepted op replays t
  assert.deepEqual(f.store.apply(op),{...first,replayed:true});assert.deepEqual(f.store.metrics(),before);
  const event=f.store.pull(first.seq-1).events[0];assert.ok(!Object.hasOwn(event,'opId')&&!Object.hasOwn(event,'topicSeq'));
 });
-test('counterexample: appending an old repaired version at a new sequence rolls a current client back',async t=>{
+test('online integrity barrier rejects the historical old-version republication counterexample',async t=>{
  const f=await fixture(t);await f.adopt();await f.pump();
  const op={...wireTopic(selected),msgId:'repair-version',deviceId:'synthetic-peer',opId:'repair-version-1',action:'upsert',baseHash:null,message:message('repair-version','version-1')},first=f.store.apply(op);
  await f.adapter.pull();const second=f.store.apply({...op,opId:'repair-version-2',baseHash:first.hash,message:message('repair-version','version-2')});await f.adapter.pull();
@@ -28,8 +28,9 @@ test('counterexample: appending an old repaired version at a new sequence rolls 
  // Deliberately unsafe repair: bypass CentralStore only in this temporary DB.
  const original=f.store.db.prepare('SELECT * FROM journal WHERE seq=?').get(first.seq),keys=Object.keys(original).filter(k=>k!=='seq');
  const appended=Number(f.store.db.prepare('INSERT INTO journal('+keys.join(',')+') VALUES('+keys.map(()=>'?').join(',')+')').run(...keys.map(k=>original[k])).lastInsertRowid);
- assert.ok(appended>second.seq);await f.adapter.pull();
- assert.equal((await f.queue.read(selected)).find(m=>m.id===op.msgId).content,'version-1');
+ assert.ok(appended>second.seq);await assert.rejects(()=>f.adapter.pull(),e=>e.code==='SYNC_STORAGE_CORRUPT'&&e.status===500);
+ assert.equal(f.adapter.state.cursor,second.seq);
+ assert.equal((await f.queue.read(selected)).find(m=>m.id===op.msgId).content,'version-2');
  assert.equal(f.store.db.prepare('SELECT hash FROM messages WHERE msg_id=?').get(op.msgId).hash,second.hash);
 });
 test('server repair before resuming the unchanged cursor recovers both topics without a new protocol',async t=>{
