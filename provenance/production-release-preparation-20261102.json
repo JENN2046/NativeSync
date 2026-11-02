@@ -1,0 +1,248 @@
+{
+  "recordedAt": "2026-11-02T18:35:08.209667+08:00",
+  "status": "local-deployment-preparation-complete-production-approval-pending",
+  "candidate": {
+    "runtimeCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320",
+    "zipSha256": "35b7e67055fb07b8d27221f231d77e8d9fb771b1774a0957055b187ec8c2cd30",
+    "manifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+    "runtimeFilesChangedThisTurn": 0
+  },
+  "target": {
+    "sshAlias": "tencent-prod",
+    "hostname": "VM-0-13-ubuntu",
+    "root": "/opt/AGENTS_OS_Workspace/runtime/VCPToolBox",
+    "sourceGitAnchor": "77aa55797057800261d8417fea6ca2156c81c7bb",
+    "productionOperationsThisTurn": "read-only public code/runtime retrieval and non-secret authorization digest review only",
+    "productionWriteOrRestart": false
+  },
+  "inputs": {
+    "tools/install_production.py": "f7e77afae426a39e7e129f0816f27d4f87ae8bf05fee49b81601f5aeddf0fba8",
+    "tools/production_db_snapshot.cjs": "3545a2bdd18f0012a152dc5b8ade76c6140d8dbca02e9a01b778f5f747f232e4",
+    "tools/install_release.py": "4645cf35f706cfd9eb1b5d9056bc34725bd5016f1041c7e474de88ba0c4c004a",
+    "tools/validate_production.py": "7942b2d93a388e3a2ecb3cac1e54ff8c6c1c8ad77b516969a1eef71363656cc1",
+    "tests/production-installation-guards.py": "8ffa5e043f0df15a2c2a96113426223da615af20b27437a8203e133eb5e5ab44",
+    "tests/fixtures/productionFlow.cjs": "92d848266a877095fdda32f5928cfc840fa719d7746e478ed0d0ecdb29e0c735",
+    "tests/fixtures/productionBrowser.cjs": "8f94caee95db5ca40d5a1437ef5bd3480c2ba54d609b6bc58c51ff43c79cb50f",
+    "tests/fixtures/productionSupport.cjs": "75815dbb5d742e11cae277f0af6889cbd09f33f930b09082cdc7e29be34e3eec",
+    "provenance/production-deployment-preflight-20261102.json": "dd40b094183c30a516c0806114bec4dee9ad3ad4694b7c4d64ec7736e7a7a4fb"
+  },
+  "publicFixture": {
+    "path": "/home/jenn/NativeSync/.local/production-installer-work-20261102T095412Z/public-production-code-complete.tar.gz",
+    "sha256": "4dccfffe56d52f55cd934badd8450826d3d81bf864a5fc00a4dcae7eafc652fb",
+    "publicFiles": 1086,
+    "runtimeSha256": "e32e2d16081cf644f88392934288086e7662529d0d43277c34f7aad2207cfafb",
+    "localDependencies": "cold-installed VCPToolBox node_modules reused; dependency closure was not reinstalled for this test",
+    "privateConfigurationHistoryOrDatabasesCopied": false
+  },
+  "fixturePath": "/var/tmp/nativesync-production-validation-1000/production-installer-work-20261102T095412Z-r3",
+  "fullHostFlow": {
+    "old": {
+      "stage": "old",
+      "limitedTopics": 2,
+      "sourceSpacePreserved": true,
+      "originalOpSeq": 1,
+      "originalOpHash": "6f04e0f9b97f404ccf7a27525213aa31109fe31dd9f1fc4b5514d6272a566c50",
+      "legacyReplayReturnedOriginal": true,
+      "foreignPushDenied": true,
+      "completedJobs": [
+        "job_e7048545979fcf8d664a10789f6dd7f6"
+      ],
+      "attempts": 1,
+      "modelCalls": 1,
+      "cursor": 4,
+      "noRePairing": false,
+      "browser": {
+        "rendered": true,
+        "directoryTopics": 2,
+        "asset": "index-DI5CQjGO.js",
+        "selectedTopic": "legacy-a",
+        "latestLegacyMessageVisible": true,
+        "latestExplicitReplyVisible": true,
+        "sessionReused": true
+      }
+    },
+    "new": {
+      "stage": "new",
+      "limitedTopics": 2,
+      "sourceSpacePreserved": true,
+      "originalOpSeq": 1,
+      "originalOpHash": "6f04e0f9b97f404ccf7a27525213aa31109fe31dd9f1fc4b5514d6272a566c50",
+      "legacyReplayReturnedOriginal": true,
+      "foreignPushDenied": true,
+      "completedJobs": [
+        "job_e7048545979fcf8d664a10789f6dd7f6",
+        "job_a97d51a04b78c6a952f95ad47f3e59ce"
+      ],
+      "attempts": 1,
+      "modelCalls": 2,
+      "cursor": 6,
+      "noRePairing": true,
+      "browser": {
+        "rendered": true,
+        "directoryTopics": 2,
+        "asset": "index-BcpsuVsp.js",
+        "selectedTopic": "legacy-a",
+        "latestLegacyMessageVisible": true,
+        "latestExplicitReplyVisible": true,
+        "sessionReused": true
+      }
+    },
+    "rollback": {
+      "stage": "rollback",
+      "limitedTopics": 2,
+      "sourceSpacePreserved": true,
+      "originalOpSeq": 1,
+      "originalOpHash": "6f04e0f9b97f404ccf7a27525213aa31109fe31dd9f1fc4b5514d6272a566c50",
+      "legacyReplayReturnedOriginal": true,
+      "foreignPushDenied": true,
+      "completedJobs": [
+        "job_e7048545979fcf8d664a10789f6dd7f6",
+        "job_a97d51a04b78c6a952f95ad47f3e59ce",
+        "job_e769716c34110aea9b4320d0052aed6a"
+      ],
+      "attempts": 1,
+      "modelCalls": 3,
+      "cursor": 8,
+      "noRePairing": true,
+      "browser": {
+        "rendered": true,
+        "directoryTopics": 2,
+        "asset": "index-DI5CQjGO.js",
+        "selectedTopic": "legacy-a",
+        "latestLegacyMessageVisible": true,
+        "latestExplicitReplyVisible": true,
+        "sessionReused": true
+      }
+    },
+    "reinstalled": {
+      "stage": "reinstalled",
+      "limitedTopics": 2,
+      "sourceSpacePreserved": true,
+      "originalOpSeq": 1,
+      "originalOpHash": "6f04e0f9b97f404ccf7a27525213aa31109fe31dd9f1fc4b5514d6272a566c50",
+      "legacyReplayReturnedOriginal": true,
+      "foreignPushDenied": true,
+      "completedJobs": [
+        "job_e7048545979fcf8d664a10789f6dd7f6",
+        "job_a97d51a04b78c6a952f95ad47f3e59ce",
+        "job_e769716c34110aea9b4320d0052aed6a"
+      ],
+      "attempts": 1,
+      "modelCalls": 3,
+      "cursor": 8,
+      "noRePairing": true,
+      "browser": {
+        "rendered": true,
+        "directoryTopics": 2,
+        "asset": "index-BcpsuVsp.js",
+        "selectedTopic": "legacy-a",
+        "latestLegacyMessageVisible": true,
+        "latestExplicitReplyVisible": true,
+        "sessionReused": true
+      }
+    }
+  },
+  "installerGuards": {
+    "result": "PASS",
+    "checks": [
+      "active ledger holder rejected before mutation",
+      "new authority field rejected even when current limited topics are unchanged",
+      "dirty rollback refused before any target mutation",
+      "dirty install refused before backup or target mutation",
+      "changed target mapping rejected by pinned plan digest",
+      "actual exit86 after unrecorded second rename recovered using before/after hashes"
+    ],
+    "candidateRuntimeUnchanged": true,
+    "acceptedTableFactsUnchanged": true,
+    "clientStateBytesUnchanged": true,
+    "actualChildExit": 86,
+    "productionAccess": false
+  },
+  "schemaAndRuntime": {
+    "schemas": {
+      "old-snapshot": {
+        "jsonGuards": 0,
+        "productionIndexes": [],
+        "messages": 3,
+        "journal": 4
+      },
+      "after-old-code-rollback": {
+        "jsonGuards": 6,
+        "productionIndexes": [
+          "idx_journal_message",
+          "idx_mobile_execution_topic",
+          "idx_mobile_execution_request"
+        ],
+        "messages": 7,
+        "journal": 8
+      },
+      "final-candidate": {
+        "jsonGuards": 6,
+        "productionIndexes": [
+          "idx_journal_message",
+          "idx_mobile_execution_topic",
+          "idx_mobile_execution_request"
+        ],
+        "messages": 7,
+        "journal": 8
+      }
+    },
+    "runtime": {
+      "node": "24.22.1",
+      "sqlite": "3.53.4",
+      "abi": "137",
+      "platform": "linux",
+      "arch": "x64"
+    }
+  },
+  "modelCalls": [
+    {
+      "ordinal": 1,
+      "model": "nativesync-prod-stub",
+      "aliasFrozen": true,
+      "latestHistoryPresent": true,
+      "previousReplyPresent": true,
+      "temperature": 0.2,
+      "maxTokens": 128
+    },
+    {
+      "ordinal": 2,
+      "model": "nativesync-prod-stub",
+      "aliasFrozen": true,
+      "latestHistoryPresent": true,
+      "previousReplyPresent": true,
+      "temperature": 0.2,
+      "maxTokens": 128
+    },
+    {
+      "ordinal": 3,
+      "model": "nativesync-prod-stub",
+      "aliasFrozen": true,
+      "latestHistoryPresent": true,
+      "previousReplyPresent": true,
+      "temperature": 0.2,
+      "maxTokens": 128
+    }
+  ],
+  "productionConfigDigest": {
+    "completeAuthorityProjectionSha256": "bce07af11223781966536bde31ff88cb25869839d9ee0f2845923b4b962a72d4",
+    "matchesReviewed": true
+  },
+  "earlierFixturesRetained": [
+    "/var/tmp/nativesync-production-validation-1000/production-installer-work-20261102T095412Z",
+    "/var/tmp/nativesync-production-validation-1000/production-installer-work-20261102T095412Z-r2"
+  ],
+  "limits": [
+    "scripted old Source client is not a Windows-device acceptance",
+    "real Chrome PWA with reused cookie and fresh browser profiles is not installed Android/offline-cache acceptance",
+    "local provider only; no paid model, real AgentAssistant or business tool acceptance",
+    "known shared-msg-id old-history ownership boundary remains",
+    "production maintenance window and fresh live target preflight still required"
+  ],
+  "pendingProductionSteps": [
+    "confirm one release operator and maintenance window; settle client outbox, all VCP/model/tool/AA work",
+    "verify fresh code/config baseline and ledger health; take consistent backup after stopping only the main service",
+    "approve the reviewed 20 payload writes with existing limited Source scope and known storage boundary",
+    "perform minimal existing-client/phone verification during actual deployment; do not reset identities or storage"
+  ]
+}
