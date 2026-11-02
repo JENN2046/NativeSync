@@ -1,0 +1,287 @@
+{
+  "status": "complete-local-real-source-production-history-and-attachments-readonly",
+  "scopeDecision": "User chose production backend, confirmed native Baseline deletion, created new empty topic, and explicitly chose to retain workspace rules and deliver reading only",
+  "desktopRoot": "/home/jenn/AGENTS_OS_Workspace/runtime/VCPChat",
+  "sourceRoot": "/home/jenn/AGENTS_OS_Workspace/runtime/VCPChat/AppData",
+  "sourceId": "source_linux_jenn_1eec0097677c4768",
+  "productionOrigin": "https://vcp.skmt617.top",
+  "initialInventory": {
+    "agents": 5,
+    "topics": 23,
+    "messages": 325,
+    "groups": 0
+  },
+  "finalDirectory": {
+    "agents": 4,
+    "topics": 22,
+    "ready": 22,
+    "executableConfigs": 0,
+    "unavailableReasons": {
+      "DESKTOP_CONTEXT_REQUIRED": 22
+    }
+  },
+  "nativeDeletion": {
+    "userConfirmed": true,
+    "agent": "Baseline",
+    "topics": 2,
+    "originalMessagesRetained": 6,
+    "notRestored": true
+  },
+  "newTopic": {
+    "userCreated": true,
+    "name": "NativeSync 接入验收",
+    "automaticDiscoveryAndReadyVerified": true
+  },
+  "originalMessageProof": {
+    "expected": 325,
+    "canonicalIdentityAndHashMatches": 325
+  },
+  "attachments": {
+    "references": 14,
+    "distinctFiles": 13,
+    "uniqueBytes": 10200551,
+    "allReferenceBinariesMatched": true,
+    "representativePhonePreviews": [
+      {
+        "type": "image/png",
+        "bytes": 733912,
+        "hash": "853cf410317788cd95cc74ed0c1ce51a38145a8d44ac0c2dc6a402a612e34f9d",
+        "previewShown": true,
+        "status": 200
+      },
+      {
+        "type": "text/plain",
+        "bytes": 6155,
+        "hash": "d6e4d5f408e966b3c3ab4c88a459cc37aa266a57501433461d82bac460e7e941",
+        "previewShown": true,
+        "status": 200
+      }
+    ],
+    "savedFiles": [
+      {
+        "type": "image/png",
+        "expectedHash": "853cf410317788cd95cc74ed0c1ce51a38145a8d44ac0c2dc6a402a612e34f9d",
+        "productSaveClicked": true,
+        "trustedTouchRetest": false,
+        "matchingSavedFileFound": true,
+        "newFileCreationIndependentlyObserved": false
+      },
+      {
+        "type": "text/plain",
+        "expectedHash": "d6e4d5f408e966b3c3ab4c88a459cc37aa266a57501433461d82bac460e7e941",
+        "productSaveClicked": true,
+        "trustedTouchRetest": true,
+        "matchingSavedFileFound": true,
+        "newFileCreationIndependentlyObserved": false
+      }
+    ]
+  },
+  "phoneInstalledEntry": {
+    "atUtc": "2026-11-02T14:13:38.315Z",
+    "authenticated": true,
+    "standalone": true,
+    "domAgentCount": 4,
+    "topics": 22,
+    "ready": 22,
+    "executable": 0,
+    "newTopicVisible": true,
+    "reloadAfterSourceSwitch": false
+  },
+  "oldPhoneSessions": {
+    "oldSessionsPreserved": true,
+    "oldSessionCount": 3,
+    "pairUsed": 1,
+    "newPairScopeIsExactSource": true,
+    "newSourceSessionCount": 1
+  },
+  "preExistingProductionAcceptedRowsPreserved": true,
+  "desktopFinalState": {
+    "cursor": 376,
+    "outbox": 0,
+    "inbox": 0,
+    "pending": false,
+    "drift": 0,
+    "localCommits": 0,
+    "plans": {
+      "complete": 24
+    },
+    "planErrors": [],
+    "sourceBindingPreserved": true,
+    "publishedNativeDeletions": 1
+  },
+  "storage": {
+    "ok": true,
+    "issues": 0,
+    "checked": {
+      "messages": 373,
+      "journal": 376,
+      "applied_ops": 376
+    }
+  },
+  "sourceObservation": {
+    "observedAt": 1793628541973,
+    "pendingImports": 0,
+    "pendingOperations": 0,
+    "conflicts": 0,
+    "directoryErrors": 0,
+    "attachmentsPending": 0,
+    "configurationPending": 0,
+    "configurationErrors": 17
+  },
+  "continuation": {
+    "acceptedTask": {
+      "id": "job_4a56d224a768881187d3c35c6b935607",
+      "topic_key": "full_c661c15c3eec8ac228718ced29846c704bc7fa9a",
+      "request_id": "e3e301fd-5497-4c80-a953-2efc0faedc25",
+      "state": "failed",
+      "attempts": 1,
+      "error_code": "DESKTOP_CONTEXT_REQUIRED",
+      "tool_started": 0,
+      "request_dispatched": 0,
+      "user_message_id": "mobile_job_4a56d224a768881187d3c35c6b935607",
+      "reply_message_id": null,
+      "user_seq": 376,
+      "configVersion": 1,
+      "configHash": "61d81a0c471896f596cdce883420eb4dcf20b9bc41cb2d0453604f083b375e64"
+    },
+    "passed": false,
+    "modelDispatched": false,
+    "reason": "Effective global workspace awareness Tavern rule requires desktop context; preserved at user request",
+    "inputMessageWrittenBackToDesktop": true,
+    "unsupportedTopics": 22,
+    "allTopicReasons": "DESKTOP_CONTEXT_REQUIRED",
+    "failureRecordPreserved": true
+  },
+  "versions": {
+    "sourceCommit": "222c164f37d5e46075cd61d604557734913f5e98",
+    "manifestSha256": "8bec7e0a027f715c1ca4a4041469ebac00d9f729560009280fb75c1b3ca20188",
+    "candidate": "/home/jenn/下载/NativeSync_Source_Context_Readiness_20261102.zip",
+    "candidateSha256": "62580f363888220ab28428c8bb0989cdd8fae8c6999f50c2328ad162affe41fa",
+    "runtimePayloadFiles": 84,
+    "changedRuntimePayloadFiles": 1,
+    "productionTargetFilesVerified": 56,
+    "desktopInstalledFilesVerified": 52,
+    "desktopPayloadFiles": 28,
+    "hostAdaptationFiles": 24,
+    "syntheticNativeSyncDevUpgradedThisTurn": false
+  },
+  "validation": {
+    "syntaxTargets": 52,
+    "settings": {
+      "passed": 15,
+      "failed": 0
+    },
+    "hostHistoryAndRequest": {
+      "passed": 13,
+      "failed": 0
+    },
+    "sourcePromptAndRules": {
+      "passed": 9,
+      "failed": 0
+    },
+    "historicalMatricesRepeated": false
+  },
+  "backups": {
+    "local": "/home/jenn/NativeSync-Local-Backups/production-full-source-20261102",
+    "sourceAdmission": "/opt/AGENTS_OS_Workspace/backups/NativeSync/production-linux-source-20261102",
+    "nativeAliasAdmission": "/opt/AGENTS_OS_Workspace/backups/NativeSync/production-linux-nova-alias-20261102",
+    "readinessFix": "/opt/AGENTS_OS_Workspace/backups/NativeSync/production-source-context-readiness-20261102",
+    "dataRestored": false,
+    "dailyPreNativeSyncFullCodeRollbackValidated": false
+  },
+  "evidence": [
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/CHAT_CODE_PLAN.json",
+      "sha256": "5d77b67fcd9e540916b3944f37eb7178cf2dcb1400d1267dba19874cdffc3d66"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/LOCAL_INSTALL.json",
+      "sha256": "a73041ad7652c47eefe802270533c6ffbfbf42868b58f53ede30ca0a2d9c4add"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/SETTINGS_CHANGE.json",
+      "sha256": "399302fa778a33b355f254a879923f11cc41fb2a2d21bde329941b5c3c163b04"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/SOURCE_SETUP.json",
+      "sha256": "a65b4b8b4e4dd225f569ace059668546f4867266695a3835e757491fd58a8ebe"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/SERVER_ADMISSION.json",
+      "sha256": "01035041aebff75c1b6368213e98d874df16892f4a00cb2b20c5805eae79fa27"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/NOVA_ALIAS_ADMISSION.json",
+      "sha256": "5668ea3880172667bb269efc9b80d011b4ec58fc53ac71aeb7b10f1eda90c1f7"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/READINESS_INSTALL.json",
+      "sha256": "d0ee9b5d58d48a53c374d9d9ae0ed532e7b44e263a6ff10bb5101c2272b37968"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/FULL_SOURCE_FINAL.json",
+      "sha256": "0ff813e191658ee61b6a1c8604a1fe68ddd8b73e80ee98ba5ba8599a7e287ccd"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/PRODUCTION_PAYLOAD_PROOF.json",
+      "sha256": "aa635398b6c110976fcb982eeee05e27ab2ec7c6f4ea9fd0c5bd69d5495d4062"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/DESKTOP_FINAL_STATE.json",
+      "sha256": "f8b0422bd8b2f65c6a43941f3f8b6f43a7822b07402f6536d685a751acc4c2d6"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/DESKTOP_INBOUND_PROOF.json",
+      "sha256": "ffea7152beed8415fa3bf3ca243581b847bd576b71af4bde2ec1d4994448d92c"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/FINAL_ATTEMPT_PROOF.json",
+      "sha256": "ff7be018a22ff973f8a7a2481267af9310371ad12188d7f754bd296f07d93928"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/RULE_CONTEXT_DIAGNOSIS.json",
+      "sha256": "df6bb291d1c3d887f857f1e5909a9a56f988819ae76f763d544752c9f4485e9a"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/PHONE_SOURCE_SCOPE_PROOF.json",
+      "sha256": "0ce3fc2f02da7044bf682f5e97375c60585bc4cfc3681427a9461f825d6a42d6"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/PHONE_FINAL_READONLY.json",
+      "sha256": "5b6471270359238ee96b5db846966910293bf2c25f3c14102f63f0a9fcc0a846"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/PHONE_SAVED_FILES_PROOF.json",
+      "sha256": "e03475b5d84394b26a8762bf4a8afd6f2e038fe6413201a0aea67f41b577292e"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/INSTALLED_ENTRY_PROOF.json",
+      "sha256": "27708cba8e9cf01153fce23d29add48ef47694e9cb24363f19faca29abbabef0"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/settings.tap",
+      "sha256": "ec9683d70a498a14884320017f8f30291aebd5805eeb9e4360b861ec9aeb4ee1"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/host-history-and-request.tap",
+      "sha256": "858b2d4c6c30d889ddf3baefada5f0cf01d1b177335e15268a12337bf7510cdf"
+    },
+    {
+      "path": "/home/jenn/NativeSync/.local/local-production-source-20261102/source-prompt-portability-final.tap",
+      "sha256": "b7c972910c7124a609cdb0be5047d033cc0c9bad3d87f24817de339422909ccb"
+    }
+  ],
+  "resourceDisposition": {
+    "stageAndReceipts": "retained locally for audit and recovery; review at next accepted daily-host update",
+    "privateBackups": "retained; not in Git",
+    "supersededAliasOnlyCandidate": "retained under .local, removed from Downloads delivery",
+    "usbForward19222": "removed at closeout"
+  },
+  "limits": [
+    "Read-only delivery; actual mobile model roundtrip not passed for this Source",
+    "Source global workspace rule retained; no private desktop workspace published",
+    "Shared msg_id old Journal ownership misassignment boundary remains accepted",
+    "No original Windows Source expansion, main merge or remote Git push",
+    "Original daily code predates NativeSync; its raw backup is not a validated safe full-code rollback after adoption"
+  ]
+}
