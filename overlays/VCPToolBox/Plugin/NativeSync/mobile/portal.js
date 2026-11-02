@@ -103,10 +103,12 @@ class MobilePortal {
             try {
                 const topic = this.authorize(req); const after = Number(req.query.after || 0);
                 if (!Number.isSafeInteger(after) || after < 0) throw error('INVALID_CURSOR');
+                const result=this.store.readSnapshot(()=>{
                 const rows = this.db.prepare('SELECT *,last_seq AS seq,msg_id AS id FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND last_seq>? ORDER BY last_seq LIMIT 201').all(topic.ownerType,topic.ownerId,topic.topicId,after);
-                const page = rows.slice(0,200);
+                const page = rows.slice(0,200),messages=this.store.projectRows(page);
                 const ready=historyReady(this.db,topic);
-                res.json({ messages: page.map(r=>({seq:r.seq,id:r.id,deleted:Boolean(r.deleted),message:this.store.projectMessage(r)})), next:page.at(-1)?.seq??after, hasMore:rows.length>200, ...(req.query.executions==='paged'?{executionProtocol:2}:{executions:this.engine.list(topic.key,req.mobileSession.id)}),topicState:{historyReady:ready,executable:this.catalog(req.mobileSession).find(t=>t.key===topic.key).executable,unavailableReason:this.catalog(req.mobileSession).find(t=>t.key===topic.key).unavailableReason,...this.engine.configs.public(topic.key)} });
+                return { messages: page.map((r,i)=>({seq:r.seq,id:r.id,deleted:Boolean(r.deleted),message:messages[i]})), next:page.at(-1)?.seq??after, hasMore:rows.length>200, ...(req.query.executions==='paged'?{executionProtocol:2}:{executions:this.engine.list(topic.key,req.mobileSession.id)}),topicState:{historyReady:ready,executable:this.catalog(req.mobileSession).find(t=>t.key===topic.key).executable,unavailableReason:this.catalog(req.mobileSession).find(t=>t.key===topic.key).unavailableReason,...this.engine.configs.public(topic.key)} };
+                });res.json(result);
             } catch(e) { next(e); }
         });
         this.router.post('/api/conversations/:key/messages', (req,res,next) => {

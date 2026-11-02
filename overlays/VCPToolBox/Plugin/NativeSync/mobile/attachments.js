@@ -102,8 +102,8 @@ class AttachmentStore{
  linkExisting(upload){
    if(upload.expires<=Date.now()&&(!upload.execution_id||!this.hasExecutions()||!this.db.prepare('SELECT 1 FROM mobile_executions WHERE id=? AND topic_key=? AND user_message_id=? AND ?=\'mobile:\'||session_id').get(upload.execution_id,upload.topic_key,upload.msg_id,upload.principal)))return;
   if(!upload.msg_id||!upload.attachment_id)return;
-  const topic=this.topic(upload.topic_key),row=this.store.findMessage.get(topic.ownerType,topic.ownerId,topic.topicId,upload.msg_id);
-  if(!row||row.deleted)return;const message=this.store.projectMessage(row),a=message.attachments?.find(a=>a.id===upload.attachment_id);
+  const topic=this.topic(upload.topic_key),entry=this.store.readProjected(()=>{const row=this.store.findMessage.get(topic.ownerType,topic.ownerId,topic.topicId,upload.msg_id);return row?[row]:[];})[0];
+  if(!entry||entry.row.deleted)return;const message=entry.message,a=message.attachments?.find(a=>a.id===upload.attachment_id);
   if(upload.frame_index!==null){if(a?.frameHashes?.[upload.frame_index]===upload.hash)this.db.prepare('INSERT INTO attachment_frames VALUES(?,?,?,?,?) ON CONFLICT(topic_identity,msg_id,attachment_id,frame_index) DO UPDATE SET hash=excluded.hash').run(byIdentity(topic),upload.msg_id,a.id,upload.frame_index,upload.hash);return;}
   if(a&&(a.hash===upload.hash||a.blobHash===upload.hash))this.db.prepare('INSERT INTO attachment_links(topic_identity,msg_id,attachment_id,hash) VALUES(?,?,?,?) ON CONFLICT(topic_identity,msg_id,attachment_id) DO UPDATE SET hash=excluded.hash').run(byIdentity(topic),upload.msg_id,a.id,upload.hash);
  }
@@ -128,13 +128,16 @@ class AttachmentStore{
  }
  locate(key,messageId,attachmentId,read=true){
   const t=this.topic(key);identity({...t,msgId:messageId});
+  const metadata=this.store.readSnapshot(()=>{
   const r=this.store.findMessage.get(t.ownerType,t.ownerId,t.topicId,messageId);if(!r||r.deleted)throw fail('ATTACHMENT_NOT_ALLOWED',403);
   const m=this.store.projectMessage(r),a=m.attachments?.find(a=>a.id===attachmentId);if(!a)throw fail('ATTACHMENT_NOT_ALLOWED',403);
   const link=this.db.prepare('SELECT hash FROM attachment_links WHERE topic_identity=? AND msg_id=? AND attachment_id=?').get(byIdentity(t),messageId,attachmentId);
   if(!link||![a.hash,a.blobHash].includes(link.hash))throw fail('ATTACHMENT_BLOB_MISSING',404);
   const blob=this.db.prepare("SELECT * FROM attachment_blobs WHERE hash=? AND state='ready'").get(link.hash);if(!blob)throw fail('ATTACHMENT_BLOB_MISSING',404);
-  if(!read){let s;try{s=regular(this.blobPath(link.hash));}catch(e){if(e.code==='ENOENT')throw fail('ATTACHMENT_BLOB_MISSING',404);throw e;}if(s.size!==blob.size)throw fail('ATTACHMENT_BLOB_CORRUPT');}
-  return {attachment:a,blob,...(read?{bytes:this.readBlob(link.hash)}:{})};
+  return {attachment:a,blob,hash:link.hash};
+  });
+  if(!read){let s;try{s=regular(this.blobPath(metadata.hash));}catch(e){if(e.code==='ENOENT')throw fail('ATTACHMENT_BLOB_MISSING',404);throw e;}if(s.size!==metadata.blob.size)throw fail('ATTACHMENT_BLOB_CORRUPT');}
+  return {attachment:metadata.attachment,blob:metadata.blob,...(read?{bytes:this.readBlob(metadata.hash)}:{})};
  }
  frame(key,messageId,attachmentId,index){
   if(!Number.isSafeInteger(index)||index<0||index>=10)throw fail('ATTACHMENT_NOT_ALLOWED',403);
@@ -146,10 +149,12 @@ class AttachmentStore{
  }
  status(key,messageIds){
   if(!Array.isArray(messageIds)||messageIds.length>100||messageIds.some(id=>typeof id!=='string'||id.length>200))throw fail('INVALID_ATTACHMENT_STATUS',400);
-  const topic=this.topic(key),result=[];
-  for(const messageId of messageIds){const row=this.store.findMessage.get(topic.ownerType,topic.ownerId,topic.topicId,messageId);if(!row||row.deleted)continue;
-   const message=this.store.projectMessage(row);for(const a of message.attachments||[]){try{const value=this.locate(key,messageId,a.id,false);result.push({messageId,attachmentId:a.id,state:'available',type:value.blob.type});}catch(e){result.push({messageId,attachmentId:a.id,state:e.code==='ATTACHMENT_BLOB_CORRUPT'?'corrupt':'missing',errorCode:e.code});}}
+  return this.store.readSnapshot(()=>{
+  const topic=this.topic(key),result=[],entries=this.store.readProjected(()=>this.db.prepare('SELECT * FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND msg_id IN (SELECT value FROM json_each(?))').all(topic.ownerType,topic.ownerId,topic.topicId,JSON.stringify(messageIds)));
+  for(const {row,message} of entries){const messageId=row.msg_id;if(row.deleted)continue;
+   for(const a of message.attachments||[]){try{const value=this.locate(key,messageId,a.id,false);result.push({messageId,attachmentId:a.id,state:'available',type:value.blob.type});}catch(e){result.push({messageId,attachmentId:a.id,state:e.code==='ATTACHMENT_BLOB_CORRUPT'?'corrupt':'missing',errorCode:e.code});}}
   }return result;
+  });
  }
  async content(key,message,imageSupported,budget={bytes:0}){
   const parts=[{type:'text',text:message.content||''}];

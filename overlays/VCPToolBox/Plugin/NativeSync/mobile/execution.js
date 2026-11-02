@@ -164,13 +164,16 @@ class ConversationExecution {
             // Keep later submissions outside this task's snapshot, but include
             // replies from completed predecessor jobs even if they published
             // after this user message was accepted. No new state/schema needed.
+            const {predecessors,history}=this.store.readSnapshot(()=>{
             const predecessors = this.db.prepare("SELECT user_message_id,reply_message_id FROM mobile_executions WHERE topic_key=? AND user_seq<? AND state='completed' AND reply_message_id IS NOT NULL ORDER BY user_seq").all(row.topic_key,row.user_seq);
-            const records = this.db.prepare(`SELECT * FROM (
+            const records = this.store.readProjected(()=>this.db.prepare(`SELECT * FROM (
                 SELECT *,row_number() OVER(PARTITION BY msg_id ORDER BY seq DESC) AS r
                 FROM journal WHERE owner_type=? AND owner_id=? AND topic_id=? AND
                 (seq<=? OR msg_id IN (SELECT value FROM json_each(?))))
-                WHERE r=1 AND action='upsert' ORDER BY seq`).all(topic.ownerType, topic.ownerId, topic.topicId, row.user_seq,JSON.stringify(predecessors.map(p=>p.reply_message_id)));
-            const history=records.map(r=>this.store.projectMessage(r)).sort((a,b)=>a.timestamp-b.timestamp);
+                WHERE r=1 AND action='upsert' ORDER BY seq`).all(topic.ownerType, topic.ownerId, topic.topicId, row.user_seq,JSON.stringify(predecessors.map(p=>p.reply_message_id))));
+            const history=records.map(r=>r.message).sort((a,b)=>a.timestamp-b.timestamp);
+            return {predecessors,history};
+            });
             const byId=new Map(history.map(m=>[m.id,m])),replyAfter=new Map(),relocated=new Set();
             for(const p of predecessors)if(byId.has(p.user_message_id)&&byId.has(p.reply_message_id)){
                 replyAfter.set(p.user_message_id,byId.get(p.reply_message_id));relocated.add(p.reply_message_id);
@@ -226,7 +229,7 @@ class ConversationExecution {
             const state = uncertain ? 'review_required' : latest.cancel_requested ? 'cancelled' : 'failed';
             const failureCode = uncertain ? (latest.cancel_requested ? 'EXECUTION_CANCELLED_REVIEW_REQUIRED' : deadline?.aborted ? 'EXECUTION_TIMEOUT_REVIEW_REQUIRED' : /^[A-Z_]+_REVIEW_REQUIRED$/.test(failure.code || '') ? failure.code : 'EXECUTION_INTERRUPTED_REVIEW_REQUIRED') :
                 latest.cancel_requested ? 'EXECUTION_CANCELLED' :
-                (/^(ATTACHMENT_|ATTACHMENTS_|MODEL_IMAGE_|CONFIG_|NATIVE_)/.test(failure.code || '') || failure.code === 'DESKTOP_CONTEXT_REQUIRED' ? failure.code : 'MODEL_EXECUTION_FAILED');
+                (/^(ATTACHMENT_|ATTACHMENTS_|MODEL_IMAGE_|CONFIG_|NATIVE_)/.test(failure.code || '') || ['DESKTOP_CONTEXT_REQUIRED','SYNC_STORAGE_CORRUPT'].includes(failure.code) ? failure.code : 'MODEL_EXECUTION_FAILED');
             if(published&&failure.partialContent){
                 const topic=this.topics.get(row.topic_key),msgId='reply_'+row.id,code=failureCode;
                 const content=failure.partialContent+'\n\n[System Message] 本轮已中断；系统不会自动重跑不确定执行。';

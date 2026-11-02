@@ -78,6 +78,7 @@ class CentralStore {
         PRIMARY KEY(device_id, op_id)
       );
       CREATE INDEX IF NOT EXISTS idx_journal_topic ON journal(owner_type,owner_id,topic_id,seq);
+      CREATE INDEX IF NOT EXISTS idx_journal_message ON journal(owner_type,owner_id,topic_id,msg_id,seq);
     `);
     // Legacy JSON never proves metadata publication authority. Only these
     // independently persisted columns, written in the same Journal transaction,
@@ -102,7 +103,14 @@ class CentralStore {
       VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(owner_type,owner_id,topic_id,msg_id) DO UPDATE SET
       hash=excluded.hash, deleted=excluded.deleted, message_json=excluded.message_json, last_seq=excluded.last_seq,metadata_version=excluded.metadata_version,metadata_hash=excluded.metadata_hash`);
     this.insertOp = this.db.prepare('INSERT INTO applied_ops(device_id,op_id,request_hash,result_json) VALUES(?,?,?,?)');
-    this.pullStmt = this.db.prepare('SELECT * FROM journal WHERE seq > ? ORDER BY seq ASC LIMIT ?');
+    // Scan routing columns only. Unauthorized message bodies are never loaded.
+    this.pullStmt = this.db.prepare('SELECT seq,owner_type,owner_id,topic_id FROM journal WHERE seq > ? ORDER BY seq ASC LIMIT ?');
+    this.readJournalSeqs = this.db.prepare('SELECT * FROM journal WHERE seq IN (SELECT value FROM json_each(?)) ORDER BY seq');
+    const tuple = alias => ['owner_type','owner_id','topic_id','msg_id'].map((name,i)=>`${alias}.${name}=json_extract(w.value,'$[${i}]')`).join(' AND ');
+    this.readProjections = this.db.prepare(`SELECT m.* FROM json_each(?) w JOIN messages m ON ${tuple('m')}`);
+    // Both lookups are bounded by the requested identities, not the database.
+    this.readProjectionHeads = this.db.prepare(`SELECT j.* FROM json_each(?) w JOIN journal j ON j.seq=json_extract(w.value,'$[4]') AND ${tuple('j')}`);
+    this.readLatestSeqs = this.db.prepare(`SELECT w.value AS identity_key,(SELECT MAX(j.seq) FROM journal j WHERE ${tuple('j')}) AS seq FROM json_each(?) w`);
     this.headStmt = this.db.prepare('SELECT COALESCE(MAX(seq),0) AS seq FROM journal');
   }
   apply(raw, authority = {}) {
@@ -136,9 +144,13 @@ class CentralStore {
       const previousOp = this.findOp.get(raw.deviceId, raw.opId);
       if (previousOp) {
         if (previousOp.request_hash !== requestHash) {
+          if(!digest(previousOp.request_hash))throw storageCorrupt(Error('INVALID_STORED_REQUEST_HASH'));
           throw new SyncError('IDEMPOTENCY_KEY_REUSED', 'opId reused for different content', 409);
         }
         const result = readStoredReceipt(previousOp.result_json,{hash,deleted:raw.action==='delete'});
+        const accepted=this.db.prepare('SELECT * FROM journal WHERE seq=? AND owner_type=? AND owner_id=? AND topic_id=? AND msg_id=?').get(result.seq,...args);
+        if(!accepted||accepted.hash!==result.hash||(accepted.action==='delete')!==result.deleted||accepted.metadata_version!==(result.metadataVersion||0)||accepted.metadata_hash!==(result.metadataHash||null))throw storageCorrupt(Error('RECEIPT_REFERENCE_INVALID'));
+        this.projectRows([accepted]);
         this.db.exec('COMMIT');
         return { ...result, replayed: true };
       }
@@ -194,19 +206,60 @@ class CentralStore {
     const allowed = allowedTopics === undefined ? null : new Set(allowedTopics);
     // LIMIT bounds the global scan, not just the authorized output. An empty
     // filtered page must still acknowledge precisely this scanned window.
-    const rows = this.pullStmt.all(afterSeq, limit);
-    const headSeq = Number(this.headStmt.get().seq);
-    const nextSeq = rows.at(-1)?.seq ?? afterSeq;
-    const events = rows.filter(row => !allowed || allowed.has(JSON.stringify([row.owner_type, row.owner_id, row.topic_id]))).map(row => ({
-      seq: Number(row.seq), ownerType: row.owner_type, ownerId: row.owner_id,
-      topicId: row.topic_id, msgId: row.msg_id,
-      action: row.action, hash: row.hash, message: this.projectMessage(row),
-      sourceDevice: row.device_id
-    }));
-    return { events, headSeq, nextSeq, hasMore: nextSeq < headSeq };
+    return this.readSnapshot(()=>{
+      const window=this.pullStmt.all(afterSeq,limit),headSeq=Number(this.headStmt.get().seq),nextSeq=window.at(-1)?.seq??afterSeq;
+      const seqs=window.filter(row=>!allowed||allowed.has(JSON.stringify([row.owner_type,row.owner_id,row.topic_id]))).map(row=>row.seq);
+      const records=this.readProjected(()=>seqs.length?this.readJournalSeqs.all(JSON.stringify(seqs)):[]);
+      const events=records.map(({row,message})=>({seq:Number(row.seq),ownerType:row.owner_type,ownerId:row.owner_id,topicId:row.topic_id,msgId:row.msg_id,action:row.action,hash:row.hash,message,sourceDevice:row.device_id}));
+      return {events,headSeq,nextSeq,hasMore:nextSeq<headSeq};
+    });
+  }
+  readSnapshot(read) {
+    const own=!this.db.isTransaction;if(own)this.db.exec('BEGIN');
+    try{
+      const result=read();
+      if(result&&typeof result.then==='function')throw Error('ASYNC_STORAGE_READ_SNAPSHOT');
+      if(own)this.db.exec('COMMIT');return result;
+    }catch(error){if(own&&this.db.isTransaction)this.db.exec('ROLLBACK');throw error;}
+  }
+  readProjected(readRows) {
+    return this.readSnapshot(()=>{
+      const rows=readRows(this.db),messages=this.projectRows(rows);
+      return rows.map((row,i)=>({row,message:messages[i]}));
+    });
+  }
+  projectRows(rows) {
+    return this.readSnapshot(()=>{
+      const key=row=>JSON.stringify([row.owner_type,row.owner_id,row.topic_id,row.msg_id]);
+      const equivalent=(journal,projection)=>journal.hash===projection.hash&&(journal.action==='delete')===Boolean(projection.deleted)&&journal.metadata_version===projection.metadata_version&&journal.metadata_hash===projection.metadata_hash;
+      const messages=[];
+      for(const row of rows){try{identity({ownerType:row.owner_type,ownerId:row.owner_id,topicId:row.topic_id,msgId:row.msg_id});}catch(error){throw storageCorrupt(error);}}
+      for(let offset=0;offset<rows.length;offset+=128){
+        const page=rows.slice(offset,offset+128),keys=[...new Set(page.map(key))].map(JSON.parse),projections=this.readProjections.all(JSON.stringify(keys));
+        const current=new Map(projections.map(row=>[key(row),row]));
+        const heads=this.readProjectionHeads.all(JSON.stringify(projections.map(row=>[...JSON.parse(key(row)),row.last_seq]))),bySeq=new Map(heads.map(row=>[row.seq,row]));
+        const latest=new Map(this.readLatestSeqs.all(JSON.stringify(keys)).map(row=>[JSON.stringify(JSON.parse(row.identity_key)),row.seq]));
+        for(const projection of projections){
+          const head=bySeq.get(projection.last_seq);
+          if(!head||key(head)!==key(projection)||latest.get(key(projection))!==projection.last_seq||!equivalent(head,projection))throw storageCorrupt(Error('MESSAGE_REFERENCE_INVALID'));
+        }
+        for(const row of page){
+          const projection=current.get(key(row));
+          if(!projection)throw storageCorrupt(Error('JOURNAL_PROJECTION_INVALID'));
+          if(Object.hasOwn(row,'action')){
+            if(projection.last_seq<row.seq||projection.last_seq===row.seq&&!equivalent(row,projection))throw storageCorrupt(Error('JOURNAL_PROJECTION_INVALID'));
+          }else if(row.last_seq!==projection.last_seq||row.hash!==projection.hash||row.deleted!==projection.deleted||row.metadata_version!==projection.metadata_version||row.metadata_hash!==projection.metadata_hash)throw storageCorrupt(Error('MESSAGE_REFERENCE_INVALID'));
+        }
+        // Only decode bodies after identity/head associations have passed.
+        for(const row of projections)projectStoredMessage(row);
+        for(const row of heads)projectStoredMessage(row);
+        for(const row of page)messages.push(projectStoredMessage(row));
+      }
+      return messages;
+    });
   }
   projectMessage(row) {
-    return projectStoredMessage(row);
+    return this.projectRows([row])[0];
   }
   metrics() {
     return {

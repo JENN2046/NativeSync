@@ -81,3 +81,65 @@ test('offline checker does not create missing databases or initialize legacy sch
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'nativesync-check-missing-')),file=path.join(root,'missing.sqlite');t.after(()=>fs.rm(root,{recursive:true,force:true}));assert.equal(runCheck(file).status,2);await assert.rejects(()=>fs.access(file));
  const db=new DatabaseSync(file);db.exec('CREATE TABLE journal(seq INTEGER PRIMARY KEY)');db.close();const before=await fs.readFile(file),result=runCheck(file);assert.equal(result.status,1,result.stderr);assert.ok(JSON.parse(result.stdout).samples.some(s=>s.kind==='STORAGE_SCHEMA_UNSUPPORTED'));assert.deepEqual(await fs.readFile(file),before);
 });
+
+test('online reads preserve older versions, tombstones and many operations sharing one accepted sequence',async t=>{
+ const f=await fixture(t),firstOp=op('online-versions',{message:message('online-versions','v1')}),v1=f.store.apply(firstOp);
+ const v2=f.store.apply(op('online-versions',{opId:'online-versions-v2',baseHash:v1.hash,message:message('online-versions','v2')}));
+ const duplicate=op('online-versions',{deviceId:'another-device',opId:'same-state-new-op',baseHash:null,message:message('online-versions','v2')});
+ const same=f.store.apply(duplicate);assert.equal(same.seq,v2.seq);assert.equal(f.store.apply(duplicate).seq,v2.seq);
+ const deleted=f.store.apply(op('online-versions',{opId:'online-versions-delete',baseHash:v2.hash,action:'delete',message:undefined}));
+ const events=f.store.pull(v1.seq-1,100).events.filter(e=>e.msgId==='online-versions');assert.deepEqual(events.map(e=>e.message?.content??null),['v1','v2',null]);assert.equal(events.at(-1).seq,deleted.seq);
+ assert.equal(f.store.apply(firstOp).seq,v1.seq);assert.equal(f.store.apply(duplicate).seq,v2.seq);
+ const baseline=f.store.sourceCatalog.page({owner_type:'agent',owner_id:selected.itemId,topic_id:selected.topicId,watermark:v1.seq,total_rows:1},v1.seq-1,100);assert.equal(baseline.events.find(e=>e.msgId==='online-versions').message.content,'v1');
+});
+
+test('legal wrong-owner journal routing fails closed across pull, mobile events, baselines, projection and execution history',async t=>{
+ const foreign={itemType:'agent',itemId:'other',topicId:selected.topicId};
+ const f=await fixture(t,{scope:{mode:'full'},executionBindings:[{key:'integrity-foreign',...wireTopic(foreign),agentAlias:'synthetic-one',model:'synthetic-model'}]});
+ await f.owner('other',{topics:[{id:foreign.topicId,name:'foreign'},{id:'excluded',name:'excluded'}]});await f.history(foreign,[message('foreign-existing')]);await f.adopt();await f.pump();
+ await f.portal.engine.configs.publish({topics:[{...wireTopic(foreign),expectedVersion:0,config:{name:'Integrity',systemPrompt:'[[VCPToolUse=Forbidden]]\nSynthetic',model:'synthetic-model',maxOutputTokens:32}}]});
+ const phone=await f.phone(),a=phone.topics.find(v=>v.ownerId===selected.itemId&&v.topicId===selected.topicId),b=phone.topics.find(v=>v.ownerId===foreign.itemId&&v.topicId===foreign.topicId),receipt=f.store.apply(op('wrong-routing'));
+ f.store.db.prepare('UPDATE journal SET owner_id=? WHERE seq=?').run(foreign.itemId,receipt.seq);
+ assert.throws(()=>f.store.pull(receipt.seq-1,100,[JSON.stringify([b.ownerType,b.ownerId,b.topicId])]),corrupt);
+ await assert.rejects(()=>f.send('/api/v1/sync/source/pull?after_seq='+(receipt.seq-1)),corrupt);
+ assert.deepEqual(await phone.call('/conversations/'+b.key+'/events?after='+(receipt.seq-1),undefined,500),{error:{code:'SYNC_STORAGE_CORRUPT'}});
+ const baseline=await phone.call('/conversations/'+b.key+'/baseline',{requestId:'online-routing-baseline'});
+ assert.deepEqual(await phone.call('/conversations/'+b.key+'/baseline/'+baseline.id+'?after=0&limit=100',undefined,500),{error:{code:'SYNC_STORAGE_CORRUPT'}});
+ assert.deepEqual(await phone.call('/conversations/'+a.key+'?after='+(receipt.seq-1),undefined,500),{error:{code:'SYNC_STORAGE_CORRUPT'}});
+ assert.throws(()=>f.store.apply(op('wrong-routing')),corrupt);
+ const engine=f.portal.engine,topic=engine.topics.get(b.key);topic.agentAlias='synthetic-one';
+ const accepted=engine.accept('integrity-session',{topicKey:b.key,requestId:'integrity-context',text:'synthetic'});engine.endpoint={url:'http://127.0.0.1:1/v1/chat/completions',key:'synthetic'};await engine.run(engine.get(accepted.id));const job=engine.get(accepted.id);assert.equal(job.state,'failed');assert.equal(job.error_code,'SYNC_STORAGE_CORRUPT');assert.equal(job.request_dispatched,0);
+ // Group history uses the same barrier before context reaches any model.
+ const groupA={ownerType:'group',ownerId:'integrity-a',topicId:'t'},groupB={ownerType:'group',ownerId:'integrity-b',topicId:'t'};
+ const ga=f.store.apply(op('group-source',{...groupA,opId:'group-source'}));f.store.apply(op('group-healthy',{...groupB,opId:'group-healthy'}));f.store.db.prepare('UPDATE journal SET owner_id=? WHERE seq=?').run(groupB.ownerId,ga.seq);engine.topics.set('integrity-group',{key:'integrity-group',...groupB});
+ assert.throws(()=>require(BOX+'/Plugin/NativeSync/mobile/groupTurn').history(engine,{id:'integrity-group-job',topic_key:'integrity-group',ordinal:0,user_seq:f.store.metrics().headSeq}),corrupt);
+});
+
+test('projection head holes, mismatched heads and dangling newer journal rows are rejected without overwriting evidence',async t=>{
+ const f=await fixture(t),r=f.store.apply(op('head-check')),where=['agent',selected.itemId,selected.topicId,'head-check'];
+ const get=()=>f.store.findMessage.get(...where),set=f.store.db.prepare('UPDATE messages SET last_seq=? WHERE owner_type=? AND owner_id=? AND topic_id=? AND msg_id=?');
+ set.run(999999,...where);assert.throws(()=>f.store.projectMessage(get()),corrupt);set.run(r.seq,...where);
+ f.store.db.prepare('UPDATE journal SET hash=? WHERE seq=?').run('b'.repeat(64),r.seq);assert.throws(()=>f.store.projectMessage(get()),corrupt);f.store.db.prepare('UPDATE journal SET hash=? WHERE seq=?').run(r.hash,r.seq);
+ const original=f.store.db.prepare('SELECT * FROM journal WHERE seq=?').get(r.seq),columns=Object.keys(original).filter(k=>k!=='seq');const tail=Number(f.store.db.prepare('INSERT INTO journal('+columns.join(',')+') VALUES('+columns.map(()=>'?').join(',')+')').run(...columns.map(k=>original[k])).lastInsertRowid);
+ assert.throws(()=>f.store.projectMessage(get()),corrupt);assert.equal(get().last_seq,r.seq);assert.equal(f.store.db.prepare('SELECT seq FROM journal WHERE seq=?').get(tail).seq,tail);
+});
+
+test('all page associations share a read snapshot while a different connection commits a legitimate update',async t=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'native-read-snapshot-')),file=path.join(root,'central.sqlite'),reader=new CentralStore(file),writer=new CentralStore(file);t.after(async()=>{reader.close();writer.close();await fs.rm(root,{recursive:true,force:true});});
+ const v1=writer.apply(op('snapshot-concurrent',{message:message('snapshot-concurrent','before')}));
+ const result=reader.readSnapshot(()=>{
+  const rows=reader.db.prepare('SELECT * FROM messages').all();assert(reader.db.isTransaction);
+  writer.apply(op('snapshot-concurrent',{opId:'snapshot-after',baseHash:v1.hash,message:message('snapshot-concurrent','after')}));
+  return reader.projectRows(rows);
+ });assert.equal(result[0].content,'before');assert.equal(reader.readProjected(db=>db.prepare('SELECT * FROM messages').all())[0].message.content,'after');assert.equal(reader.db.isTransaction,false);
+});
+
+test('targeted verification uses indexed message identities and batches across the 128-row boundary',async t=>{
+ const f=await fixture(t);for(let i=0;i<129;i++)f.store.apply(op('batch-head-'+i));
+ const tuple=JSON.stringify([['agent',selected.itemId,selected.topicId,'batch-head-0']]);
+ for(const [statement,index]of [[f.store.readProjections,'sqlite_autoindex_messages'],[f.store.readLatestSeqs,'idx_journal_message']]){
+  const plan=f.store.db.prepare('EXPLAIN QUERY PLAN '+statement.sourceSQL).all(tuple).map(r=>r.detail).join('\n');assert(plan.includes(index),plan);assert(!/\bSCAN (?:m|j|messages|journal)\b/.test(plan),plan);
+ }
+ const sizes=[],original=f.store.readProjections.all.bind(f.store.readProjections);f.store.readProjections.all=(value)=>{sizes.push(JSON.parse(value).length);return original(value);};
+ const page=f.store.pull(0,500,[JSON.stringify(['agent',selected.itemId,selected.topicId])]);assert.equal(page.events.filter(e=>e.msgId.startsWith('batch-head-')).length,129);assert(sizes.length>=2);assert(sizes.every(n=>n<=128));
+});

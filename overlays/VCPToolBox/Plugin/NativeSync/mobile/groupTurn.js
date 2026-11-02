@@ -32,8 +32,8 @@ function accept(engine,sessionId,input,invitation=false){
  if(engine.db.prepare('SELECT count(*) AS n FROM mobile_executions WHERE session_id=? AND created_at>?').get(sessionId,Date.now()-60000).n>=20)throw fail('SUBMISSION_RATE_LIMIT',429);
  const config=engine.configs.snapshot(topic);if(!config?.group)throw fail('EXECUTION_CONFIG_REQUIRED');
  if(!modes[config.group.mode])throw fail('GROUP_MODE_REQUIRES_DESKTOP');
- const records=engine.db.prepare('SELECT * FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND deleted=0 ORDER BY last_seq').all(topic.ownerType,topic.ownerId,topic.topicId);
- const history=records.map(r=>engine.store.projectMessage(r)).sort((a,b)=>a.timestamp-b.timestamp).filter(m=>!m.isThinking);
+ const records=engine.store.readProjected(()=>engine.db.prepare('SELECT * FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND deleted=0 ORDER BY last_seq').all(topic.ownerType,topic.ownerId,topic.topicId));
+ const history=records.map(r=>r.message).sort((a,b)=>a.timestamp-b.timestamp).filter(m=>!m.isThinking);
  const now=Date.now(),msgId=invitation?'invite_'+id:'mobile_'+id;
  const files=attachments.length?(engine.attachments?engine.attachments.claim('mobile:'+sessionId,topicKey,attachments):(()=>{throw fail('ATTACHMENTS_NOT_ENABLED');})()):[];
  const message={id:msgId,role:'user',name:config.executionPolicy?.userName||'用户',content:text,timestamp:now,...(files.length?{attachments:files}:{})};
@@ -92,15 +92,17 @@ function recover(engine){
 }
 
 function history(engine,job){
+ return engine.store.readSnapshot(()=>{
  const topic=engine.topics.get(job.topic_key),prior=engine.db.prepare("SELECT rowid AS ordinal,* FROM mobile_executions WHERE topic_key=? AND kind IN ('group_message','group_invitation') AND rowid<=? ORDER BY rowid").all(job.topic_key,job.ordinal);
  const replies=new Map();for(const p of prior)replies.set(p.id,steps(engine,p.id).filter(s=>s.reply_message_id).map(s=>s.reply_message_id));
  const ids=[...replies.values()].flat();
- const records=engine.db.prepare(`SELECT * FROM (SELECT *,row_number() OVER(PARTITION BY msg_id ORDER BY seq DESC) AS r FROM journal WHERE owner_type=? AND owner_id=? AND topic_id=? AND (seq<=? OR msg_id IN (SELECT value FROM json_each(?)))) WHERE r=1 AND action='upsert' ORDER BY seq`).all(topic.ownerType,topic.ownerId,topic.topicId,job.user_seq,JSON.stringify(ids));
- const source=records.map(r=>engine.store.projectMessage(r)).sort((a,b)=>a.timestamp-b.timestamp),byId=new Map(source.map(m=>[m.id,m])),after=new Map(),relocated=new Set();
+ const records=engine.store.readProjected(()=>engine.db.prepare(`SELECT * FROM (SELECT *,row_number() OVER(PARTITION BY msg_id ORDER BY seq DESC) AS r FROM journal WHERE owner_type=? AND owner_id=? AND topic_id=? AND (seq<=? OR msg_id IN (SELECT value FROM json_each(?)))) WHERE r=1 AND action='upsert' ORDER BY seq`).all(topic.ownerType,topic.ownerId,topic.topicId,job.user_seq,JSON.stringify(ids)));
+ const source=records.map(r=>r.message).sort((a,b)=>a.timestamp-b.timestamp),byId=new Map(source.map(m=>[m.id,m])),after=new Map(),relocated=new Set();
  for(const p of prior){const anchor=p.anchor_message_id||p.user_message_id;if(!after.has(anchor))after.set(anchor,[]);for(const id of replies.get(p.id)||[])if(byId.has(id)){after.get(anchor).push(byId.get(id));relocated.add(id);}}
  const ordered=[];for(const m of source)if(!relocated.has(m.id)){ordered.push(m);if(after.has(m.id))ordered.push(...after.get(m.id));}
  for(const [anchor,items]of after)if(!byId.has(anchor))ordered.push(...items);
  return ordered;
+ });
 }
 
 function observe(engine){

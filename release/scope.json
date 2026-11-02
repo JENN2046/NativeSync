@@ -11,7 +11,9 @@
   ],
   "excludes": [
     "pure execution lifecycle adapter",
+    "packages/execution-decisions runtime integration (archived experiment only)",
     "predicate batching prototype",
+    "haltedTopics availability protocol (archived experiment only)",
     "poison-row skipping or republication",
     "production configuration and data"
   ],
