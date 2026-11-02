@@ -1,0 +1,302 @@
+{
+  "recordedAt": "2026-11-02T19:28:32.641119+08:00",
+  "status": "production-code-deployed-technical-checks-passed-phone-session-acceptance-pending",
+  "authorization": {
+    "productionUpgrade": "Explicit user approval of production maintenance and launch; user confirmed window starts now, new requests paused and work closing",
+    "newPhonePairing": "Explicit user approval for exact two-topic snapshot; no future scope expansion"
+  },
+  "candidate": {
+    "runtimeCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320",
+    "deploymentToolCommit": "fcdd2c609f6797a6864654c23fc2c6d1707a1c1b",
+    "originalZipSha256": "35b7e67055fb07b8d27221f231d77e8d9fb771b1774a0957055b187ec8c2cd30",
+    "manifestSha256": "91134a1656d23ee80b8aa3550fb0f85e8ab55e0893eece5590e4bded195dad95",
+    "toolkitSha256": "7ac1215200c2ff46e7e7f18c68df069c7d5511af2d70e2fb8404b31508414754"
+  },
+  "freshPreflight": {
+    "atUtc": "2026-11-02T10:46:53.926276+00:00",
+    "hostname": "VM-0-13-ubuntu",
+    "user": "ubuntu",
+    "fileMismatches": [],
+    "filesChecked": 61,
+    "units": {
+      "vcptoolbox.service": {
+        "ActiveState": "active",
+        "SubState": "running",
+        "InvocationID": "951c1501577548109ceeb05c21265128",
+        "MainPID": "1268927",
+        "Result": "success",
+        "NRestarts": "0",
+        "ExecMainStartTimestamp": "Mon 2026-11-02 18:03:59 CST"
+      },
+      "vcptoolbox-admin.service": {
+        "ActiveState": "active",
+        "SubState": "running",
+        "InvocationID": "a0bc1715d16340f8bd126be22dd341ca",
+        "MainPID": "1233828",
+        "Result": "success",
+        "NRestarts": "0",
+        "ExecMainStartTimestamp": "Mon 2026-11-02 16:41:41 CST"
+      }
+    },
+    "completeConfigurationSha256": "bce07af11223781966536bde31ff88cb25869839d9ee0f2845923b4b962a72d4",
+    "configurationMatchesReviewed": true,
+    "diskAvailableBytes": 918958080,
+    "stageExists": false,
+    "backupExists": false
+  },
+  "prestopRuntime": {
+    "atUtc": "2026-11-02T10:53:57.459Z",
+    "hostname": "VM-0-13-ubuntu",
+    "user": "ubuntu",
+    "mainPort": 6005,
+    "queryOnly": true,
+    "lifecycle": {
+      "httpStatus": 200,
+      "state": {
+        "state": "RUNNING",
+        "reason": null,
+        "startedAt": null,
+        "uptimeMsInState": 0,
+        "activeRequestCount": 0
+      }
+    },
+    "agentAssistant": {
+      "httpStatus": 200,
+      "activeCount": 0
+    },
+    "accepted": {
+      "messages": 44,
+      "journal": 47,
+      "applied_ops": 47,
+      "source_bindings": 1,
+      "mobile_executions": 1,
+      "mobile_native_tasks": 0,
+      "mobile_native_invocations": 0
+    },
+    "pending": {
+      "mobile": 0,
+      "nativeTasks": 0,
+      "nativeInvocations": 0
+    },
+    "headSeq": 47,
+    "sourceProgress": [
+      {
+        "observedAt": 1793616713514,
+        "pendingImports": 0,
+        "pendingOperations": 0,
+        "conflicts": 0,
+        "directoryErrors": 0,
+        "attachmentsPending": null
+      }
+    ],
+    "toolRecords": []
+  },
+  "stop": {
+    "atUtc": "2026-11-02T10:54:35.163855+00:00",
+    "operation": "normal-systemd-stop",
+    "before": {
+      "ActiveState": "active",
+      "SubState": "running",
+      "InvocationID": "951c1501577548109ceeb05c21265128",
+      "MainPID": "1268927",
+      "Result": "success",
+      "ExecMainStatus": "0"
+    },
+    "after": {
+      "ActiveState": "inactive",
+      "SubState": "dead",
+      "InvocationID": "951c1501577548109ceeb05c21265128",
+      "MainPID": "0",
+      "Result": "success",
+      "ExecMainStatus": "0"
+    },
+    "adminPidPreserved": true
+  },
+  "installation": {
+    "installationState": "installed",
+    "codeWrites": 20,
+    "runtimeTargetsVerified": 56,
+    "protectedHostFilesUnchanged": 5,
+    "configurationBytesUnchanged": true,
+    "dataRestored": false,
+    "backupRoot": "/opt/AGENTS_OS_Workspace/backups/NativeSync/144e0dc-20261102-r1",
+    "backupSha256": "8793583e07e4dd046591e099f6d71f420b4a35a86e6c67ed89aac3952869dadc",
+    "backupPermissionsPrivate": true,
+    "backupConsistentFactsMatched": true,
+    "units": {
+      "vcptoolbox.service": {
+        "ActiveState": "active",
+        "SubState": "running",
+        "InvocationID": "66d501524edf48279d560bcfeab672ca",
+        "MainPID": "1290317",
+        "Result": "success",
+        "NRestarts": "0",
+        "ExecMainStartTimestamp": "Mon 2026-11-02 18:56:05 CST"
+      },
+      "vcptoolbox-admin.service": {
+        "ActiveState": "active",
+        "SubState": "running",
+        "InvocationID": "a0bc1715d16340f8bd126be22dd341ca",
+        "MainPID": "1233828",
+        "Result": "success",
+        "NRestarts": "0",
+        "ExecMainStartTimestamp": "Mon 2026-11-02 16:41:41 CST"
+      }
+    },
+    "installedSourceCommit": "144e0dc4681dbd94410dd9a4a44d93c23f61e320"
+  },
+  "postcheck": {
+    "atUtc": "2026-11-02T10:59:01.928Z",
+    "lifecycle": {
+      "state": "RUNNING",
+      "reason": null,
+      "startedAt": null,
+      "uptimeMsInState": 0,
+      "activeRequestCount": 0
+    },
+    "database": {
+      "coreFacts": {
+        "messages": {
+          "rows": 44,
+          "sha256": "2ab01e5f8214070dbb1dcac725ec99e9c4f92913093c9e83275996fec73fa429"
+        },
+        "journal": {
+          "rows": 47,
+          "sha256": "f7a53a0bf8ed171a2728656c3ccb9243fd8806065352ed7c44550c66757547a0"
+        },
+        "applied_ops": {
+          "rows": 47,
+          "sha256": "c3f2565f5584a6550c92dc3344ce4279b2eeb75a1dcc26f202429c99d92ad961"
+        },
+        "source_bindings": {
+          "rows": 1,
+          "sha256": "acc5060da214f1d42252eddc494fff3db6ef974112fa6f4631d1295c94ed6966"
+        },
+        "owner_execution_configs": {
+          "rows": 1,
+          "sha256": "1bc8b926172fa0af76e144cb56ec6d6414095bb59ff0e99a1d7334c56165a332"
+        },
+        "mobile_executions": {
+          "rows": 1,
+          "sha256": "3ccd4c32dbff3476c14a7ce0c938f2823daea8d9073770e075cd93adcc1ef78e"
+        },
+        "mobile_native_tasks": {
+          "rows": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "mobile_native_invocations": {
+          "rows": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "newIndexes": [
+        "idx_journal_message",
+        "idx_mobile_execution_topic",
+        "idx_mobile_execution_request"
+      ],
+      "jsonGuards": 6,
+      "sourcePinsPreserved": true,
+      "unexpiredSessionsPreserved": true
+    },
+    "sourceHttp": {
+      "status": 200,
+      "executionMode": "selected",
+      "limitedTopics": 2,
+      "events": 47,
+      "pages": 1,
+      "nextSeq": 47,
+      "allIdentityAndHashesMatched": true
+    },
+    "modelToolOrSubmitRequestsMade": false,
+    "backupSnapshotSha256": "8793583e07e4dd046591e099f6d71f420b4a35a86e6c67ed89aac3952869dadc"
+  },
+  "publicRoutes": [
+    {
+      "route": "/mobile/",
+      "status": 200,
+      "bytes": 931,
+      "sha256": "26e51591ccddea653a1320a7fe79eff0a98eae76a1b7f805a7fd97662caf44b1",
+      "cache": "DYNAMIC",
+      "contentType": "text/html; charset=utf-8",
+      "newAssetReferenced": true,
+      "seconds": 0.899
+    },
+    {
+      "route": "/mobile/manifest.webmanifest",
+      "status": 200,
+      "bytes": 433,
+      "sha256": "fb11d99176f326ae1c0d49ff8a7b890c599dff37522594f6a8159402bbea7456",
+      "cache": "DYNAMIC",
+      "contentType": "application/manifest+json; charset=utf-8",
+      "seconds": 1.647
+    },
+    {
+      "route": "/mobile/assets/index-BcpsuVsp.js",
+      "status": 200,
+      "bytes": 121613,
+      "sha256": "17b5f2aba78d1b76e46481e08c64c12a4594dcb4eaaca7245ec3108423b6a815",
+      "cache": "MISS",
+      "contentType": "text/javascript; charset=utf-8",
+      "seconds": 2.847
+    },
+    {
+      "route": "/mobile/assets/index-RI3Q4bWS.css",
+      "status": 200,
+      "bytes": 6710,
+      "sha256": "072013480e5cbe7907b4a6adc6026d5103908e68f175479fe61ab2110999b7bd",
+      "cache": "MISS",
+      "contentType": "text/css; charset=utf-8",
+      "seconds": 1.471
+    },
+    {
+      "route": "/mobile/api/session",
+      "status": 401,
+      "seconds": 1.287
+    }
+  ],
+  "phone": {
+    "productionLandingPageUserConfirmedFast": true,
+    "originalIconUserReportedOldTestIcon": true,
+    "oldIconActualStartUrlNotCaptured": true,
+    "oldLocalPortsNotListeningAtDiagnosis": true,
+    "oldPairWasExpiredAndUnused": true,
+    "serverErrorMessageForInvalidPairingIsGeneric": true,
+    "latestPairStatus": {
+      "used": 0,
+      "expired": true,
+      "scopeCount": 2,
+      "atUtc": "2026-11-02T11:28:32.616Z"
+    },
+    "pairedPhoneHistoryAcceptanceCompleted": false,
+    "scopeSnapshotTopics": 2,
+    "noPairCodeCookieOrKeyInThisRecord": true,
+    "publicPairRouteProbe": {
+      "intent": "one negative pairing probe; syntactically invalid code cannot issue a session",
+      "credentialsSent": false,
+      "realPairingCodeSent": false,
+      "status": 401,
+      "apiErrorCode": "INVALID_PAIRING",
+      "seconds": 2.98,
+      "reachedPairingApi": true
+    },
+    "pairingCodesAreExpiredPendingUserReady": true
+  },
+  "maintenanceNotes": {
+    "adminServiceNotRestarted": true,
+    "noProductionRollbackPerformed": true,
+    "databaseStateCursorOrBindingRestored": false,
+    "noRealModelToolOrChatSubmitRequestsInitiatedByAssistant": true,
+    "productionResumedOtherWorkDuringPhoneDiagnosis": true,
+    "noPersistentServerKeyPasswordCookieOrPrivateKeyPrinted": true,
+    "oneTimePairingCodesDisplayedAtExplicitUserRequest": true
+  },
+  "knownBoundary": "shared msg_id old-history ownership misassignment still not authenticated; not a golden baseline",
+  "scopePreserved": {
+    "sourceLimitedTopics": 2,
+    "allSupportedEnabled": false,
+    "attachmentsEnabled": false,
+    "unexpiredPriorSessionsPreserved": true
+  },
+  "remoteBackup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/144e0dc-20261102-r1",
+  "localEvidence": "/home/jenn/NativeSync/.local/production-deploy-20261102T104653Z"
+}
