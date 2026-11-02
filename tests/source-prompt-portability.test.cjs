@@ -36,3 +36,23 @@ test('selected legacy alias retains its existing context policy',async t=>{
  const f=fixture(t,{source:false,prompt:'Legacy {{VCPChatWorkSpace}}'}),config=await f.configs.normalize(f.topic,f.input);
  assert.equal(config.systemPrompt,'Legacy {{VCPChatWorkSpace}}');assert.equal(config.authority,undefined);
 });
+const workspaceRule=(extra={})=>({id:'workspace',type:'system_suffix',scope:'global',enabled:true,content:'{{VCPChatWorkSpace}}',...extra});
+test('active workspace Tavern rule rejects portable source prompt before publishing',async t=>{
+ const f=fixture(t);
+ await assert.rejects(f.configs.publish({topics:[{ownerType:'agent',ownerId:'owner',topicId:'history',expectedVersion:0,config:{...f.input,tavernRules:[workspaceRule()]}}]}),{code:'DESKTOP_CONTEXT_REQUIRED'});
+ assert.equal(f.configs.public('topic').configError,'DESKTOP_CONTEXT_REQUIRED');
+});
+test('already accepted source snapshot with active workspace rule is unavailable',async t=>{
+ const f=fixture(t),config=await f.configs.normalize(f.topic,f.input);config.tavernRules=[workspaceRule()];
+ const hash=sha256(stable(config));f.db.prepare('INSERT INTO owner_execution_configs VALUES(?,?,?,?,?)').run('topic',1,hash,JSON.stringify(config),1);
+ assert.throws(()=>f.configs.snapshot(f.topic),{code:'DESKTOP_CONTEXT_REQUIRED'});
+});
+test('disabled and other-scope workspace rules do not block source single chat',async t=>{
+ const f=fixture(t),config=await f.configs.normalize(f.topic,{...f.input,tavernRules:[workspaceRule({enabled:false}),workspaceRule({scope:'group'})]});
+ assert.equal(config.tavernRules.length,2);
+});
+test('source group checks group rule scope without applying agent-only rules',async t=>{
+ const f=fixture(t),group={...f.topic,ownerType:'group',ownerId:'group',memberAliases:{owner:'Native'}},input={group:{name:'Group',members:['owner'],mode:'sequential'},agents:[{id:'owner',...f.input}]};
+ await assert.rejects(f.configs.normalize(group,{...input,tavernRules:[workspaceRule()]}),{code:'DESKTOP_CONTEXT_REQUIRED'});
+ assert.equal((await f.configs.normalize(group,{...input,tavernRules:[workspaceRule({scope:'agent'})]})).group.mode,'sequential');
+});

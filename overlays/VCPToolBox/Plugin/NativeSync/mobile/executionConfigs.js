@@ -3,6 +3,13 @@ const { stable, sha256 } = require('../sync/protocol');
 const fail = (code, status = 409) => Object.assign(new Error(code), { code, status });
 const fields = ['name','systemPrompt','model','temperature','contextTokenLimit','maxOutputTokens','tavernRules','executionPolicy','streamOutput'];
 const groupFields = ['name','members','mode','memberTags','groupPrompt','invitePrompt','useUnifiedModel','unifiedModel','enableContextMessageWindow','contextMessageWindowSize','tagMatchMode','createdAt','modeSettings','sequentialSpeakerOrder'];
+const tavern = require('../nativeRules/modules/tavernRulesEngine');
+const needsDesktop = text => /\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(text||'');
+function assertSourcePortable(config) {
+    const scope=config.group?'group':'agent';
+    const prompts=[config.systemPrompt,config.group?.groupPrompt,config.group?.invitePrompt,...(config.agents||[]).map(a=>a.systemPrompt)];
+    if(prompts.some(needsDesktop)||(config.tavernRules||[]).some(r=>tavern.isRuleActive(r,scope)&&needsDesktop(r.content)))throw fail('DESKTOP_CONTEXT_REQUIRED');
+}
 
 // Private immutable execution inputs, not another Agent registry. Identity and
 // alias authority remain the explicit host topic scope and native AgentManager.
@@ -57,7 +64,9 @@ class ExecutionConfigs {
             if (group.memberTags && (typeof group.memberTags!=='object'||Array.isArray(group.memberTags)||Object.entries(group.memberTags).some(([id,tags])=>!group.members.includes(id)||typeof tags!=='string'))) throw fail('INVALID_GROUP_CONFIG',400);
             if (group.useUnifiedModel && (typeof group.unifiedModel!=='string'||!group.unifiedModel.trim())) throw fail('INVALID_GROUP_CONFIG',400);
             if (this.hasAgentReference(group.groupPrompt||'').length || this.hasAgentReference(group.invitePrompt||'').length) throw fail('CONFIG_PROMPT_AUTHORITY_CONFLICT');
-            return {name:group.name,group:JSON.parse(JSON.stringify(group)),agents,...(authority?{authority}:{}),imageModels:Array.isArray(imageModels)?imageModels.filter(m=>typeof m==='string'):[],executionPolicy:this.policy(input.executionPolicy),tavernRules:this.rules(input.tavernRules),model:group.useUnifiedModel?group.unifiedModel:agents.find(a=>!a.unavailable)?.model||null,promptPolicy:'desktop'};
+            const value={name:group.name,group:JSON.parse(JSON.stringify(group)),agents,...(authority?{authority}:{}),imageModels:Array.isArray(imageModels)?imageModels.filter(m=>typeof m==='string'):[],executionPolicy:this.policy(input.executionPolicy),tavernRules:this.rules(input.tavernRules),model:group.useUnifiedModel?group.unifiedModel:agents.find(a=>!a.unavailable)?.model||null,promptPolicy:'desktop'};
+            if(authority)assertSourcePortable(value);
+            return value;
         }
         if (!input || Object.keys(input).some(k => !fields.includes(k)) || topic.ownerType !== 'agent') throw fail('INVALID_EXECUTION_CONFIG',400);
         if (!authority&&(!topic.agentAlias || !this.agentManager.isAgent(topic.agentAlias))) throw fail('AGENT_NOT_CONFIGURED');
@@ -74,8 +83,8 @@ class ExecutionConfigs {
             if(typeof prompt!=='string'||!prompt||references(prompt).length||prompt.startsWith('[AgentManager:')||prompt===input.systemPrompt)throw fail('CONFIG_PROMPT_SNAPSHOT_UNAVAILABLE');
             promptPolicy='native-alias-snapshot';
         }
-        if(authority&&/\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(prompt))throw fail('DESKTOP_CONTEXT_REQUIRED');
         const value = {name:input.name,systemPrompt:prompt,...(authority?{authority}:{}),...(promptTemplate?{promptTemplate}:{}),model:input.model.trim(),executionPolicy:this.policy(input.executionPolicy),streamOutput:input.streamOutput===true||input.streamOutput==='true',promptPolicy,...(topic.agentAlias?{agentAlias:topic.agentAlias}:{}),imageSupported:Array.isArray(imageModels)&&imageModels.includes(input.model),tavernRules:this.rules(input.tavernRules)};
+        if(authority)assertSourcePortable(value);
         for (const [key,min,max] of [['temperature',0,2],['contextTokenLimit',1,2000000],['maxOutputTokens',1,2000000]]) {
             if (input[key] !== undefined) {
                 if (!Number.isFinite(input[key]) || input[key] < min || input[key] > max || (key !== 'temperature' && !Number.isSafeInteger(input[key]))) throw fail('INVALID_EXECUTION_CONFIG',400);
@@ -140,7 +149,7 @@ class ExecutionConfigs {
         if(config.authority){
             const expected=this.authority(topic);
             if(!expected||stable(expected)!==stable(config.authority))throw fail('EXECUTION_CONFIG_IDENTITY_MISMATCH');
-            for(const value of [config,...(config.agents||[])])if(/\{\{VCPChat(?:Canvas|WorkSpace)(?::[^{}]*)?\}\}/.test(value.systemPrompt||''))throw fail('DESKTOP_CONTEXT_REQUIRED');
+            assertSourcePortable(config);
             for(const member of config.agents||[])if(!member.unavailable&&stable(member.authority)!==stable(this.memberAuthority(topic,member.id)))throw fail('EXECUTION_CONFIG_IDENTITY_MISMATCH');
         }
         return snapshot;
