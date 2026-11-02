@@ -281,7 +281,13 @@
     },
     "pairingCodesAreExpiredPendingUserReady": false,
     "userConfirmedTopicsAndHistory": true,
-    "productionSendAttachmentsAndStandaloneReopenAcceptanceCompleted": false
+    "productionSendAttachmentsAndStandaloneReopenAcceptanceCompleted": false,
+    "productionChromeReopenUserConfirmed": {
+      "noRePairing": true,
+      "twoTopicsAndHistoryRetained": true,
+      "evidence": "explicit user confirmation",
+      "standaloneInstalledAppReopenVerified": false
+    }
   },
   "maintenanceNotes": {
     "adminServiceNotRestarted": true,
