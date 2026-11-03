@@ -1,0 +1,147 @@
+{
+  "sourceCommit": "00d7c9a063fb05df44d80d51c5014135edcdf141",
+  "candidateSha256": "8cdd4d2a65820d62903278d6406d20d41550c004a2e1fc1b64b83a912966dbec",
+  "windowsInstallExecuted": true,
+  "productionInstallExecuted": true,
+  "windowsFilesChanged": 3,
+  "productionPathsChanged": 7,
+  "productionBackup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/source-data-v2-20261103",
+  "productionSQLiteSnapshotSha256": "bc547626e253d6b3434db4b363f69f2489ca082f72ad6610c98cde49839a01d7",
+  "windowsBackup": "P:\\NativeSync-Local-Backups\\QLL6-source-data-v2-20261103T135131392Z",
+  "windowsSQLiteSnapshotSha256": "5d8a45793e5149e518e3e0655daca7c786874798262314f935aa6ca58bb8e5fb",
+  "windowsDataFilesPreservedDuringInstall": 99,
+  "sourceHistoryAcceptance": {
+    "topics": 32,
+    "completed": 32,
+    "originalMessages": 809,
+    "localAndServerIdentityContentHashMatches": 809,
+    "cursor": 1175,
+    "inbox": 0,
+    "outbox": 0,
+    "pending": false,
+    "drift": 0,
+    "originalPlanIdPreserved": true,
+    "originalPlanLocalIndexFrom": 0,
+    "originalPlanLocalIndexTo": 65
+  },
+  "originalServerRowsPreserved": {
+    "messages": 1105,
+    "journal": 1110,
+    "applied_ops": 1110
+  },
+  "ordinaryAttachmentOccurrences": {
+    "available-hash-match": 14,
+    "unsupported": 2
+  },
+  "desktopReferencesPreserved": 63,
+  "desktopReferenceHistoricalTextBytesPreserved": 6155669,
+  "groupRawAttachmentOccurrencesPreserved": 70,
+  "groupUniqueOrdinaryMetadataEntries": 6,
+  "storageCheck": {
+    "mode": "read-only",
+    "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+    "checked": {
+      "messages": 1170,
+      "journal": 1175,
+      "applied_ops": 1175
+    },
+    "issues": 0,
+    "samples": [],
+    "sampleLimit": 20,
+    "ok": true
+  },
+  "oldMobileSessionsPreserved": 4,
+  "oldPairingsPreserved": 11,
+  "newJointPairingAuthorized": true,
+  "newJointPairingRedeemed": true,
+  "jointSources": [
+    {
+      "sourceId": "source_linux_jenn_1eec0097677c4768",
+      "topics": 24
+    },
+    {
+      "sourceId": "source_a0b7cf2e3e7feebb23508a4d",
+      "topics": 32
+    }
+  ],
+  "futureTopicsAuthorized": true,
+  "oldMobileScopesExpanded": false,
+  "sourceBindingsAndPreviousExecutionRowsUnchanged": true,
+  "androidDirectoryUserConfirmed": true,
+  "androidGroupFileAndReopenAcceptance": "not accepted: user reports slow/laggy sessions with many messages",
+  "publicPythonProbes": "Cloudflare 403; no policy changes",
+  "originStaticHashesMatched": true,
+  "realModelOrToolRequestsSentByAgent": 0,
+  "windowsForcedExitPrecededConsistentBackup": true,
+  "databaseStateOrCursorRestored": false,
+  "freshAvailableBytesAtClosure": 379084800,
+  "configurationIssues": {
+    "publishedWithoutIssue": 1,
+    "reasons": {
+      "CONFIG_PROMPT_SNAPSHOT_UNAVAILABLE": 31
+    }
+  },
+  "evidence": [
+    {
+      "path": ".local/source-data-v2-20261103/PRODUCTION_INSTALL.json",
+      "sha256": "a7d7bb39ee30e503eafef569f8bfce148a06e2e04fa6684c49e0a8ae41b767cd"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/WINDOWS_INSTALL.json",
+      "sha256": "0bc47ec23396d300032669237e5fb4035a076278aa89f680276aa4032a01e3b2"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/WINDOWS_PROGRESS_FINAL.json",
+      "sha256": "b699bf24a9a8bfe5786e21761b8de933470ae99f3a36a6367e378625afe6135c"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/SERVER_ACCEPTANCE_LATEST.json",
+      "sha256": "9883e7413306512c69236d43edf07167e8706e5cd192711efdc4afcb88ef9082"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/INSTALLED_FILES_VERIFIED.json",
+      "sha256": "ce701728e826eaa085a5415a3335c5b595d842c1f31d87aeca84f83f5360f251"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/LOCAL_DATA_PRESERVED_FINAL.json",
+      "sha256": "db795383c5bfba26a3dccea828761d18bc022a57e4ee38ac3d8ee47254fb191c"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/GROUP_PRESERVATION_AFTER_INSTALL.json",
+      "sha256": "91f0a60feaa000df7353f1f5430eaa2ffb211da223758da8ca30d59cff843e6a"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/ATTACHMENT_RESULTS_AFTER_INSTALL.json",
+      "sha256": "4b8094ca0278969dde93671836fc2d353340c7dec5db66e687326f0e5e698e49"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/STORAGE_CHECK_AFTER_INSTALL.json",
+      "sha256": "7fcd3fa1b0361a9bcff1fb477ae9266a253301897c0dd881a188118859609767"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/EXECUTIONS_AND_BINDINGS_PRESERVED.json",
+      "sha256": "629745a59465bee26dc7292aa3dab57169c3780af009715d7f89a353e3d495cb"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/JOINT_PAIRING_RECEIPT.json",
+      "sha256": "4b75a240c80bfec9dd4057455766fea2cf45fefead4dc36022b0d62f85e8249e"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/JOINT_PHONE_SESSION_VERIFIED.json",
+      "sha256": "6a65292c4ef0d57e0fb23530ad940f5dcb4227ff223b457793fc72ad6e36a3b5"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/PUBLIC_HTTPS_PROBE.json",
+      "sha256": "75498217f306725c29668e603ca408361005be4a4e990f75e56d8c68051a5291"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/ORIGIN_STATIC_VERIFIED.json",
+      "sha256": "bb3026790d6e4e762ea35276aaf0c77ff5134def4c03c008677f38c196826388"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/PRODUCTION_IDLE_FINAL.json",
+      "sha256": "0f1e0c09e7e24baaef7839367d6039ece4e2498e6206e9544509c7dd395a08b3"
+    }
+  ],
+  "androidPerformanceIssueUserReported": true
+}
