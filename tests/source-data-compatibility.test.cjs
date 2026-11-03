@@ -9,6 +9,12 @@ function nativeMessage(){
  const refs=Array.from({length:63},(_,i)=>({name:'reference-'+i+'.js',type:'text/javascript',_fileManagerData:{id:'ref-'+i,isLiveReference:true,hash:'live:'+i,sourcePath:'/DO_NOT_READ_WORKSPACE/'+i,workspaceRef:{workspaceId:'synthetic-work',alias:'Synthetic',relPath:'src/file-'+i+'.js'},extractedText:'SYNTHETIC_HISTORICAL_TEXT_NOT_FOR_TRANSPORT\n'.repeat(2500),imageFrames:Array(11).fill('UNPUBLISHED_FRAME')}}));
  return {...message('with-references','Unchanged native body'),attachments:[ordinary(0),...refs,...Array.from({length:6},(_,i)=>ordinary(i+1))]};
 }
+// Match the three simultaneous real-data boundaries without copying private data.
+function combinedNativeMessage({large=true}={}){
+ const raw=nativeMessage(),first=raw.attachments[0];first.nativeOccurrence='first';first._fileManagerData.extractedText='T'.repeat(1205732);
+ const duplicate=structuredClone(first);duplicate.nativeOccurrence='second';raw.attachments[69]=duplicate;
+ raw.content=large?'\n'.repeat(500000)+'G'.repeat(8082401):'Synthetic duplicate references';return raw;
+}
 function sealed(raw){const m=canonicalSourceSnapshot(raw,'t'),envelope=metadata.envelopeFor(m,1);return {...m,_nativeSyncMetadata:envelope};}
 function sourceHeaders(f,extra={}){return{Authorization:'Bearer synthetic-only','Content-Type':'application/json','X-NativeSync-Source':'sourceA','X-NativeSync-Device':'deviceA','X-NativeSync-Space':f.connection.spaceId,'X-NativeSync-Protocol':'2',...extra};}
 
@@ -23,14 +29,61 @@ test('native references project without historical text, retain native handles o
  const ordinary={...message('ordinary'),attachments:[{name:'broken.txt',type:'text/plain',hash:'bad'}]};assert.throws(()=>protocol.canonicalMessage(ordinary,'t'),/INVALID_ATTACHMENT/);
 });
 
-test('source push accepts bounded 3 MiB, preserves lost-response op replay and refuses over 4 MiB',async t=>{
+test('identical repeated attachment metadata is shared without losing occurrences; conflicts and bounds still reject',()=>{
+ const raw=combinedNativeMessage({large:false}),wire=sealed(raw),fields=wire._nativeSyncMetadata.fields;
+ assert.equal(wire.attachments.length,7);assert.equal(fields.attachmentData.length,6);assert.equal(wire.attachments.filter(a=>a.id===wire.attachments[0].id).length,2);assert(Buffer.byteLength(protocol.stable(fields))>768000);assert(Buffer.byteLength(protocol.stable(fields))<2*1024*1024);metadata.validateEnvelope(wire,wire._nativeSyncMetadata);assert(metadata.requiresSourceDataV2(wire));
+ const restored=materializeSourceMessage(raw,wire,'t');assert.deepEqual(restored.attachments,raw.attachments);
+ const edited=materializeSourceMessage(raw,{...wire,content:'Edited remote body'},'t');assert.equal(edited.attachments[0].nativeOccurrence,'first');assert.equal(edited.attachments[69].nativeOccurrence,'second');assert.equal(edited.attachments[0]._fileManagerData.extractedText,raw.attachments[0]._fileManagerData.extractedText);assert.equal(edited.attachments[69]._fileManagerData.extractedText,raw.attachments[69]._fileManagerData.extractedText);
+ for(const [key,value]of [['contentHash','f'.repeat(64)],['extractedText','conflicting text'],['frameHashes',['e'.repeat(64)]]]){const bad=structuredClone(wire);bad.attachments[6][key==='contentHash'?'hash':key]=value;assert.throws(()=>metadata.fieldsFrom(bad),e=>e.code==='INVALID_ATTACHMENT_METADATA');assert.throws(()=>protocol.canonicalMessage(bad,'t'),e=>e.code==='INVALID_ATTACHMENT_METADATA');}
+ const tooLarge={...message('metadata-bound'),attachments:[{id:'a',hash:'a'.repeat(64),name:'large.txt',type:'text/plain',extractedText:'x'.repeat(2*1024*1024)}]};assert.throws(()=>metadata.fieldsFrom(tooLarge),e=>e.code==='CONTROL_METADATA_TOO_LARGE');
+ assert.throws(()=>metadata.fieldsFrom({...message('control-bound'),role:'assistant',tool_calls:[{id:'c',type:'function',function:{name:'synthetic',arguments:'x'.repeat(768000)}}]}),e=>e.code==='CONTROL_METADATA_TOO_LARGE');
+});
+
+test('combined 8.58 MB body, repeated ordinary file and 63 references recover the original import operation after lost response',async t=>{
+ const f=await fixture(t,{scope:{mode:'full'},bodyLimit:'300mb'});await f.adopt();await f.pump();const group={itemType:'group',itemId:'large-group',topicId:'combined'},raw=combinedNativeMessage(),rows=Array.from({length:65},(_,i)=>i===60?raw:message('group-'+i));
+ await f.owner('large-group',{type:'group',topics:[{id:'combined',name:'Synthetic combined group'}]});await f.history(group,rows);await f.sync.discover();f.network.dropPush=1;f.network.dropPushId=raw.id;
+ for(let i=0;i<20&&f.network.dropPush;i++)await f.sync.tick();assert.equal(f.network.dropPush,0,'the target operation must actually be accepted before its response is dropped');const first=f.sent.find(s=>/push$/.test(s.route)&&s.body?.msgId===raw.id).body,plan=f.sync.plan(group).id,metrics=f.store.metrics();assert(Buffer.byteLength(JSON.stringify(first))>13*1024*1024);assert(Buffer.byteLength(JSON.stringify(first))<16*1024*1024);assert.equal(f.sync.plan(group).localIndex,60);
+ await f.close();await f.open();assert.equal(f.sync.plan(group).id,plan);await f.pump(40);
+ const attempts=f.sent.filter(s=>/push$/.test(s.route)&&s.body?.msgId===raw.id);assert.equal(attempts.length,2);assert.equal(attempts[0].body.opId,attempts[1].body.opId);assert.equal(protocol.stable(attempts[0].body),protocol.stable(attempts[1].body));assert.equal(f.store.metrics().journalRows,metrics.journalRows+4);
+ const accepted=f.cloudRows(group).filter(e=>e.msgId===raw.id);assert.equal(accepted.length,1);assert.equal(accepted[0].message.content,raw.content);assert.equal(accepted[0].message.attachments.length,7);assert.equal(accepted[0].message._nativeSyncMetadata.fields.attachmentData.length,6);assert.equal(accepted[0].message.desktopReferences.length,63);
+ const local=(await f.queue.read(group)).find(m=>m.id===raw.id);assert.deepEqual(local.attachments,raw.attachments);assert.equal(local.content,raw.content);assert.equal(f.adapter.state.inbox.length,0);assert.equal(f.adapter.state.outbox.length,0);assert.equal(f.sync.snapshots.size,0);f.assertOldFacts();
+ const response=await fetch(f.connection.url+'/api/v1/sync/source/push',{method:'POST',headers:sourceHeaders(f,{'X-NativeSync-Capabilities':cap+',source-data-v2'}),body:JSON.stringify({...wireTopic(group),deviceId:'deviceA',opId:'oversized-server-probe',action:'upsert',baseHash:null,msgId:'oversized-server',message:message('oversized-server','x'.repeat(16*1024*1024))})});assert.equal(response.status,413);assert.equal((await response.json()).error.code,'BODY_TOO_LARGE');
+});
+
+test('source-data v2 gates publishing and every history page, including small duplicate-only rows, while ordinary tombstones stay compatible',async t=>{
+ const f=await fixture(t,{scope:{mode:'full'}});await f.adopt();await f.pump();const a={id:'same',hash:'a'.repeat(64),name:'a.txt',type:'text/plain',size:1,extractedText:'same text'},m=sealed({...message('small-duplicate'),attachments:[a,{...a}]}),op={...wireTopic(selected),deviceId:'deviceA',opId:'duplicate-operation',action:'upsert',baseHash:null,msgId:m.id,message:m,metadata:m._nativeSyncMetadata};
+ const post=async(headers,body=op)=>fetch(f.connection.url+'/api/v1/sync/push',{method:'POST',headers,body:JSON.stringify(body)});
+ const old=await post(sourceHeaders(f,{'X-NativeSync-Capabilities':cap}));assert.equal(old.status,409);assert.equal((await old.json()).error.code,'SOURCE_DATA_CLIENT_UPGRADE_REQUIRED');
+ const selectedHeaders={Authorization:'Bearer synthetic-only','Content-Type':'application/json','X-NativeSync-Protocol':'2','X-NativeSync-Topics':Buffer.from(JSON.stringify([['agent','one','selected']])).toString('base64url'),'X-NativeSync-Capabilities':cap+',source-data-v2'};const selectedResponse=await post(selectedHeaders);assert.equal(selectedResponse.status,409);assert.equal((await selectedResponse.json()).error.code,'SOURCE_DATA_SOURCE_REQUIRED');
+ const accepted=await f.send('/api/v1/sync/push',{body:op});const info=await f.send('/api/v1/sync/source/info?sourceId=sourceA&deviceId=deviceA');assert.equal(info.maxOperationBytes,16*1024*1024);assert.equal(info.maxMetadataBytes,2*1024*1024);assert.equal(info.sourceDataV2,true);
+ const desktop=await fetch(f.connection.url+'/api/v1/sync/source/pull?after_seq=0&limit=100',{headers:sourceHeaders(f,{'X-NativeSync-Capabilities':cap})});assert.equal(desktop.status,409);assert.equal((await desktop.json()).error.code,'SOURCE_DATA_CLIENT_UPGRADE_REQUIRED');
+ const baseline=await f.send('/api/v1/sync/source/baselines',{body:{planId:require('node:crypto').randomUUID(),...wireTopic(selected)}});const page=await fetch(f.connection.url+'/api/v1/sync/source/baselines/'+baseline.id,{headers:sourceHeaders(f,{'X-NativeSync-Capabilities':cap})});assert.equal(page.status,409);
+ const topic=f.portal.topics.find(x=>x.ownerId==='one'&&x.topicId==='selected'),pair=f.portal.createPairing({scopeMode:'source',sourceId:'sourceA'}),headers={'X-Forwarded-Proto':'https',Origin:'https://synthetic-mobile.invalid','Content-Type':'application/json'};const paired=await fetch(f.connection.url+'/mobile/api/pair',{method:'POST',headers,body:JSON.stringify({code:pair.pairingCode})});const cookie=paired.headers.get('set-cookie').split(';')[0];
+ for(const suffix of ['', '/events?after=0']){const result=await fetch(f.connection.url+'/mobile/api/conversations/'+topic.key+suffix,{headers:{...headers,Cookie:cookie,'X-NativeSync-Capabilities':cap}});assert.equal(result.status,409);assert.equal((await result.json()).error.code,'SOURCE_DATA_CLIENT_UPGRADE_REQUIRED');}
+ const mobileBaseline=await(await fetch(f.connection.url+'/mobile/api/conversations/'+topic.key+'/baseline',{method:'POST',headers:{...headers,Cookie:cookie},body:JSON.stringify({requestId:'duplicate-baseline'})})).json();const route=f.connection.url+'/mobile/api/conversations/'+topic.key+'/baseline/'+mobileBaseline.id;assert.equal((await fetch(route,{headers:{...headers,Cookie:cookie,'X-NativeSync-Capabilities':cap}})).status,409);assert.equal((await fetch(route,{headers:{...headers,Cookie:cookie,'X-NativeSync-Capabilities':cap+',source-data-v2'}})).status,200);
+ await f.send('/api/v1/sync/push',{body:{...op,opId:'delete-duplicate',action:'delete',baseHash:accepted.hash,message:undefined,metadata:undefined}});const deleted=await fetch(f.connection.url+'/api/v1/sync/source/pull?after_seq='+accepted.seq+'&limit=100',{headers:sourceHeaders(f,{'X-NativeSync-Capabilities':cap})});assert.equal(deleted.status,200);assert.equal((await deleted.json()).events[0].message,null);
+ const unapproved=await fetch(f.connection.url+'/api/v1/sync/source/pull?after_seq=0',{headers:sourceHeaders(f,{'X-NativeSync-Device':'wrong-device','X-NativeSync-Capabilities':cap+',source-data-v2'})});assert.equal(unapproved.status,403);
+});
+
+test('source push accepts bounded 3 MiB, preserves lost-response op replay and refuses over 16 MiB',async t=>{
  const f=await fixture(t,{scope:{mode:'full'}});await f.adopt();await f.pump();
  const op={...wireTopic(selected),deviceId:'deviceA',opId:'large-original-operation',action:'upsert',baseHash:null,msgId:'large',message:message('large','中'.repeat(1000000))},before=f.store.metrics();
  const accepted=await f.send('/api/v1/sync/push',{body:op}); // The client may lose this accepted response.
  await f.close();await f.open();const retry=await f.send('/api/v1/sync/push',{body:op});assert.equal(retry.seq,accepted.seq);assert.equal(retry.hash,accepted.hash);assert.equal(retry.replayed,true);assert.equal(f.store.metrics().journalRows,before.journalRows+1);await f.adapter.synchronize();assert.equal((await f.queue.read(selected)).find(m=>m.id==='large').content,op.message.content);assert.equal(f.store.pull(0,500).events.find(e=>e.msgId==='large').message.content,op.message.content);
- await assert.rejects(()=>f.send('/api/v1/sync/push',{body:{...op,opId:'too-large',msgId:'too-large',message:message('too-large','x'.repeat(4*1024*1024))}}),e=>e.code==='BODY_TOO_LARGE'&&e.status===413);
+ await assert.rejects(()=>f.send('/api/v1/sync/push',{body:{...op,opId:'too-large',msgId:'too-large',message:message('too-large','x'.repeat(16*1024*1024))}}),e=>e.code==='BODY_TOO_LARGE'&&e.status===413);
  const legacy=await fetch(f.connection.url+'/api/v1/sync/push',{method:'POST',headers:{Authorization:'Bearer synthetic-only','Content-Type':'application/json','X-NativeSync-Topics':Buffer.from(JSON.stringify([['agent','one','selected']])).toString('base64url')},body:JSON.stringify({...op,opId:'legacy-large',message:message('large','x'.repeat(2*1024*1024))})});assert.equal(legacy.status,413);
  const foreign=await fetch(f.connection.url+'/api/v1/sync/source/push',{method:'POST',headers:sourceHeaders(f,{'X-NativeSync-Device':'other-device'}),body:JSON.stringify({...op,opId:'foreign-device'})});assert.equal(foreign.status,403);assert.equal(f.store.metrics().journalRows,before.journalRows+1);
+});
+
+test('source-data v2 negotiation checks identity and both bounds before publishing even envelope-only metadata',async t=>{
+ const connection={url:'http://127.0.0.1:1',token:'synthetic',scopeMode:'source',sourceId:'sourceA',deviceId:'deviceA',spaceId:'spaceA'},m=sealed({...message('envelope-only'),attachments:[{id:'a',hash:'a'.repeat(64),name:'a.txt',type:'text/plain',extractedText:'x'.repeat(800000)}]});delete m.attachments[0].extractedText;
+ const body={message:m,metadata:m._nativeSyncMetadata};let posts=0,info={version:1,sourceId:'sourceA',deviceId:'deviceA',spaceId:'spaceA',desktopReferences:true,maxOperationBytes:4*1024*1024};
+ t.mock.method(globalThis,'fetch',async(url,options)=>{if(options.method==='POST'){posts++;assert(options.headers['X-NativeSync-Capabilities'].includes('source-data-v2'));return new Response('{}');}return new Response(JSON.stringify(info));});const send=createSyncRequest(connection);
+ await assert.rejects(()=>send('/api/v1/sync/push',{body}),e=>e.code==='SOURCE_DATA_SERVER_UPGRADE_REQUIRED');assert.equal(posts,0);
+ info={...info,sourceDataV2:true,maxOperationBytes:16*1024*1024,maxMetadataBytes:768000};await assert.rejects(()=>send('/api/v1/sync/push',{body}),e=>e.code==='SOURCE_DATA_SERVER_UPGRADE_REQUIRED');assert.equal(posts,0);
+ info={...info,maxMetadataBytes:2*1024*1024,spaceId:'other'};await assert.rejects(()=>send('/api/v1/sync/push',{body}),e=>e.code==='SOURCE_BINDING_CHANGED');assert.equal(posts,0);
+ info={...info,spaceId:'spaceA'};await send('/api/v1/sync/push',{body});assert.equal(posts,1);
+ await assert.rejects(()=>createSyncRequest({...connection,scopeMode:'selected'} )('/api/v1/sync/push',{body}),e=>e.code==='SOURCE_DATA_SOURCE_REQUIRED');assert.equal(posts,1);
 });
 
 test('bulk deadline covers source body reads; reference publication negotiates before sending private inputs',async t=>{
@@ -80,8 +133,8 @@ test('unsupported originals are reported individually and do not consume active 
 test('Chrome displays reference-only history as readonly and expands the complete large text without a send', {skip:!process.env.NATIVESYNC_PWA_DIST},async t=>{
  const https=require('node:https'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');const f=await fixture(t,{scope:{mode:'full'},executionMode:'all-supported'});await f.adopt();await f.pump();
  await f.portal.engine.configs.publish({topics:[{...wireTopic(selected),expectedVersion:1,config:{name:'One',model:'synthetic',systemPrompt:'Portable'}}]});
- const refs=sealed(nativeMessage());f.store.apply({...wireTopic(selected),deviceId:'deviceA',opId:'browser-reference',action:'upsert',baseHash:null,msgId:refs.id,message:refs,metadata:refs._nativeSyncMetadata},{metadataPublisher:true});
- const long='SYNTHETIC_LONG_TEXT\n'+'x'.repeat(3*1024*1024);f.store.apply({...wireTopic(selected),deviceId:'deviceA',opId:'browser-long',action:'upsert',baseHash:null,msgId:'browser-long',message:message('browser-long',long)});
+ const refs=sealed(combinedNativeMessage());f.store.apply({...wireTopic(selected),deviceId:'deviceA',opId:'browser-reference',action:'upsert',baseHash:null,msgId:refs.id,message:refs,metadata:refs._nativeSyncMetadata},{metadataPublisher:true});
+ const long=refs.content;
  const pairing=f.portal.createPairing({scopeMode:'source',sourceId:'sourceA'}),headers={'X-Forwarded-Proto':'https',Origin:'https://synthetic-mobile.invalid','Content-Type':'application/json'};const paired=await fetch(f.connection.url+'/mobile/api/pair',{method:'POST',headers,body:JSON.stringify({code:pairing.pairingCode})}),cookie=paired.headers.get('set-cookie').split(';')[0];
  const cert=path.join(f.root,'cert.pem'),key=path.join(f.root,'key.pem');execFileSync('openssl',['req','-x509','-newkey','rsa:2048','-nodes','-keyout',key,'-out',cert,'-days','1','-subj','/CN=localhost'],{stdio:'ignore'});
  const options={cert:await fs.readFile(cert),key:await fs.readFile(key)},spki=crypto.createHash('sha256').update(new crypto.X509Certificate(options.cert).publicKey.export({type:'spki',format:'der'})).digest('base64');let sends=0;
@@ -90,6 +143,6 @@ test('Chrome displays reference-only history as readonly and expands the complet
  const page=await browser.newPage();await page.setViewport({width:390,height:844,isMobile:true,hasTouch:true,deviceScaleFactor:1});const [name,...parts]=cookie.split('=');await page.setCookie({name,value:parts.join('='),domain:'127.0.0.1',path:'/mobile',secure:true,httpOnly:true,sameSite:'Strict'});await page.goto('https://127.0.0.1:'+proxy.address().port+'/mobile/',{waitUntil:'networkidle0'});await page.waitForSelector('#topic-select');await page.select('#agent-select',JSON.stringify(['agent','one']));await page.select('#topic-select','original');
  await page.waitForSelector('[data-message-id="with-references"] .desktop-references');assert.equal(await page.$eval('textarea',e=>e.disabled),true);assert((await page.$eval('.topic-detail',e=>e.textContent)).includes('仅在桌面可用'));
  const card='[data-message-id="with-references"] .desktop-references';assert.equal(await page.$eval(card,e=>e.open),false);await page.click(card+' summary');assert.equal(await page.$$eval(card+' strong',e=>e.length),63);assert.equal(await page.$eval(card,e=>e.querySelectorAll('a,button').length),0);
- const big='[data-message-id="browser-long"]';assert.equal(await page.$(big+' .bubble'),null);await page.click(big+' .long-message button');assert.equal(await page.$eval(big+' .bubble',e=>e.textContent.length),long.length);assert.equal(sends,0);
+ assert.equal(await page.$$eval('[data-message-id="with-references"] .attachment',e=>e.length),7);const big='[data-message-id="with-references"]';assert.equal(await page.$(big+' .bubble'),null);await page.click(big+' .long-message button');assert.equal(await page.$eval(big+' .bubble',e=>e.textContent.length),long.length);assert.equal(sends,0);
  if(process.env.NATIVESYNC_BROWSER_EVIDENCE){await page.click(big+' .long-message button');await page.$eval(card,e=>{e.open=false;e.scrollIntoView({block:'center'});});await page.screenshot({path:process.env.NATIVESYNC_BROWSER_EVIDENCE,fullPage:false});}
 });

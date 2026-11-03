@@ -1,7 +1,7 @@
 # NativeSync 本机候选安装入口
 
 本包适用于固定Linux开发副本或带本项目标记的本机合成验证目录，不包含服务器部署授权。
-实际源码、84项运行载荷及宿主补丁均以本包MANIFEST.json为准；当前验收结果另见源码中的全量阶段交付记录。
+实际源码、运行载荷及宿主补丁均以本包MANIFEST.json为准；当前验收结果另见源码中的全量阶段交付记录。
 历史阶段的测试数量、旧代码引用和旧回退组合不能替代本包的证据。
 
 ## 校验和安装
@@ -21,6 +21,8 @@ python3 tools/install_release.py verify --package /absolute/candidate
 SETTINGS.md、GROUPS.md、ATTACHMENTS.md，临时Android入口见ANDROID_TEST.md。
 
 ## 全量Source代码回退
+
+**后续数据兼容限制优先：一旦接受desktop-references-v1或source-data-v2数据，本候选不声明下面旧包组合可直接读取。不得直接降至旧codec；保留新codec向前恢复，不恢复旧数据库、state或游标。以下是接受扩展数据之前的历史回退组合。**
 
 只有导入、提交、执行及未知原生工作均已明确收尾，且本项目实例正常停止后，才运行source_compat.py prepare。
 它保存并移除本来源新增配置键；随后使用该次实际安装的外置备份回退代码。
@@ -46,3 +48,12 @@ SCOPE.json的codeRollbackBaseline是早期选定模式的公共夹具组装输�
 2026-11-03多来源转换修正：仅移除full转换对“任意其他来源存在”的整库排斥；真实目录身份碰撞和按来源读写屏障保留。Windows安装已完成但扩围受阻，生产单文件修复尚待批准，见[执行记录](windows-full-source-install-20261103.md)。
 
 真实历史兼容候选增加desktop-references-v1元数据能力，Source操作有界4MiB、批量传输60秒，旧选定模式限制保持。先安装新服务端/读取屏障，再安装匹配桌面；已有新引用后不支持直接退旧codec，保持full范围及数据向前恢复。临时拒绝附件诊断沿用既有列，原件不删。详见[开发交付与降版边界](windows-source-data-compat-delivery-20261103.md)。
+
+
+## Source大历史与重复文件引用（source-data-v2）
+
+本候选支持Source单操作16MiB、附件元数据合计2MiB；无附件的控制元数据仍受原768000字节限制。旧选定模式保留1MiB请求限制，不能发布扩展表示。Source info须声明sourceDataV2、maxOperationBytes和maxMetadataBytes；桌面先核对Source/设备/空间及实际载荷所需限额，再发送。新读取者声明`source-data-v2`，旧客户端命中扩展历史页返回409；普通删除事件没有扩展正文时继续兼容。
+
+相同附件id的规范化元数据完全一致时存一份attachmentData，消息体保留每次引用与顺序；同id不同hash/提取文本/帧元数据继续拒绝。桌面入站按出现次数保留对应原生句柄，手机按出现位置显示重复引用，不重命名、不造hash、不截断正文。
+
+服务端新codec、能力屏障及PWA应先于桌面安装。发布边界变化不授予新Source或手机权限；原有只读原因和格式限制保持。源码候选不等于Windows/生产安装或Android实机验收；以本次安装授权、精确前后摘要及实际回执为准。

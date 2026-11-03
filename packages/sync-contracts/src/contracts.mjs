@@ -77,6 +77,25 @@ function boundedJson(value,depth=0){
     if(value&&typeof value==='object'&&Object.keys(value).length<=100&&!Object.keys(value).some(k=>['__proto__','prototype','constructor'].includes(k)))return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,boundedJson(v,depth+1)]));
     throw fail('INVALID_CONTROL_METADATA');
 }
+function attachmentData(message){
+    const attachments=new Map();
+    for(const a of message.attachments||[]){
+        const source=a._fileManagerData||a,entry={id:a.id||source.id||'attachment_'+(a.hash||source.hash),contentHash:a.hash||source.hash};
+        for(const key of ['extractedText','imageFrames','blobHash','frameHashes'])if(source[key]!==undefined)entry[key]=source[key];
+        if(entry.frameHashes!==undefined){if(!Array.isArray(entry.frameHashes)||entry.frameHashes.length>10||entry.frameHashes.some(h=>!/^[a-f0-9]{64}$/.test(h)))throw fail('INVALID_ATTACHMENT_METADATA');delete entry.imageFrames;}
+        if(typeof entry.id!=='string'||!entry.id||(entry.extractedText!==undefined&&typeof entry.extractedText!=='string')||(entry.blobHash!==undefined&&!/^[a-f0-9]{64}$/.test(entry.blobHash))||(entry.imageFrames!==undefined&&(!Array.isArray(entry.imageFrames)||entry.imageFrames.some(f=>typeof f!=='string'))))throw fail('INVALID_ATTACHMENT_METADATA');
+        // File metadata is shared, while body occurrences and order stay intact.
+        if(attachments.has(entry.id)&&stable(attachments.get(entry.id))!==stable(entry))throw fail('INVALID_ATTACHMENT_METADATA');
+        attachments.set(entry.id,entry);
+    }
+    return [...attachments.values()].sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+}
+function requiresSourceDataV2(message,envelope=message?._nativeSyncMetadata){
+    message=projectDesktopReferences(message||{});
+    const ids=new Set();
+    for(const a of message.attachments||[]){const source=a._fileManagerData||a,id=a.id||source.id||'attachment_'+(a.hash||source.hash);if(ids.has(id))return true;ids.add(id);}
+    return [fieldsFrom(message),message._nativeSyncMetadata?.fields,envelope?.fields].some(fields=>fields&&byteLength(stable(fields))>768000)||byteLength(JSON.stringify(message))>4*1024*1024;
+}
 function fieldsFrom(message){
     message=projectDesktopReferences(message);
     const fields={};
@@ -102,21 +121,17 @@ function fieldsFrom(message){
         for(const k of ['requestId','executionId'])if(c[k]!==undefined&&(typeof c[k]!=='string'||!c[k]||c[k].length>512))throw fail('INVALID_MESSAGE_CAUSALITY');
         fields.continuity={version:1,known:c.known,...(c.requestId?{requestId:c.requestId}:{}),...(c.executionId?{executionId:c.executionId}:{}),dependsOnMessageIds:[...c.dependsOnMessageIds]};
     }
-    const attachments=[];
-    for(const a of message.attachments||[]){
-        const source=a._fileManagerData||a,entry={id:a.id||source.id||'attachment_'+(a.hash||source.hash),contentHash:a.hash||source.hash};
-        for(const key of ['extractedText','imageFrames','blobHash','frameHashes'])if(source[key]!==undefined)entry[key]=source[key];
-        if(entry.frameHashes!==undefined){if(!Array.isArray(entry.frameHashes)||entry.frameHashes.length>10||entry.frameHashes.some(h=>!/^[a-f0-9]{64}$/.test(h)))throw fail('INVALID_ATTACHMENT_METADATA');delete entry.imageFrames;}
-        if(typeof entry.id!=='string'||!entry.id||(entry.extractedText!==undefined&&typeof entry.extractedText!=='string')||(entry.blobHash!==undefined&&!/^[a-f0-9]{64}$/.test(entry.blobHash))||(entry.imageFrames!==undefined&&(!Array.isArray(entry.imageFrames)||entry.imageFrames.some(f=>typeof f!=='string'))))throw fail('INVALID_ATTACHMENT_METADATA');
-        attachments.push(entry);
-    }
-    if(new Set(attachments.map(a=>a.id)).size!==attachments.length)throw fail('INVALID_ATTACHMENT_METADATA');
-    if(attachments.length)fields.attachmentData=attachments.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);
+    // Keep the previous bound for controls unrelated to file metadata.
     if(byteLength(stable(fields))>768000)throw fail('CONTROL_METADATA_TOO_LARGE');
+    const attachments=attachmentData(message);
+    if(attachments.length)fields.attachmentData=attachments;
+    if(byteLength(stable(fields))>2*1024*1024)throw fail('CONTROL_METADATA_TOO_LARGE');
     return fields;
 }
 function withFields(message,envelope){
     message=projectDesktopReferences(message);
+    // Do not let an envelope overwrite and conceal conflicting duplicates.
+    attachmentData(message);
     const result={...message};for(const key of controls)delete result[key];
     const fields=envelope.fields;
     for(const key of controls)if(Object.hasOwn(fields,key))result[key]=fields[key];
@@ -151,7 +166,7 @@ function preserveMetadata(source,target){
     if(source._nativeSyncMetadata)return withFields(target,validateEnvelope(target,source._nativeSyncMetadata));
     const cleaned=withFields(target,{fields:fieldsFrom(target)});delete cleaned._nativeSyncMetadata;return cleaned;
 }
-return {fieldsFrom,withFields,envelopeFor,validateEnvelope,preserveMetadata,emptyHash,controlFields:controls,projectDesktopReferences,nativeReference};
+return {fieldsFrom,withFields,envelopeFor,validateEnvelope,preserveMetadata,emptyHash,controlFields:controls,projectDesktopReferences,nativeReference,requiresSourceDataV2};
 }
 
 export function createSourceScope({identity,stable,sha256}){

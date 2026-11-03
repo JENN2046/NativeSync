@@ -20,7 +20,7 @@ const sibling={itemType:'agent',itemId:'one',topicId:'excluded'},foreign={itemTy
 const message=(id,content=id)=>({id,role:'user',content,timestamp:1});
 const limited=topics=>({mode:'limited',topics:topics.map(wireTopic)});
 const waitFor=async(fn,label)=>{const until=Date.now()+5000;for(;;){if(await fn())return;if(Date.now()>until)throw Error('WAIT_TIMEOUT '+label);await new Promise(r=>setTimeout(r,5));}};
-async function fixture(t,{scope=limited([selected,older]),seedOwners=true,executionBindings=[],executionMode}={}){
+async function fixture(t,{scope=limited([selected,older]),seedOwners=true,executionBindings=[],executionMode,bodyLimit='5mb'}={}){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'native-m2m3-')),app=path.join(root,'AppData');await fs.mkdir(app,{recursive:true});
  const store=new CentralStore(path.join(root,'central.sqlite')),staticTopic={key:'original',...wireTopic(selected),agentAlias:'synthetic-one'};
  const configuredTopics=[staticTopic,...executionBindings];
@@ -28,7 +28,7 @@ async function fixture(t,{scope=limited([selected,older]),seedOwners=true,execut
  const syncService=createSyncHttpService(store);
  const portal=new MobilePortal({store,config:{NativeMobileOrigin:'https://synthetic-mobile.invalid',NativeMobileTopics:JSON.stringify(configuredTopics),NativeMobileConfigSync:true,NativeMobileMaxConcurrency:1,NativeSyncDataDir:root},agentManager:{isAgent:a=>a==='synthetic-one'||executionBindings.some(t=>t.agentAlias===a)}});
  store.onSourceChange=()=>portal.refreshDirectoryTopics();
- const appHttp=express();appHttp.set('trust proxy','loopback');appHttp.use(express.json({limit:'5mb'}));
+ const appHttp=express();appHttp.set('trust proxy','loopback');appHttp.use(express.json({limit:bodyLimit}));
  appHttp.use('/api/v1/sync',(req,res)=>{if(req.headers.authorization!=='Bearer synthetic-only')return res.status(401).json({});return syncService.handle(req,res);});
  appHttp.use('/mobile',portal.router);appHttp.use((e,req,res,next)=>res.status(e.status||400).json({error:{code:e.code||'TEST_HTTP_ERROR'}}));
  const server=http.createServer(appHttp);await new Promise(r=>server.listen(0,'127.0.0.1',r));
@@ -42,7 +42,7 @@ async function fixture(t,{scope=limited([selected,older]),seedOwners=true,execut
  f.readAgentConfig=async id=>{f.reads.push({kind:'config',owner:id});return JSON.parse(await fs.readFile(path.join(app,'Agents',id,'config.json'),'utf8'));};
  f.readGroupConfig=async id=>JSON.parse(await fs.readFile(path.join(app,'AgentGroups',id,'config.json'),'utf8'));
  const rawSend=createSyncRequest(connection);
- f.send=async(route,options={})=>{if(f.network.offline)throw Object.assign(Error('OFFLINE'),{code:'NETWORK_UNAVAILABLE'});f.sent.push({route,body:options.body?structuredClone(options.body):null});const value=await rawSend(route,options);if(/\/(?:source\/)?push$/.test(route)&&f.network.dropPush>0){f.network.dropPush--;throw Object.assign(Error('ACK_DROPPED'),{code:'NETWORK_UNAVAILABLE'});}return value;};
+ f.send=async(route,options={})=>{if(f.network.offline)throw Object.assign(Error('OFFLINE'),{code:'NETWORK_UNAVAILABLE'});f.sent.push({route,body:options.body?structuredClone(options.body):null});const value=await rawSend(route,options);if(/\/(?:source\/)?push$/.test(route)&&f.network.dropPush>0&&(!f.network.dropPushId||options.body?.msgId===f.network.dropPushId)){f.network.dropPush--;throw Object.assign(Error('ACK_DROPPED'),{code:'NETWORK_UNAVAILABLE'});}return value;};
  f.makeQueue=()=>{const q=new HistoryMutationQueue({userDataDir:path.join(app,'UserData'),logger:{warn(){}}}),read=q.read.bind(q);q.read=async(d,...args)=>{f.reads.push({kind:'history',owner:d.itemId,topic:d.topicId});return read(d,...args);};return q;};
  f.close=async()=>{await f.adapter?.close();await f.queue?.dispose();f.adapter=null;};
  f.open=async({adopt=false,discover=true,fault}={})=>{

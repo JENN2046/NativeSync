@@ -25,7 +25,7 @@
     "requires": "settled stopped local root, source_compat.py prepare, matching installation backup; preserves Source history and reading, disables new automatic continuation",
     "evidence": "full-source closeout and per-install receipts; no arbitrary older candidate substitution"
   },
-  "rollbackStateCompatibility": "v3/native-message-intents-v2; full Source additionally requires the declared config preparation; never restore database, state, cursor, Source scope, bindings or execution snapshots",
+  "rollbackStateCompatibility": "v3/native-message-intents-v2; full Source additionally requires the declared config preparation; never restore database, state, cursor, Source scope, bindings or execution snapshots; after desktop-references-v1 or source-data-v2 acceptance, no verified old-code downgrade is declared: retain the new codec and recover forward",
   "runtimePrefixes": [
     "VCPChat/modules/services/nativeSync/",
     "VCPToolBox/Plugin/NativeSync/",

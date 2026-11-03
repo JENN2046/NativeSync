@@ -18,22 +18,28 @@ function syncHeaders(connection){
     return connection.topics?.length?{'X-NativeSync-Topics':Buffer.from(JSON.stringify(connection.topics.map(t=>[t.itemType||'agent',t.itemId,t.topicId]))).toString('base64url')}:{};
 }
 function createSyncRequest(connection,timeoutMs=8000) {
-    const {url,token}=connection;let referencesSupported=false;
+    const {url,token}=connection;let referencesSupported=false,sourceDataV2Support=null;
     const send=async(route,{body}={})=>{
-        if(body?.message&&(body.metadata?.fields?.desktopReferences?.length||body.message._nativeSyncMetadata?.fields?.desktopReferences?.length||require('./metadata').fieldsFrom(body.message).desktopReferences?.length)&&!referencesSupported){
-            if(connection.scopeMode!=='source')throw fail('DESKTOP_REFERENCE_SOURCE_REQUIRED');
+        const serialized=body?JSON.stringify(body):undefined,size=serialized?Buffer.byteLength(serialized):0;
+        const metadata=require('./metadata'),fields=body?.message?metadata.fieldsFrom(body.message):null,references=body?.message&&(body.metadata?.fields?.desktopReferences?.length||body.message._nativeSyncMetadata?.fields?.desktopReferences?.length||fields.desktopReferences?.length);
+        const extended=body?.message&&(size>4*1024*1024||metadata.requiresSourceDataV2(body.message,body.metadata));
+        if(connection.scopeMode==='source'&&/\/(?:source\/)?push$/.test(route)&&size>16*1024*1024)throw Object.assign(fail('BODY_TOO_LARGE'),{status:413});
+        const metadataBytes=extended?Math.max(...[fields,body.message._nativeSyncMetadata?.fields,body.metadata?.fields].filter(Boolean).map(f=>Buffer.byteLength(require('./protocol').stable(f)))):0;
+        if((references&&!referencesSupported)||(extended&&(!sourceDataV2Support||sourceDataV2Support.maxOperationBytes<size||sourceDataV2Support.maxMetadataBytes<metadataBytes))){
+            if(connection.scopeMode!=='source')throw fail(extended?'SOURCE_DATA_SOURCE_REQUIRED':'DESKTOP_REFERENCE_SOURCE_REQUIRED');
             const info=await send('/api/v1/sync/source/info?'+new URLSearchParams({sourceId:connection.sourceId,deviceId:connection.deviceId}));
             if(info.sourceId!==connection.sourceId||info.deviceId!==connection.deviceId||info.spaceId!==connection.spaceId)throw fail('SOURCE_BINDING_CHANGED');
-            if(info.desktopReferences!==true)throw fail('DESKTOP_REFERENCE_SERVER_UPGRADE_REQUIRED');
-            referencesSupported=true;
+            if(references&&info.desktopReferences!==true)throw fail('DESKTOP_REFERENCE_SERVER_UPGRADE_REQUIRED');
+            if(extended&&(info.sourceDataV2!==true||!Number.isSafeInteger(info.maxOperationBytes)||info.maxOperationBytes<size||!Number.isSafeInteger(info.maxMetadataBytes)||info.maxMetadataBytes<metadataBytes))throw fail('SOURCE_DATA_SERVER_UPGRADE_REQUIRED');
+            referencesSupported=info.desktopReferences===true;
+            sourceDataV2Support=info.sourceDataV2===true&&Number.isSafeInteger(info.maxOperationBytes)&&Number.isSafeInteger(info.maxMetadataBytes)?{maxOperationBytes:info.maxOperationBytes,maxMetadataBytes:info.maxMetadataBytes}:null;
         }
         route=require('./connection').sourceRoute(connection,route);
-        const serialized=body?JSON.stringify(body):undefined;
         const bulk=connection.scopeMode==='source'&&(/\/source\/(push|pull)(?:\?|$)/.test(route)||/\/source\/baselines(?:\/|$)/.test(route));
         const deadline=bulk?Math.max(timeoutMs,60000):timeoutMs;
         let response,value;
         try {
-            response=await fetch(url+route,{method:body?'POST':'GET',headers:{...syncHeaders(connection),Authorization:`Bearer ${token}`,'Content-Type':'application/json','X-NativeSync-Protocol':'2','X-NativeSync-Capabilities':'attachments-v1,message-intents-v1,desktop-references-v1'},body:serialized,redirect:'error',signal:AbortSignal.timeout(deadline)});
+            response=await fetch(url+route,{method:body?'POST':'GET',headers:{...syncHeaders(connection),Authorization:`Bearer ${token}`,'Content-Type':'application/json','X-NativeSync-Protocol':'2','X-NativeSync-Capabilities':'attachments-v1,message-intents-v1,desktop-references-v1,source-data-v2'},body:serialized,redirect:'error',signal:AbortSignal.timeout(deadline)});
         } catch { throw fail('NETWORK_UNAVAILABLE'); }
         try { value=await response.json(); } catch(error) { if(response.ok&&error?.name!=='SyntaxError')throw fail('NETWORK_UNAVAILABLE'); }
         if(!response.ok)throw Object.assign(fail(/^[A-Z][A-Z0-9_]{0,79}$/.test(value?.error?.code||'')?value.error.code:(response.status===413?'BODY_TOO_LARGE':'SYNC_HTTP_ERROR')),{status:response.status});

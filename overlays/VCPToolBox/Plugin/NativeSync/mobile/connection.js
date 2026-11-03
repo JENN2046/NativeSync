@@ -21,7 +21,7 @@ class MobileConnection {
         return { service: 'VCPToolBox', plugin: 'NativeSync', mobileProtocol: 1,
             serverUrl: this.address, suggestedServerUrl: this.address || '',
             credentialExchangeAllowed: Boolean(this.enabled && this.address && (this.hostKey() || this.verifyKey)),
-            transport: 'same-host', scope: 'server-approved topics and sources', capabilities:{multiSourcePairing:true,desktopReferences:true} };
+            transport: 'same-host', scope: 'server-approved topics and sources', capabilities:{multiSourcePairing:true,desktopReferences:true,sourceDataV2:true} };
     }
     test(value) {
         const address = backendAddress(value);

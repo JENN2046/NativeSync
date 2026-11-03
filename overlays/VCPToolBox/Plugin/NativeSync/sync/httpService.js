@@ -2,7 +2,7 @@
 // R4 wire contract on a host-owned HTTP server. Authentication and listening
 // belong to VCPToolBox; the plugin opens no second server or authentication lane.
 const { SyncError } = require('./centralStore');
-const {requireReferenceReader,supported,needsReferences}=require('./capabilities');
+const {requireReferenceReader,supported,needsReferences,SOURCE_DATA_CAPABILITY}=require('./capabilities');
 function createSyncHttpService(store) {
     let closing = false, quiescing = false, active = 0, drain;
     const drained = new Promise(resolve => { drain = resolve; });
@@ -34,7 +34,7 @@ function createSyncHttpService(store) {
             if (req.method === 'POST' && url.pathname === '/push') {
                 // Express may already have consumed JSON before plugin routes.
                 let op = req.body;
-                const maxBody=req.nativeSyncSourceBinding?4*1024*1024:1024*1024;
+                const maxBody=req.nativeSyncSourceBinding?16*1024*1024:1024*1024;
                 if (op === undefined) {
                     let raw = '';
                     for await (const chunk of req) {
@@ -46,6 +46,10 @@ function createSyncHttpService(store) {
                 store.sourceCatalog?.authorizePush(req.nativeSyncSourceBinding,op);
                 if(req.nativeSyncTopics!==undefined&&!req.nativeSyncTopics.includes(JSON.stringify([op?.ownerType,op?.ownerId,op?.topicId])))throw new SyncError('TOPIC_NOT_ALLOWED','Operation is outside the selected source',403);
                 if(req.nativeSyncSourceBinding&&op?.deviceId!==req.nativeSyncSourceBinding.deviceId)throw new SyncError('SOURCE_DEVICE_MISMATCH','Operation device changed',403);
+                if(Buffer.byteLength(JSON.stringify(op))>4*1024*1024||require('./metadata').requiresSourceDataV2(op?.message,op?.metadata)){
+                    if(!req.nativeSyncSourceBinding)throw new SyncError('SOURCE_DATA_SOURCE_REQUIRED','Extended source data requires Source mode',409);
+                    if(!supported(req.headers['x-nativesync-capabilities'],SOURCE_DATA_CAPABILITY))throw new SyncError('SOURCE_DATA_CLIENT_UPGRADE_REQUIRED','Source data v2 support required',409);
+                }
                 if((needsReferences(op?.message)||op?.metadata?.fields?.desktopReferences?.length||require('./metadata').fieldsFrom(op?.message||{}).desktopReferences?.length)&&!supported(req.headers['x-nativesync-capabilities']))throw new SyncError('DESKTOP_REFERENCE_CLIENT_UPGRADE_REQUIRED','Desktop reference support required',409);
                 return send(res, 200, store.apply(op,{metadataPublisher:req.nativeSyncMetadataPublisher??(req.nativeSyncTopics===undefined),attachmentPrincipal:req.nativeSyncDeviceId?'desktop:'+req.nativeSyncDeviceId:'host-bearer'}));
             }

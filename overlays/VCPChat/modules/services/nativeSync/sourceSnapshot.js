@@ -30,8 +30,10 @@ function materializeSourceMessage(local,incoming,topicId){
  if(stable(left)===stable(right))return {...local,...(message._nativeSyncMetadata?{_nativeSyncMetadata:message._nativeSyncMetadata}:{})};
  const base={...local,...message};if(!message.attachments)delete base.attachments;
  let result=message._nativeSyncMetadata?withFields(base,message._nativeSyncMetadata):base;
+ const available=(local?.attachments||[]).filter(old=>!nativeReference(old));
  if(result.attachments)result.attachments=result.attachments.map(a=>{
-  const previous=local?.attachments?.find(old=>!nativeReference(old)&&(old.id||old._fileManagerData?.id||'attachment_'+(old.hash||old._fileManagerData?.hash))===a.id&&(old.hash||old._fileManagerData?.hash)===a.hash);
+  const index=available.findIndex(old=>(old.id||old._fileManagerData?.id||'attachment_'+(old.hash||old._fileManagerData?.hash))===a.id&&(old.hash||old._fileManagerData?.hash)===a.hash);
+  const previous=index<0?null:available.splice(index,1)[0];
   if(!previous)return a;
   const merged={...previous,...a},data={...(previous._fileManagerData||previous),id:a.id,name:a.name,type:a.type,size:a.size,hash:a.hash};
   for(const key of ['extractedText','imageFrames','frameHashes','blobHash']){delete merged[key];delete data[key];if(Object.hasOwn(a,key)){merged[key]=a[key];data[key]=a[key];}}
