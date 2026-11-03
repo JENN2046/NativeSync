@@ -1,0 +1,130 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "candidateCommit": "7c9875eaa372b213745dc44dd1a8ac010cc8ac97",
+  "productionInstalled": true,
+  "nativeSyncRuntimeChanged": false,
+  "productionFilesChanged": 2,
+  "backup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/history-origin-gzip-20261103-r2",
+  "earlierAttemptBackup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/history-origin-gzip-20261103",
+  "firstAttempt": {
+    "verification": "immediate post-reload probe did not observe gzip",
+    "configurationRollbackExecuted": true,
+    "originalConfigAndAbsentSnippetRecheckedBeforeSecondAttempt": true
+  },
+  "secondAttemptWaitedForNewWorkers": true,
+  "reloadCompressionProbeEncodings": [
+    null,
+    "gzip"
+  ],
+  "serviceMasterAndBackendPidsUnchanged": true,
+  "otherConfigHashesUnchanged": true,
+  "sourceHistory": {
+    "beforeRawBytes": 12635343,
+    "afterGzipBytes": 2394127,
+    "afterIdentityBytes": 12635343,
+    "decodedSha256": "93c200ff54ba9f3ae14d4fec2e9e1f49a965ec9975263bc3c2fe13dc4c37c426",
+    "byteReductionPercent": 81.05,
+    "noStorePreserved": true,
+    "identityFallback": true
+  },
+  "publicGuards": {
+    "/admin_api/server/lifecycle": 404,
+    "/v1/native-conversation": 404,
+    "/mobile/api/session": 401
+  },
+  "phone": {
+    "sameExistingBaseline": true,
+    "pageAsset": "index-CcV6qDxz.js",
+    "beforeSamePageMs": [
+      43852.799999952316,
+      49171.60000014305
+    ],
+    "afterSamples": [
+      {
+        "status": 200,
+        "encoding": "gzip",
+        "cacheControl": "no-store",
+        "cfCacheStatus": "DYNAMIC",
+        "decodedBytes": 13126025,
+        "decodedSha256": "f451eb705bbec654f7c0a18cd48670314ea573a010b30ceb2d98b3667056b962",
+        "elapsedMs": 10887.400000095367,
+        "headersMs": 2427.4000000953674,
+        "resourceTiming": {
+          "encodedBytes": 2522412,
+          "decodedBytes": 13126025,
+          "transferBytes": 2522712,
+          "durationMs": 10857.399999856949,
+          "ttfbMs": 2417.0999999046326,
+          "downloadMs": 8436.700000047684,
+          "protocol": "h3"
+        }
+      },
+      {
+        "status": 200,
+        "encoding": "gzip",
+        "cacheControl": "no-store",
+        "cfCacheStatus": "DYNAMIC",
+        "decodedBytes": 13126025,
+        "decodedSha256": "f451eb705bbec654f7c0a18cd48670314ea573a010b30ceb2d98b3667056b962",
+        "elapsedMs": 10047.900000095367,
+        "headersMs": 1628.7000000476837,
+        "resourceTiming": {
+          "encodedBytes": 2523068,
+          "decodedBytes": 13126025,
+          "transferBytes": 2523368,
+          "durationMs": 10026.299999952316,
+          "ttfbMs": 1621.5,
+          "downloadMs": 8403.099999904633,
+          "protocol": "h3"
+        }
+      }
+    ],
+    "beforePublicEncoding": "zstd",
+    "afterPublicEncoding": "gzip",
+    "newResourceTimingObserverUsed": true,
+    "newPairingRequired": false,
+    "sameDecodedSha256AcrossAfterSamples": true,
+    "fullUiInteractionAcceptance": "not separately claimed; measured real authenticated page history GET"
+  },
+  "databaseStateOrCursorRestored": false,
+  "realModelOrToolRequestsSent": 0,
+  "cloudflareDnsVpnOrHttp3Changed": false,
+  "windowsProcessOrFilesChanged": false,
+  "limitations": [
+    "Before/after phone samples were taken at different times, without freezing Internet conditions.",
+    "Same-page GET timings are not full app start or interaction latency.",
+    "Source loopback sample and mobile baseline page have different response scopes.",
+    "Topic-switch/reopen full-history re-download behavior remains."
+  ],
+  "evidence": [
+    {
+      "path": ".local/history-origin-gzip-20261103/PRODUCTION_FIRST_ATTEMPT.json",
+      "sha256": "54ea8810ae00428a6386d5531b95438ad78ccd196ebc23290a5fa78f5e482613"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/PRODUCTION_INSTALL.json",
+      "sha256": "eec89a7bbd5af7164aa8b78b3ff024fc61a4ea2dc48a2f166758c0c7d3dc0de6"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/PRODUCTION_FINAL.json",
+      "sha256": "30f56eef5f68c10e35bd182ab494cd77959640aca062d667bac98f444a3cd618"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/PHONE_AFTER_INSTALL.json",
+      "sha256": "fd918059fe27959896ab46b5b862382f04c763df1bffba8eb5ce83f731f4e1db"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/install-approved.py",
+      "sha256": "7aeb00f3423cb4d72eda87028f70bf2a4803a63d79937c6d4d63419fabbc78fa"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/install-approved-r2.py",
+      "sha256": "b619141dc29696c207fd1c81c6ad6ed40ba5dcfb9c728ea84e21dbbf567a37a2"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/phone-after.cjs",
+      "sha256": "3f17c5bf069b0c9d0719c1096bf16577fdd509ff6e5cd1d9b6eddbd18820a474"
+    }
+  ]
+}

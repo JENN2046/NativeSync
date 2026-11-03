@@ -4,6 +4,8 @@
 
 ## 最新本机状态
 
+[历史源站压缩已批准并上线](history-origin-gzip-20261103.md)：两路径Nginx配置生效，真实12.64 MB历史压为2.39 MB，安装前后/identity解压摘要相同，no-store和权限拒绝保持。Android同一13.13 MB历史页从此前约43–49秒降至两次10.89/10.05秒，当前公网gzip约2.52 MB；不是全应用交互时延承诺。首次首探未见gzip已自动恢复，第二次等待worker交接并确认实际压缩后完成，现场全保留。Nginx主进程、VCP后端及管理服务未重启，Windows/数据/授权/配对不变；当前建议保留代理，暂不改直连，话题切换重复完整读取仍未改。
+
 [历史JSON源站压缩候选](history-origin-gzip-20261103.md)已准备：仅公开HTTPS server一条include和新增历史location片段，gzip等级3，保留鉴权/no-store及原代理行为。本机同版本Nginx 1.28.3合成9.04 MB压为1.63 MB，解压摘要一致、identity/权限/路由范围/模拟SSE通过；生产暂存候选nginx -t通过，活动配置及主进程保持。生产尚未安装或reload，按此前约定等待这份两路径清单的追加确认；无需退出Windows或重启后端，手机收益未验收。
 
 [源站JSON压缩补充核实](mobile-network-readonly-20261103.md)已完成：生产Nginx HTTPS读取同一份12.64 MB真实历史JSON，identity、gzip及br/gzip协商均无Content-Encoding、仍发送12.64 MB；同站点HTML gzip对照通过。源站JSON未压缩已由配置线索升级为直接响应证据，原Nginx TLS测量缺口已关闭；生产配置未改。离线gzip约2.03 MB只作减量估算，尚未验证上线收益，也不认定手机44–49秒全部由出口带宽造成。
