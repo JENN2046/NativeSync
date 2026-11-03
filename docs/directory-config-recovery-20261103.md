@@ -38,7 +38,11 @@ App.vue把目录请求错误独立保存。相同revision核对成功或完整�
 
 ## 集中安装与回退清单
 
-待候选封存后追加准确源码、ZIP摘要和静态文件名。运行代码仅前端新JS和index.html两路径；另有生产 `Plugin/NativeSync/config.env` 的单行NativeMobileTopics更新，不把运行配置混入代码ZIP。Brotli修正f8ed5b4及Nginx配置保持。
+源码已本地提交 `be86b980fab4ad8bbaad5db8d8ec0c727d0d87e1`；完整候选86项载荷/40项支持文件及ZIP已核对，构建时工作树干净，运行载荷与被测候选相同。[候选ZIP](/home/jenn/下载/NativeSync_Directory_Config_Recovery_20261103.zip)，SHA256 `b9108e54522de290bb399e746593ebee4b07cd5336aab479ca75a00f9be228cc`。[公开机器清单](../provenance/directory-config-recovery-20261103.json)记录前后摘要。运行代码仅前端新JS和index.html两路径；另有生产 `Plugin/NativeSync/config.env` 的单行NativeMobileTopics更新，不把运行配置混入代码ZIP。Brotli修正f8ed5b4及Nginx配置保持。
+
+精确静态写入（相对VCPToolBox）为：新增 `apps/mobile/dist/assets/index-CtwQoamN.js`，SHA256 `2b9f0269d5a50ffe9b1df7b9994f132e19f4ed9c6af248e1e5721ad5331514c9`；更新 `apps/mobile/dist/index.html`，`2d601ad48d10905eb7d0cd7aaabfa296fa76b5605c8d7570300a596629c9bd9d` → `3fe3b527872a1a671bb4213130f14c108774ce73b02116afcc0dca406f30d52a`。CSS不变，旧JS保留。
+
+私有配置计划在 `/home/jenn/NativeSync/.local/directory-config-recovery-20261103/PRIVATE_BINDING_INSTALL_PLAN.json`；它仅含既有静态行和拟追加精确接线，不含凭据。该文件及其来源核对材料均未进入公开ZIP或Git。
 
 追加安装需先明确暂停新的生产请求，复核在途正常收尾，制作含已提交WAL的一致SQLite备份，并私密保存原配置及代码。逐项核对生产当前载荷、index及配置摘要、Windows引用/规则配置和原生Agent文件摘要、当前目录key/归属与成员，拒绝未知变化。
 

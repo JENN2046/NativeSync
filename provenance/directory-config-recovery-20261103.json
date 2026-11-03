@@ -61,6 +61,10 @@
     {
       "path": ".local/directory-config-recovery-20261103/PHONE_READONLY.json",
       "sha256": "6e8770bd13bef10bb0ffabbf133053e22da179fd5e3221e98322e71fc82b246d"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/CANDIDATE_VERIFIED.json",
+      "sha256": "396a0d0dfa2043f356d0216eac311c20a8bb095118c8a6e4a7b59067fbe91407"
     }
   ],
   "privateEvidenceDigests": [
@@ -76,5 +80,30 @@
       "path": ".local/directory-config-recovery-20261103/WINDOWS_EFFECTIVE_RULE_METADATA_FINAL.json",
       "sha256": "c5466f566cb1f7ec2ec69c359c99eb0cd7e68041fec2fa4fd045945047b89bb7"
     }
-  ]
+  ],
+  "candidate": {
+    "sourceCommit": "be86b980fab4ad8bbaad5db8d8ec0c727d0d87e1",
+    "sourceDirty": false,
+    "sourceInputsSha256": "b06452e4f09e466e3593cbda83948832a436a997a516da2ed1587f172b499ef5",
+    "zip": "/home/jenn/下载/NativeSync_Directory_Config_Recovery_20261103.zip",
+    "zipSha256": "b9108e54522de290bb399e746593ebee4b07cd5336aab479ca75a00f9be228cc",
+    "runtimeFiles": 86,
+    "supportFiles": 40,
+    "runtimeMatchesTestedCandidate": true,
+    "productionWrites": [
+      {
+        "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-CtwQoamN.js",
+        "before": null,
+        "after": "2b9f0269d5a50ffe9b1df7b9994f132e19f4ed9c6af248e1e5721ad5331514c9"
+      },
+      {
+        "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/index.html",
+        "before": "2d601ad48d10905eb7d0cd7aaabfa296fa76b5605c8d7570300a596629c9bd9d",
+        "after": "3fe3b527872a1a671bb4213130f14c108774ce73b02116afcc0dca406f30d52a"
+      }
+    ],
+    "oldStaticAssetsKeptOnInstall": true,
+    "configurationInPublicZip": false,
+    "productionInstalled": false
+  }
 }
