@@ -1,0 +1,11 @@
+{
+  "target": "/home/jenn/AGENTS_OS_Workspace/runtime/VCPChat",
+  "path": "main.js",
+  "beforeSha256": "c9a1571e53c0e65432e9df080af4491677aefda3f7b1bd880c0d0c9b42cd230b",
+  "afterSha256": "66fe96e093b2f34545764c0b1f8bc66d720fe326632781e860884ecf3dcce32e",
+  "patchSha256": "017db3bb419b7bc47be520c544eb4ebc3ca54ab8fafe967fbb8b5393f8a53a72",
+  "scope": "Connect the existing native conversation resolver to NativeSync effective rule publication; no settings, rules, credentials, state or data changes.",
+  "isolatedApplyAndSyntaxVerified": true,
+  "appliedToLiveHost": false,
+  "olderHostWithoutResolver": "Keep the optional callback absent; existing global-rule behavior remains."
+}

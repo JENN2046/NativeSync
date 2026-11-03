@@ -159,19 +159,20 @@ class MobilePortal {
             try{if(t.ownerType==='group'){const snapshot=this.engine.configs.snapshot(t);if(!snapshot)reason='EXECUTION_CONFIG_REQUIRED';else if(!['sequential','naturerandom','invite_only'].includes(snapshot.group.mode))reason='GROUP_MODE_REQUIRES_DESKTOP';else available=true;}
             else {const snapshot=this.engine.configs.snapshot(t);this.engine.configs.assertRunnable(t,snapshot);available=Boolean((published.model||t.model)&&(!this.engine.configs.required||snapshot));reason=this.engine.configs.required&&!published.configVersion?'EXECUTION_CONFIG_REQUIRED':'SERVER_AGENT_NOT_CONFIGURED';}}catch(e){reason=e.code||'CONFIG_SNAPSHOT_CORRUPT';}
             if(!ready){available=false;reason='HISTORY_IMPORT_PENDING';}
-            return {key:t.key,ownerId:t.ownerId,ownerType:t.ownerType,topicId:t.topicId,historyProtocol:this.sourceCatalog?2:1,executionProtocol:2,...(t.sourceId?{sourceId:t.sourceId,archived:Boolean(t.archived),sourceState:t.sourceState||'available'}:{}),agentName:metadata.agentName||t.agentName||t.ownerId,topicName:metadata.topicName||t.topicName||t.topicId,avatar:metadata.avatar||null,updatedAt:metadata.updatedAt||null,model:t.model||null,historyReady:ready,executable:available,unavailableReason:available?null:reason,attachmentsEnabled:Boolean(this.attachments),...published,syncStatus:ready?(t.sourceId?'history-ready':'central'):'initial-import-pending',...this.db.prepare('SELECT count(*) AS messageCount,coalesce(max(last_seq),0) AS seq FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND deleted=0').get(t.ownerType,t.ownerId,t.topicId)};
+            return {key:t.key,ownerId:t.ownerId,ownerType:t.ownerType,topicId:t.topicId,historyProtocol:this.sourceCatalog?2:1,executionProtocol:2,...(t.sourceId?{sourceId:t.sourceId,sourceLabel:this.sourceLabel(t.sourceId),archived:Boolean(t.archived),sourceState:t.sourceState||'available'}:{}),agentName:metadata.agentName||t.agentName||t.ownerId,topicName:metadata.topicName||t.topicName||t.topicId,avatar:metadata.avatar||null,updatedAt:metadata.updatedAt||null,model:t.model||null,historyReady:ready,executable:available,unavailableReason:available?null:reason,attachmentsEnabled:Boolean(this.attachments),...published,syncStatus:ready?(t.sourceId?'history-ready':'central'):'initial-import-pending',...this.db.prepare('SELECT count(*) AS messageCount,coalesce(max(last_seq),0) AS seq FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND deleted=0').get(t.ownerType,t.ownerId,t.topicId)};
         });
     }
     agents(session) {
         const topics=this.catalog(session),agents=new Map();
-        for(const t of topics)if(!agents.has(JSON.stringify([t.ownerType,t.ownerId])))agents.set(JSON.stringify([t.ownerType,t.ownerId]),{id:t.ownerId,ownerType:t.ownerType,name:t.agentName,avatar:t.avatar,model:t.model,executable:t.executable,unavailableReason:t.unavailableReason});
+        for(const t of topics)if(!agents.has(JSON.stringify([t.ownerType,t.ownerId])))agents.set(JSON.stringify([t.ownerType,t.ownerId]),{id:t.ownerId,ownerType:t.ownerType,name:t.agentName,avatar:t.avatar,model:t.model,executable:t.executable,unavailableReason:t.unavailableReason,...(t.sourceId?{sourceId:t.sourceId,sourceLabel:this.sourceLabel(t.sourceId)}:{})});
         for(const sourceId of this.sourceIds(session))for(const owner of this.sourceCatalog.entities(sourceId,'agents')){
             if(owner.deleted)continue;const related=topics.filter(t=>t.sourceId===sourceId&&t.ownerType===owner.ownerType&&t.ownerId===owner.ownerId);
-            agents.set(JSON.stringify([owner.ownerType,owner.ownerId]),{id:owner.ownerId,ownerType:owner.ownerType,name:owner.name,avatar:owner.avatar||null,executable:related.some(t=>t.executable),unavailableReason:related.length?'SERVER_AGENT_NOT_CONFIGURED':'NO_TOPICS',sourceId});
+            agents.set(JSON.stringify([owner.ownerType,owner.ownerId]),{id:owner.ownerId,ownerType:owner.ownerType,name:owner.name,avatar:owner.avatar||null,executable:related.some(t=>t.executable),unavailableReason:related.length?'SERVER_AGENT_NOT_CONFIGURED':'NO_TOPICS',sourceId,sourceLabel:this.sourceLabel(sourceId)});
         }
         return [...agents.values()];
     }
     hasSourceScope(session){return session.scopes.some(k=>k.startsWith('source:'));}
+    sourceLabel(sourceId){return this.sourceCatalog?.grants.get(sourceId)?.label||'未命名来源';}
     sourceIds(session){return session.scopes.filter(k=>k.startsWith('source:')).map(k=>k.slice(7)).filter(id=>this.sourceCatalog?.grants.has(id));}
     topicAllowed(topic,session){return !topic.directoryDeleted&&(session.scopes.includes(topic.key)||(topic.sourceId&&this.sourceIds(session).includes(topic.sourceId)&&Boolean(this.sourceCatalog.activeTopic(topic.sourceId,topic))));}
     refreshDirectoryTopics(){
@@ -191,7 +192,7 @@ class MobilePortal {
         const stableTopics=topics.map(({messageCount,seq,updatedAt,...rest})=>rest);
         const revision=digest(JSON.stringify({agents,topics:stableTopics,scope:session.scopes}));
         if(query.revision&&query.revision!==revision)throw error('DIRECTORY_REVISION_CHANGED',409);
-        const sourceProgress=this.sourceIds(session).map(sourceId=>({sourceId,...this.sourceCatalog.progress(sourceId)}));
+        const sourceProgress=this.sourceIds(session).map(sourceId=>({sourceId,sourceLabel:this.sourceLabel(sourceId),...this.sourceCatalog.progress(sourceId)}));
         if(query.kind==='revision')return {version:1,revision,sourceProgress};
         if(!['agents','topics'].includes(query.kind))throw error('INVALID_DIRECTORY_QUERY');
         const limit=Number(query.limit||100);if(!Number.isSafeInteger(limit)||limit<1||limit>200)throw error('INVALID_DIRECTORY_QUERY');
@@ -223,23 +224,34 @@ class MobilePortal {
         this.db.exec('BEGIN IMMEDIATE');try{if(existingId)this.db.prepare('DELETE FROM mobile_sessions WHERE id=?').run(existingId);this.db.prepare('INSERT INTO mobile_sessions(hash,id,expires,scopes,last_topic_key) VALUES(?,?,?,?,?)').run(digest(token),id,Date.now()+this.sessionSeconds*1000,scopes,selected||null);this.db.exec('COMMIT');}catch(e){this.db.exec('ROLLBACK');throw e;}
         res.setHeader('Set-Cookie',`${cookieName}=${token}; Path=/mobile; HttpOnly; Secure; SameSite=Strict; Max-Age=${this.sessionSeconds}`);res.json({authenticated:true,server:this.connection.information()});
     }
+    pairingSourceScopes(sourceId,snapshot,requestScope) {
+        if(requestScope.topics!==undefined&&requestScope.source?.sourceId!==sourceId)throw error('SOURCE_SCOPE_MISMATCH',403);
+        if(!this.sourceCatalog?.grants.has(sourceId))throw error('SOURCE_NOT_APPROVED',403);
+        if(!snapshot)return ['source:'+sourceId];
+        const rows=this.sourceCatalog.entities(sourceId,'topics').filter(t=>this.sourceCatalog.activeTopic(sourceId,t));
+        if(!rows.length||rows.length>128||rows.some(t=>!t.ready))throw error('PAIRING_SCOPE_NOT_READY',409);
+        const scopes=rows.map(t=>t.key);
+        if(new Set(scopes).size!==scopes.length||scopes.some(k=>typeof k!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(k)))throw error('PAIRING_SCOPE_NOT_READY',409);
+        return scopes;
+    }
     createPairing(options={},requestScope={}) {
         if(this.engine.quiescing)throw error('HOST_DRAINING',503);
-        if(!options||Object.keys(options).some(k=>!['scopeMode','sourceId','snapshot'].includes(k)))throw error('INVALID_PAIRING_SCOPE');
+        if(!options||typeof options!=='object'||Array.isArray(options)||Object.keys(options).some(k=>!['scopeMode','sourceId','snapshot','sources'].includes(k)))throw error('INVALID_PAIRING_SCOPE');
         if(options.snapshot!==undefined&&(typeof options.snapshot!=='boolean'||options.scopeMode!=='source'))throw error('INVALID_PAIRING_SCOPE');
         let scopes=this.staticTopics.filter(t=>requestScope.topics===undefined||requestScope.topics.includes(JSON.stringify([t.ownerType,t.ownerId,t.topicId]))).map(t=>t.key);
-        if(options.scopeMode!==undefined&&options.scopeMode!=='selected'&&options.scopeMode!=='source')throw error('INVALID_PAIRING_SCOPE');
-        if(options.scopeMode==='source'){
-            if(requestScope.topics!==undefined&&requestScope.source?.sourceId!==options.sourceId)throw error('SOURCE_SCOPE_MISMATCH',403);
-            if(!this.sourceCatalog?.grants.has(options.sourceId))throw error('SOURCE_NOT_APPROVED',403);
-            if(options.snapshot===true){
-                // Reuse the existing exact-topic session grants. This creates a
-                // new bounded pairing; it never changes existing sessions/pins.
-                const rows=this.sourceCatalog.entities(options.sourceId,'topics').filter(t=>this.sourceCatalog.activeTopic(options.sourceId,t));
-                if(!rows.length||rows.length>128||rows.some(t=>!t.ready))throw error('PAIRING_SCOPE_NOT_READY',409);
-                scopes=rows.map(t=>t.key);if(new Set(scopes).size!==scopes.length||scopes.some(k=>typeof k!=='string'||!/^[a-zA-Z0-9_-]{1,64}$/.test(k)))throw error('PAIRING_SCOPE_NOT_READY',409);
-            }else scopes=['source:'+options.sourceId];
-        }else if(options.sourceId!==undefined)throw error('INVALID_PAIRING_SCOPE');
+        if(options.scopeMode!==undefined&&!['selected','source','sources'].includes(options.scopeMode))throw error('INVALID_PAIRING_SCOPE');
+        if(options.scopeMode==='sources'){
+            if(options.sourceId!==undefined||options.snapshot!==undefined||!Array.isArray(options.sources)||!options.sources.length||options.sources.length>32)throw error('INVALID_PAIRING_SCOPE');
+            const ids=new Set();scopes=[];
+            for(const row of options.sources){
+                if(!row||Object.keys(row).some(k=>!['sourceId','snapshot'].includes(k))||typeof row.sourceId!=='string'||typeof row.snapshot!=='boolean'||ids.has(row.sourceId))throw error('INVALID_PAIRING_SCOPE');
+                ids.add(row.sourceId);scopes.push(...this.pairingSourceScopes(row.sourceId,row.snapshot,requestScope));
+            }
+        }else{
+            if(options.sources!==undefined)throw error('INVALID_PAIRING_SCOPE');
+            if(options.scopeMode==='source')scopes=this.pairingSourceScopes(options.sourceId,options.snapshot===true,requestScope);
+            else if(options.sourceId!==undefined)throw error('INVALID_PAIRING_SCOPE');
+        }
         const code=randomBytes(24).toString('base64url'),expiresAt=Date.now()+180000;
         this.db.prepare('INSERT INTO mobile_pairings(hash,expires,scopes) VALUES(?,?,?)').run(digest(code),expiresAt,JSON.stringify(scopes));
         return {pairingCode:code,expiresAt};

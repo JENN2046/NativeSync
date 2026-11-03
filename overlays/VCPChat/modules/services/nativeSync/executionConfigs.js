@@ -2,8 +2,13 @@
 const { extractAgentDTO } = require('../../../VCPDistributedServer/Plugin/VCPMobileSync/dto/agent.dto');
 const { extractGroupDTO } = require('../../../VCPDistributedServer/Plugin/VCPMobileSync/dto/group.dto');
 const { fail } = require('./protocol');
+const ruleFields=['id','name','type','enabled','content','scope','builtinKey','isBuiltin','role','depth','wrap','order','source'];
+function projectRules(rules){
+ if(!Array.isArray(rules)||rules.some(r=>!r||typeof r!=='object'||Array.isArray(r)))throw fail('INVALID_TAVERN_RULES');
+ return rules.map(rule=>Object.fromEntries(ruleFields.filter(k=>Object.hasOwn(rule,k)).map(k=>[k,rule[k]])));
+}
 // Private inputs are projected through the existing native DTO whitelist.
-async function executionConfigFor(t,{readAgentConfig,readGroupConfig,readTavernRules=()=>[],readExecutionPolicy=()=>({}),allowDirectoryTopic=false}){
+async function executionConfigFor(t,{readAgentConfig,readGroupConfig,readTavernRules=()=>[],readEffectiveTavernRules,readExecutionPolicy=()=>({}),allowDirectoryTopic=false}){
  const group=t.itemType==='group';if(group&&typeof readGroupConfig!=='function')throw fail('GROUP_CONFIG_AUTHORITY_REQUIRED');
  const original=await(group?readGroupConfig:readAgentConfig)(t.itemId);
  if(!original.topics?.some(topic=>topic.id===t.topicId)&&!allowDirectoryTopic)throw fail('SELECTED_TOPIC_NOT_IN_AGENT');
@@ -14,7 +19,7 @@ async function executionConfigFor(t,{readAgentConfig,readGroupConfig,readTavernR
   for(const id of dto.members){try{const value=await readAgentConfig(id);if(!value||value.error)throw Error();agents.push({id,...project(value)});}catch{agents.push({id,unavailable:true});}}
   config={group:{...dto,...(original.modeSettings?.sequential?.speakerOrder?{modeSettings:{sequential:{speakerOrder:original.modeSettings.sequential.speakerOrder}}}:{}),...(original.sequentialSpeakerOrder?{sequentialSpeakerOrder:original.sequentialSpeakerOrder}:{})},agents};
  }
- config.tavernRules=await readTavernRules();config.executionPolicy=await readExecutionPolicy();return config;
+ config.tavernRules=projectRules(await(readEffectiveTavernRules?readEffectiveTavernRules(t):readTavernRules()));config.executionPolicy=await readExecutionPolicy();return config;
 }
 async function publishExecutionConfigs({topics,send,...readers}){
  const current=await send('/api/plugins/NativeSync/mobile/execution-configs'),rows=[];

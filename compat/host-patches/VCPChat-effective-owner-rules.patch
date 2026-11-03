@@ -1,0 +1,10 @@
+--- a/main.js
++++ b/main.js
+@@ -2020,6 +2020,7 @@
+             agentConfigEvents: agentConfigManager,
+             readGroupConfig: id => groupChat.getAgentGroupConfig(id),
+             readTavernRules: () => tavernHandlers.getActiveRules(),
++            readEffectiveTavernRules: async descriptor => (await require('./modules/services/conversationContext').resolve({type:descriptor.itemType||'agent',id:descriptor.itemId})).rules,
+             readExecutionPolicy: async () => { const s=await appSettingsManager.readSettings(); return {userName:s.userName||'用户',enableThoughtChainInjection:s.enableThoughtChainInjection===true,enableContextSanitizer:s.enableContextSanitizer===true,contextSanitizerDepth:s.contextSanitizerDepth===undefined?2:Number(s.contextSanitizerDepth),enableVcpToolInjection:s.enableVcpToolInjection===true}; },
+             storeAttachment: (...args) => fileManager.storeFile(...args),
+             notifyExecutionStatus: change => {

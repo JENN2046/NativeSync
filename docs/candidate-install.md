@@ -32,3 +32,11 @@ SCOPE.json的codeRollbackBaseline是早期选定模式的公共夹具组装输�
 始终保留数据库、state、游标、范围、授权绑定和已接受执行快照，不通过删数据或恢复旧数据完成回退。
 
 包中不包含凭据、聊天、SQLite、原生依赖或完整宿主。模型、手机、Windows与远端的支持边界以实际交付记录为准。
+
+## 原生有效规则与多来源候选
+
+新版桌面runtime支持可选`readEffectiveTavernRules(descriptor)`，应由匹配宿主调用原生`conversationContext.resolve`并返回其rules。包内`compat/host-patches/VCPChat-effective-owner-rules.patch`仅适用于JSON所列before摘要；现有固定开发副本安装器不会自动应用该日常宿主补丁。未接该回调的旧宿主继续使用全局规则。
+
+手机只显示已有会话获准访问的来源，并可按来源筛选；同名Agent保持独立身份。新的联合配对需先确认`/mobile/api/connection`能力`multiSourcePairing`为true，然后使用原受保护配对入口提交`scopeMode:"sources"`与`sources:[{sourceId,snapshot}]`。每项snapshot必须明确为true（当前话题固定快照）或false（该已批准来源及未来新增内容）。未知/重复来源、缺少明确选择、单一来源请求试图添加其他来源均拒绝。
+
+这些能力不修改已有Source授权或旧手机会话，不自动解除只读限制。日常/生产安装需使用当次匹配目标清单；不要因新候选存在就套用旧固定清单或恢复数据。

@@ -1,5 +1,13 @@
 // A whole directory revision is published to the view only after every page.
 // Failures retain the previous view; absence in a failed read is never removal.
+export function directorySources(agents=[],topics=[]){
+ const rows=new Map();
+ for(const row of [...agents,...topics]){
+  const key=row.sourceId||'',label=row.sourceLabel||(key?'未命名来源':'选定会话');
+  if(!rows.has(key))rows.set(key,{key,label});
+ }
+ return [...rows.values()].sort((a,b)=>a.key.localeCompare(b.key)).map((row,_index,all)=>({...row,label:all.filter(r=>r.label===row.label).length>1?row.label+' · '+(all.filter(r=>r.label===row.label).findIndex(r=>r.key===row.key)+1):row.label}));
+}
 export async function readDirectoryPages(api,current=()=>true){
  for(let attempt=0;attempt<3;attempt++){
   try{

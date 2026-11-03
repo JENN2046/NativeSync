@@ -1,7 +1,7 @@
 <script setup>
 import {ref,computed,onMounted,onUnmounted,nextTick} from 'vue';
 import {createExecutionPager} from './executionPages.js';
-import {readDirectoryPages,readHistoryBaseline} from './directoryHistory.js';
+import {readDirectoryPages,readHistoryBaseline,directorySources} from './directoryHistory.js';
 import {createAttachmentStatusPager} from './attachmentStatus.js';
 import {consumePairingLink} from './pairingLink.js';
 import {uploadAttachment} from './attachmentUpload.js';
@@ -23,6 +23,10 @@ let connectionInitialized=false;
 const pairingLinkOpen=ref(false);
 const paired=ref(false),pairCode=ref(''),topics=ref([]),selected=ref(''),agentId=ref(''),messages=ref([]),jobs=ref([]),busy=ref(false),notice=ref('正在连接…'),online=ref(false),history=ref(null);
 const directoryAgents=ref(null),directoryNotice=ref(''),sourceProgress=ref([]);
+const sourceFilter=ref('*'),sourceKey=row=>row?.sourceId||'';
+const sources=computed(()=>directorySources(directoryAgents.value||[],topics.value));
+const sourceMatches=row=>sourceFilter.value==='*'||sourceKey(row)===sourceFilter.value;
+const sourceName=row=>sources.value.find(s=>s.key===sourceKey(row))?.label||'选定会话';
 let directoryPaged=false,directoryRevision='',directoryLoading=false,directoryRequest=0,baselineReady=false,baselineRequestId='';
 const settingsOpen=ref(false),serverUrl=ref(''),accessKey=ref(''),server=ref(null),tested=ref(false);
 const recoveryContext=ref(null),recoveryRecords=ref([]),recoveryError=ref(''),recoveryDetail=ref(''),acceptedReceipt=ref(null);
@@ -31,8 +35,9 @@ const submissionStore=createSubmissionRecovery({origin:browserOrigin,getStorage:
 let timer,refreshing=false,historyKey='',cursor=0,historyRows=new Map(),generation=0,authEpoch=0,submissionNoticeHeld=false;
 const ownerKey=t=>JSON.stringify([t.ownerType||'agent',t.ownerId||t.agentName]);
 const labels={waiting_approval:'等待原生工具审批',review_required:'执行中断 · 接力已暂停',blocked_config:'上下文或配置不可用 · 接力已暂停',recovering:'正在恢复已保存的结果',interrupted:'已中断 · 不自动重跑',preparing:'正在持久保存',queued:'已接受 · 等待执行',running:'服务端执行中',cancelling:'正在取消',cancelled:'已取消',publishing:'正在保存回复',completed:'回复已保存',failed:'执行失败'};
-const agents=computed(()=>directoryAgents.value?directoryAgents.value.map(a=>({...a,id:JSON.stringify([a.ownerType||'agent',a.id]),name:(a.ownerType==='group'?'群聊 · ':'')+a.name})):[...new Map(topics.value.map(t=>[ownerKey(t),{id:ownerKey(t),name:(t.ownerType==='group'?'群聊 · ':'')+t.agentName,avatar:t.avatar,model:t.model,executable:t.executable}])).values()]);
-const visibleTopics=computed(()=>topics.value.filter(t=>ownerKey(t)===agentId.value));
+const agents=computed(()=>directoryAgents.value?directoryAgents.value.map(a=>{const id=JSON.stringify([a.ownerType||'agent',a.id]),topic=topics.value.find(t=>ownerKey(t)===id);return {...a,sourceId:a.sourceId||topic?.sourceId,sourceLabel:a.sourceLabel||topic?.sourceLabel,id,name:(a.ownerType==='group'?'群聊 · ':'')+a.name};}):[...new Map(topics.value.map(t=>[ownerKey(t),{id:ownerKey(t),name:(t.ownerType==='group'?'群聊 · ':'')+t.agentName,avatar:t.avatar,model:t.model,executable:t.executable,sourceId:t.sourceId,sourceLabel:t.sourceLabel}])).values()]);
+const visibleAgents=computed(()=>agents.value.filter(sourceMatches));
+const visibleTopics=computed(()=>topics.value.filter(t=>sourceMatches(t)&&ownerKey(t)===agentId.value));
 const currentTopic=computed(()=>topics.value.find(t=>t.key===selected.value));
 function draftScope(){const topic=currentTopic.value;return paired.value&&validSessionRecovery(recoveryContext.value)&&topic?JSON.stringify([recoveryContext.value.entryId,ownerKey(topic),topic.topicId,topic.key]):'';}
 function switchDraft(){
@@ -74,11 +79,12 @@ function resetHistory(){executionPager.reset();jobsInfo.value=null;jobsError.val
 async function setDirectory(result,{initial=false,selectedTopic=null,adjustSelection=true}={}){
  const previous=selected.value,previousAgent=agentId.value;
  topics.value=result.topics;directoryAgents.value=Array.isArray(result.agents)?result.agents:null;sourceProgress.value=result.sourceProgress||[];
+ if(sourceFilter.value!=='*'&&!sources.value.some(s=>s.key===sourceFilter.value))sourceFilter.value='*';
  directoryRevision=result.revision||'';
  if(adjustSelection){
-  const preferred=topics.value.find(t=>t.key===(previous||(initial?selectedTopic:null)));
+  const preferred=topics.value.find(t=>sourceMatches(t)&&t.key===(previous||(initial?selectedTopic:null)));
   if(preferred){agentId.value=ownerKey(preferred);selected.value=preferred.key;}
-  else{agentId.value=agents.value.some(a=>a.id===previousAgent)?previousAgent:agents.value[0]?.id||'';selected.value=visibleTopics.value[0]?.key||'';}
+  else{agentId.value=visibleAgents.value.some(a=>a.id===previousAgent)?previousAgent:visibleAgents.value[0]?.id||'';selected.value=visibleTopics.value[0]?.key||'';}
   if(previous&&previous!==selected.value)directoryNotice.value='原话题已删除或当前会话已失去访问权限；本页草稿和待确认提交仍保留。';
   else directoryNotice.value='';
   if(previous!==selected.value)resetHistory();else switchDraft();
@@ -111,6 +117,11 @@ async function testConnection(){busy.value=true;tested.value=false;accessKey.val
 async function connect(){if(!keyAllowed.value||!tested.value)return;busy.value=true;const key=accessKey.value;accessKey.value='';invalidateSession();try{await api('connection/authenticate',{serverUrl:serverUrl.value,apiKey:key});resetHistory();await session();settingsOpen.value=false;notice.value='已保存服务器连接，使用受限设备会话；待确认提交继续保留。';}catch(e){notice.value=e.message;}finally{busy.value=false;}}
 async function disconnect(){busy.value=true;accessKey.value='';try{await api('connection/disconnect',{});paired.value=false;invalidateSession();topics.value=[];directoryAgents.value=null;sourceProgress.value=[];directoryRevision='';resetHistory();tested.value=false;settingsOpen.value=true;notice.value='此设备会话已撤销，待确认提交继续保留，可重新认证核对。';}catch(e){notice.value=e.message;}finally{busy.value=false;}}
 function selectAgent(){selected.value=visibleTopics.value[0]?.key||'';changeTopic();}
+function selectSource(){
+ if(currentTopic.value&&sourceMatches(currentTopic.value))return;
+ agentId.value=visibleAgents.value.some(a=>a.id===agentId.value)?agentId.value:visibleAgents.value[0]?.id||'';
+ selected.value=visibleTopics.value[0]?.key||'';changeTopic();
+}
 async function changeTopic(){resetHistory();if(!selected.value)return;try{await api('selection',{key:selected.value});await refresh();}catch(e){notice.value=e.message;}}
 async function refresh(){
  if(!paired.value||!selected.value||refreshing)return;refreshing=true;const key=selected.value,epoch=generation,sessionEpoch=authEpoch,context=validSessionRecovery(recoveryContext.value)?captureContext():null;
@@ -284,7 +295,7 @@ onUnmounted(()=>{clearInterval(timer);window.removeEventListener('hashchange',pa
    <p v-if="recoveryRecords.length" id="saved-submissions">此设备保留 {{recoveryRecords.length}} 条待确认提交。重新连接后会核对原记录，不会自动重发。</p><p v-if="recoveryError" role="alert">{{recoveryError}}</p><p role="status">{{notice}}</p>
   </main>
   <template v-else>
-   <nav><div class="agent-heading"><img v-if="agents.find(a=>a.id===agentId)?.avatar" :src="agents.find(a=>a.id===agentId).avatar" alt="Agent 头像"><div><label for="agent-select">Agent / 群聊</label><select id="agent-select" v-model="agentId" @change="selectAgent" :disabled="busy"><option v-for="a in agents" :key="a.id" :value="a.id">{{a.name}}</option></select></div></div><label for="topic-select">历史话题</label><select id="topic-select" v-model="selected" @change="changeTopic" :disabled="busy"><option v-for="t in visibleTopics" :key="t.key" :value="t.key">{{t.topicName}} · {{t.messageCount}} 条</option></select><small v-if="currentTopic" class="topic-detail"><template v-if="currentTopic.configVersion">配置 v{{currentTopic.configVersion}} · </template>{{currentTopic.topicId}} · {{currentTopic.model||'未配置模型'}} · {{currentTopic.historyReady===false?'等待电脑首次同步':currentTopic.executable===false?(errors[currentTopic.unavailableReason]||'仅可阅读'):'可继续对话'}}<template v-if="currentTopic.updatedAt"> · {{new Date(currentTopic.updatedAt).toLocaleString()}}</template></small><small v-if="!visibleTopics.length">此 Agent 暂无话题；新话题同步后会自动出现。</small><small v-if="directoryNotice" role="status">{{directoryNotice}}</small><small v-for="progress in sourceProgress" :key="progress.sourceId" class="source-progress">最近已知：目录待核对 {{progress.directoryErrors??'未知'}} · 历史待接入 {{progress.pendingImports??'未知'}} · 本地操作待确认 {{progress.pendingOperations??'未知'}} · 冲突 {{progress.conflicts??'未知'}} · 附件待就绪 {{progress.attachmentsPending??'未知'}}<template v-if="progress.configurationPending!==undefined"> · 续聊配置待就绪 {{progress.configurationPending??'核对中'}} · 配置异常 {{progress.configurationErrors}}</template></small></nav>
+   <nav><template v-if="sources.length>1"><label for="source-select">来源</label><select id="source-select" v-model="sourceFilter" @change="selectSource" :disabled="busy"><option value="*">全部已授权来源</option><option v-for="s in sources" :key="s.key" :value="s.key">{{s.label}}</option></select></template><small v-else-if="sources.length" class="source-label">来源：{{sources[0].label}}</small><div class="agent-heading"><img v-if="agents.find(a=>a.id===agentId)?.avatar" :src="agents.find(a=>a.id===agentId).avatar" alt="Agent 头像"><div><label for="agent-select">Agent / 群聊</label><select id="agent-select" v-model="agentId" @change="selectAgent" :disabled="busy"><option v-for="a in visibleAgents" :key="a.id" :value="a.id">{{a.name}}<template v-if="sourceFilter==='*'&&sources.length>1"> · {{sourceName(a)}}</template></option></select></div></div><label for="topic-select">历史话题</label><select id="topic-select" v-model="selected" @change="changeTopic" :disabled="busy"><option v-for="t in visibleTopics" :key="t.key" :value="t.key">{{t.topicName}} · {{t.messageCount}} 条</option></select><small v-if="currentTopic" class="topic-detail"><template v-if="currentTopic.configVersion">配置 v{{currentTopic.configVersion}} · </template>{{currentTopic.topicId}} · {{currentTopic.model||'未配置模型'}} · {{currentTopic.historyReady===false?'等待电脑首次同步':currentTopic.executable===false?(errors[currentTopic.unavailableReason]||'仅可阅读'):'可继续对话'}}<template v-if="currentTopic.updatedAt"> · {{new Date(currentTopic.updatedAt).toLocaleString()}}</template></small><small v-if="!visibleTopics.length">此 Agent 暂无话题；新话题同步后会自动出现。</small><small v-if="directoryNotice" role="status">{{directoryNotice}}</small><small v-for="progress in sourceProgress" :key="progress.sourceId" class="source-progress">{{progress.sourceLabel||'来源'}} · 最近已知：目录待核对 {{progress.directoryErrors??'未知'}} · 历史待接入 {{progress.pendingImports??'未知'}} · 本地操作待确认 {{progress.pendingOperations??'未知'}} · 冲突 {{progress.conflicts??'未知'}} · 附件待就绪 {{progress.attachmentsPending??'未知'}}<template v-if="progress.configurationPending!==undefined"> · 续聊配置待就绪 {{progress.configurationPending??'核对中'}} · 配置异常 {{progress.configurationErrors}}</template></small></nav>
    <section ref="history" id="history" aria-label="聊天历史"><div class="start">会话 · 服务端持久保存</div><article v-for="m in messages" :key="m.id" class="message" :class="m.role" :data-message-id="m.id"><small>{{m.role==='user'?'你':(m.name||currentTopic?.agentName||'Agent')}}</small><div class="bubble">{{typeof m.content==='string'?m.content:'此消息包含非文本内容，请在桌面查看'}}</div><div v-if="m.attachments?.length" class="attachments"><div v-for="a in m.attachments" :key="a.id" class="attachment"><template v-if="attachmentStates[m.id+'/'+a.id]?.state==='available'"><img v-if="attachmentStates[m.id+'/'+a.id]?.type?.startsWith('image/')" :src="attachmentUrl(m,a)" :alt="a.name||'图片附件'" loading="lazy"><button class="attachment-open" @click="openAttachment(m,a)">{{a.name||'查看附件'}}</button><details v-if="a.extractedText"><summary>查看文本</summary><pre>{{a.extractedText}}</pre></details></template><span v-else>{{a.name||'附件'}} · {{attachmentStates[m.id+'/'+a.id]?.state==='corrupt'?'完整性校验失败':'附件暂未同步或正在确认'}}</span></div></div></article><p v-if="!messages.length" class="empty">{{currentTopic?.historyReady===false?'正在等待电脑同步所选历史，完成后即可接续。':'还没有消息，发送一条开始会话。'}}</p></section>
    <section v-if="recoveryBlocker||pendingSubmission||acceptedReceipt||recoveryRecords.length" id="submission-recovery" class="submission-recovery" aria-label="提交确认状态" aria-live="polite"><p v-if="recoveryBlocker" role="alert">{{recoveryBlocker}}</p><div v-if="pendingSubmission" id="pending-submission" :data-request-id="pendingSubmission.requestId"><strong>本地已保存 · 云端接受尚待确认</strong><p>{{pendingSubmission.kind==='invitation'?'邀请成员：'+pendingSubmission.payload.agentId:pendingSubmission.payload.text.slice(0,120)||'附件消息'}}</p><small>提交 {{pendingSubmission.requestId}}<template v-if="pendingSubmission.payload.attachments?.length"> · {{pendingSubmission.payload.attachments.length}} 个附件</template></small><p id="submission-recovery-detail">{{recoveryDetail||'原提交已保留。刷新或重连只核对云端记录，不会自动发送。'}}</p></div><p v-else-if="acceptedReceipt" id="accepted-submission" :data-request-id="acceptedReceipt.requestId"><strong>云端已接受</strong> · 提交 {{acceptedReceipt.requestId}}</p><small v-if="recoveryRecords.length>(pendingSubmission?1:0)">此设备另有 {{recoveryRecords.length-(pendingSubmission?1:0)}} 条待确认提交，返回对应入口和话题可核对。</small></section>
    <section class="executions" aria-label="原生执行状态">

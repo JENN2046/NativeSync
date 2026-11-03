@@ -31,7 +31,7 @@ function createSyncRequest(connection,timeoutMs=8000) {
     };
 }
 
-async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated = false, notify, notifyExecutionStatus, intervalMs = 250, executionIntervalMs = 5000, readSettings, readAgentConfig, readGroupConfig, readTavernRules, readExecutionPolicy, thumbnail, request, requestBinary, storeAttachment, ipcMain, sourceFault, agentConfigEvents }) {
+async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated = false, notify, notifyExecutionStatus, intervalMs = 250, executionIntervalMs = 5000, readSettings, readAgentConfig, readGroupConfig, readTavernRules, readEffectiveTavernRules, readExecutionPolicy, thumbnail, request, requestBinary, storeAttachment, ipcMain, sourceFault, agentConfigEvents }) {
     const poc = args.includes('--native-sync-poc');
     if (poc && !isolated) throw fail('ISOLATED_APP_DATA_REQUIRED');
     if (!poc && !appDataRoot) return null;
@@ -70,7 +70,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
         if(full&&connection.executionMode==='all-supported')return;
         if (!connection?.publishExecutionConfigs || (full&&!connection.executionTopics.length)) return;
         try {
-            await require('./executionConfigs').publishExecutionConfigs({topics:full?connection.executionTopics:connection.topics,readAgentConfig,readGroupConfig,readTavernRules,readExecutionPolicy,send});
+            await require('./executionConfigs').publishExecutionConfigs({topics:full?connection.executionTopics:connection.topics,readAgentConfig,readGroupConfig,readTavernRules,readEffectiveTavernRules,readExecutionPolicy,send});
             publicationError = null;
         } catch (error) { publicationError = error.code || 'CONFIG_PUBLICATION_FAILED'; }
     };
@@ -96,7 +96,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
         sourceListener=()=>{sourceSync.dirty=true;};agentConfigEvents?.on?.('agent-config-updated',sourceListener);
         await sourceSync.discover();
         if(connection.executionMode==='all-supported'){
-            sourcePublisher=new (require('./sourceExecutionPublication').SourceExecutionPublication)({send,getTopics:()=>connection.topics,getDirectory:()=>sourceSync.directory,readAgentConfig,readGroupConfig,readTavernRules,readExecutionPolicy});
+            sourcePublisher=new (require('./sourceExecutionPublication').SourceExecutionPublication)({send,getTopics:()=>connection.topics,getDirectory:()=>sourceSync.directory,readAgentConfig,readGroupConfig,readTavernRules,readEffectiveTavernRules,readExecutionPolicy});
             adapter.sourceExecutionPublication=()=>sourcePublisher.diagnostics();
         }
     }
