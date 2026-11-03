@@ -1,0 +1,129 @@
+{
+  "sourceCommit": "1d19663f3eff12b0bded7b9b9b2ee62fb82be7da",
+  "archive": "/home/jenn/下载/NativeSync_Source_Data_Compat_20261103.zip",
+  "sha256": "a300c2b146d10e2b7fe0a7085f6be3a3a76fae5d6d39c2b9967b64c3d3b2745a",
+  "runtimeFiles": 85,
+  "supportFilesVerified": 38,
+  "windowsWrites": [
+    {
+      "path": "VCPChat/modules/services/nativeSync/adapter.js",
+      "beforeSha256": "8400b4f0530233add1a0c58578f2f838c2377b12ad52d53c48acd0de8b5b120e",
+      "afterSha256": "31be883778e5f72af6d460d80d5d12b0cb99c3af07ce9a6dd1ac00571a15806a",
+      "action": "replace"
+    },
+    {
+      "path": "VCPChat/modules/services/nativeSync/attachments.js",
+      "beforeSha256": "81f264a761868c1e07aba3d9c9c25a46896851c7929d1025a5482e7b6ab13eb3",
+      "afterSha256": "c6653820d6c5dd09fe6602a98e4d61f095a3c891043032f8be62d1ce5f1d4f7d",
+      "action": "replace"
+    },
+    {
+      "path": "VCPChat/modules/services/nativeSync/contracts.generated.cjs",
+      "beforeSha256": "91ec9dbd605f0b4476572f3db19df3d622d6a9b662dfff2dfaf072b40964f1bd",
+      "afterSha256": "9df5dfdfc906be81821c20c5cf3de2d11fc3e50ac2b977866de8c92fbcbc9cc9",
+      "action": "replace"
+    },
+    {
+      "path": "VCPChat/modules/services/nativeSync/runtime.js",
+      "beforeSha256": "ed256d92775696f307481d45b110a10ad88c6b77d6813f495721be5ad6296664",
+      "afterSha256": "cae24e1a18269d7d35dd8d32131b8c4cbcdba60db60af6b0564688f9cce18e5a",
+      "action": "replace"
+    },
+    {
+      "path": "VCPChat/modules/services/nativeSync/sourceSnapshot.js",
+      "beforeSha256": "ea21a3e299fe46b32950a35986cbd5b21d4a419ed589deaa6e23ba288fa97fb6",
+      "afterSha256": "99ca50ad77431e992e666e24cd346a14703c1df27fc130bea86b7a18bca5ec8c",
+      "action": "replace"
+    },
+    {
+      "path": "VCPChat/modules/services/nativeSync/sourceSync.js",
+      "beforeSha256": "71d915278072f93ecf0204389ca6c2bbbc2f34744820cd996568a3be8debd356",
+      "afterSha256": "93a67ae22f4305bcf39d61987fb67d0d25403bc10d1beea3bbd95e7a1c337889",
+      "action": "replace"
+    }
+  ],
+  "productionWrites": [
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/attachments.js",
+      "beforeSha256": "3771cb0ab46aa76bd0d28a01d5824d9899d21e20c4617c67b42f1b8db16cf17a",
+      "afterSha256": "9e0802867f2bd1cb4094be0d542e07fcbd2461a1fda256b5d92325408548de6e",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/connection.js",
+      "beforeSha256": "600db05b4d243f0fc79b6362ae450cc43be184cbe3c65b3af5aabaca090f72a3",
+      "afterSha256": "8a1011c7821e6990d84b85a660b2cee88de6a95b00fbc66dae8e270e17d213e2",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/execution.js",
+      "beforeSha256": "96a20792770f31bb7d6f9627f53eceb26f8471b7d9b50ba6343afe3ab7d8737d",
+      "afterSha256": "3db816f5e18db559ae5b13f14a48a40e7c7ea1f8b18fecc6db7efebc210c3c70",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/groupRequest.js",
+      "beforeSha256": "c509d2689ff626d194196665e225ea283f29638e45b19c80a8a4b25d3612f024",
+      "afterSha256": "7c0324c2b6f0d1f40f07fbbac1907ec5d7a31a6923c2f3c4f57ea19f1784e6b8",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "beforeSha256": "a57f82a2b4dbc044dd6fb2de0894e2a3040c2dc59269e1035dae25b043b5b34c",
+      "afterSha256": "7bfe95b2eb17a5d125ba306e02c2f3d92e004d528b6f9fb555c6d2c23338b056",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-Bq8qR-fB.js",
+      "beforeSha256": null,
+      "afterSha256": "2bbcde251c5ea05ad468133f1d45b756e7e652476dd2bf6a5e99587becb508ff",
+      "action": "create"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/index.html",
+      "beforeSha256": "361dabde7627bc9f1c747b72fdc5c4dc73937f1b0d4e7163d05f891f4e824f19",
+      "afterSha256": "5a9451ac0f386936251a551f625f06fe1c952d9c1608639bd079edd0a077f36d",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/capabilities.js",
+      "beforeSha256": null,
+      "afterSha256": "bebaf345829b44bb5648f328626de5a9664e66e5fc9b7a2358d5f2a29306874a",
+      "action": "create"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/contracts.generated.cjs",
+      "beforeSha256": "91ec9dbd605f0b4476572f3db19df3d622d6a9b662dfff2dfaf072b40964f1bd",
+      "afterSha256": "9df5dfdfc906be81821c20c5cf3de2d11fc3e50ac2b977866de8c92fbcbc9cc9",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "beforeSha256": "92309b48a14225db971d5fe31fe2c68fbfe82bbee7dc82d50e001cb0307e04a1",
+      "afterSha256": "44cf584d89cc1665b2829284f14da46846040560c6225f1ab50dc3cacbcf637c",
+      "action": "replace"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "beforeSha256": "7d957a3748cc4c776daa6d3f3e2d53801c285efabfd8590ca6f3bc4d3f04ba2b",
+      "afterSha256": "9faf922309c053cde4ab850dab5d05ad962b575b4b9f35890735c43e0fe09c79",
+      "action": "replace"
+    }
+  ],
+  "oldFrontendAssetsRetained": [
+    "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-DGmMOFfB.js"
+  ],
+  "sqliteMigration": false,
+  "mainStateVersionChanged": false,
+  "liveInstallExecuted": false,
+  "newReferenceRowsForbidUnverifiedOldCodecDowngrade": true,
+  "syntaxCheckedRuntimeFiles": 16,
+  "testEvidence": {
+    "targetedScenarios": 7,
+    "legacyContractChecks": 3,
+    "postHardeningDirectChecks": 2,
+    "candidateBrowserChecks": 1,
+    "realAndroid": false,
+    "realWindowsCandidateInstalled": false
+  }
+}
