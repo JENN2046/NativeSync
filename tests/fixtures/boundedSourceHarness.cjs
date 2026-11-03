@@ -20,13 +20,13 @@ const sibling={itemType:'agent',itemId:'one',topicId:'excluded'},foreign={itemTy
 const message=(id,content=id)=>({id,role:'user',content,timestamp:1});
 const limited=topics=>({mode:'limited',topics:topics.map(wireTopic)});
 const waitFor=async(fn,label)=>{const until=Date.now()+5000;for(;;){if(await fn())return;if(Date.now()>until)throw Error('WAIT_TIMEOUT '+label);await new Promise(r=>setTimeout(r,5));}};
-async function fixture(t,{scope=limited([selected,older]),seedOwners=true,executionBindings=[],executionMode,bodyLimit='5mb'}={}){
+async function fixture(t,{scope=limited([selected,older]),seedOwners=true,executionBindings=[],executionMode,bodyLimit='5mb',attachments=false}={}){
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'native-m2m3-')),app=path.join(root,'AppData');await fs.mkdir(app,{recursive:true});
  const store=new CentralStore(path.join(root,'central.sqlite')),staticTopic={key:'original',...wireTopic(selected),agentAlias:'synthetic-one'};
  const configuredTopics=[staticTopic,...executionBindings];
  const sourceCatalog=new SourceCatalog(store,{NativeSyncFullSources:JSON.stringify([{sourceId:'sourceA',deviceId:'deviceA',scope,...(executionMode?{executionMode}:{})}]),NativeMobileTopics:JSON.stringify(configuredTopics)});store.sourceCatalog=sourceCatalog;
  const syncService=createSyncHttpService(store);
- const portal=new MobilePortal({store,config:{NativeMobileOrigin:'https://synthetic-mobile.invalid',NativeMobileTopics:JSON.stringify(configuredTopics),NativeMobileConfigSync:true,NativeMobileMaxConcurrency:1,NativeSyncDataDir:root},agentManager:{isAgent:a=>a==='synthetic-one'||executionBindings.some(t=>t.agentAlias===a)}});
+ const portal=new MobilePortal({store,config:{NativeMobileOrigin:'https://synthetic-mobile.invalid',NativeMobileTopics:JSON.stringify(configuredTopics),NativeMobileConfigSync:true,NativeMobileAttachments:attachments,NativeMobilePwaDir:process.env.NATIVESYNC_PWA_DIST,NativeMobileMaxConcurrency:1,NativeSyncDataDir:root},agentManager:{isAgent:a=>a==='synthetic-one'||executionBindings.some(t=>t.agentAlias===a)}});
  store.onSourceChange=()=>portal.refreshDirectoryTopics();
  const appHttp=express();appHttp.set('trust proxy','loopback');appHttp.use(express.json({limit:bodyLimit}));
  appHttp.use('/api/v1/sync',(req,res)=>{if(req.headers.authorization!=='Bearer synthetic-only')return res.status(401).json({});return syncService.handle(req,res);});

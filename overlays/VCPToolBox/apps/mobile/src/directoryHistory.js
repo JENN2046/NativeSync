@@ -30,16 +30,19 @@ export async function readDirectoryPages(api,current=()=>true){
 }
 // Initial history is an immutable Journal prefix, followed by normal deltas.
 // A mutable messages.last_seq page is retained only for explicitly old servers.
-export async function readHistoryBaseline(api,key,requestId,current=()=>true){
+export async function readHistoryBaseline(api,key,requestId,current=()=>true,onPage=()=>{}){
  const route='conversations/'+encodeURIComponent(key),snapshot=await api(route+'/baseline',{requestId});if(!current())return null;
  if(!snapshot.id||!Number.isSafeInteger(snapshot.watermark)||!Number.isSafeInteger(snapshot.total))throw Error('历史基线无效');
  const rows=new Map(),seen=new Set();let after=0,count=0,pages=0;
  do{
   if(++pages>100000)throw Error('历史分页未能完成');
-  const r=await api(route+'/baseline/'+encodeURIComponent(snapshot.id)+'?after='+after+'&limit=100');if(!current())return null;
-  if(r.id!==snapshot.id||r.watermark!==snapshot.watermark||r.total!==snapshot.total||!Array.isArray(r.events)||r.events.length>100||typeof r.hasMore!=='boolean')throw Error('历史基线已变化');
+  const limit=pages===1?20:100;
+  const r=await api(route+'/baseline/'+encodeURIComponent(snapshot.id)+'?after='+after+'&limit='+limit);if(!current())return null;
+  if(r.id!==snapshot.id||r.watermark!==snapshot.watermark||r.total!==snapshot.total||!Array.isArray(r.events)||r.events.length>limit||typeof r.hasMore!=='boolean')throw Error('历史基线已变化');
   let previous=after;for(const event of r.events){if(!Number.isSafeInteger(event.position)||event.position<=previous||!Number.isSafeInteger(event.seq)||event.seq>r.watermark||seen.has(event.msgId)||!['delete','upsert'].includes(event.action))throw Error('历史分页身份无效');previous=event.position;seen.add(event.msgId);if(event.action==='upsert'){if(event.message?.id!==event.msgId)throw Error('历史消息身份无效');rows.set(event.msgId,event.message);}count++;}
   if(!Number.isSafeInteger(r.next)||r.next<previous||(r.hasMore&&r.next===after))throw Error('历史分页停滞');after=r.next;
+  if(count>snapshot.total||(!r.hasMore&&count!==snapshot.total))throw Error('历史分页未完成');
+  await onPage({messages:[...rows.values()],loaded:count,total:snapshot.total});if(!current())return null;
   if(!r.hasMore)break;
  }while(true);
  if(count!==snapshot.total)throw Error('历史分页未完成');return {rows,cursor:snapshot.watermark};

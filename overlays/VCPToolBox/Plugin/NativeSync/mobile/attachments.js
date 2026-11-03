@@ -141,14 +141,23 @@ class AttachmentStore{
   const metadata=this.store.readSnapshot(()=>{
   const r=this.store.findMessage.get(t.ownerType,t.ownerId,t.topicId,messageId);if(!r||r.deleted)throw fail('ATTACHMENT_NOT_ALLOWED',403);
   const m=this.store.projectMessage(r),a=m.attachments?.find(a=>a.id===attachmentId);if(!a)throw fail('ATTACHMENT_NOT_ALLOWED',403);
-  const link=this.db.prepare('SELECT hash FROM attachment_links WHERE topic_identity=? AND msg_id=? AND attachment_id=?').get(byIdentity(t),messageId,attachmentId);
+  return this.#descriptor(t,messageId,a);
+  });
+  if(!read)this.#assertPresent(metadata);
+  return {attachment:metadata.attachment,blob:metadata.blob,...(read?{bytes:this.readBlob(metadata.hash)}:{})};
+ }
+ // Both callers have projected the owning message in the same read snapshot.
+ // Reuse that checked attachment; never re-decode its whole body per file.
+ #descriptor(t,messageId,a){
+  const link=this.db.prepare('SELECT hash FROM attachment_links WHERE topic_identity=? AND msg_id=? AND attachment_id=?').get(byIdentity(t),messageId,a.id);
   if(!link||![a.hash,a.blobHash].includes(link.hash))throw fail('ATTACHMENT_BLOB_MISSING',404);
   const blob=this.db.prepare("SELECT * FROM attachment_blobs WHERE hash=? AND state='ready'").get(link.hash);if(!blob)throw fail('ATTACHMENT_BLOB_MISSING',404);
   return {attachment:a,blob,hash:link.hash};
-  });
-  if(!read){let s;try{s=regular(this.blobPath(metadata.hash));}catch(e){if(e.code==='ENOENT')throw fail('ATTACHMENT_BLOB_MISSING',404);throw e;}if(s.size!==metadata.blob.size)throw fail('ATTACHMENT_BLOB_CORRUPT');}
-  return {attachment:metadata.attachment,blob:metadata.blob,...(read?{bytes:this.readBlob(metadata.hash)}:{})};
  }
+ #assertPresent(metadata){
+  let s;try{s=regular(this.blobPath(metadata.hash));}catch(e){if(e.code==='ENOENT')throw fail('ATTACHMENT_BLOB_MISSING',404);throw e;}if(s.size!==metadata.blob.size)throw fail('ATTACHMENT_BLOB_CORRUPT');
+ }
+
  frame(key,messageId,attachmentId,index){
   if(!Number.isSafeInteger(index)||index<0||index>=10)throw fail('ATTACHMENT_NOT_ALLOWED',403);
   const main=this.locate(key,messageId,attachmentId,false),digest=main.attachment.frameHashes?.[index],topic=this.topic(key);
@@ -162,7 +171,7 @@ class AttachmentStore{
   return this.store.readSnapshot(()=>{
   const topic=this.topic(key),result=[],entries=this.store.readProjected(()=>this.db.prepare('SELECT * FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND msg_id IN (SELECT value FROM json_each(?))').all(topic.ownerType,topic.ownerId,topic.topicId,JSON.stringify(messageIds)));
   for(const {row,message} of entries){const messageId=row.msg_id;if(row.deleted)continue;
-   for(const a of message.attachments||[]){try{const value=this.locate(key,messageId,a.id,false);result.push({messageId,attachmentId:a.id,state:'available',type:value.blob.type});}catch(e){const rejected=this.db.prepare("SELECT 1 FROM attachment_uploads WHERE topic_key=? AND msg_id=? AND attachment_id=? AND expected_hash IN (?,?) AND name=? AND parse_error='UPLOAD_REJECTED:ATTACHMENT_TYPE_REJECTED' LIMIT 1").get(key,messageId,a.id,a.hash,a.blobHash||a.hash,a.name);result.push({messageId,attachmentId:a.id,state:rejected?'unsupported':e.code==='ATTACHMENT_BLOB_CORRUPT'?'corrupt':'missing',errorCode:rejected?'ATTACHMENT_TYPE_REJECTED':e.code});}}
+   for(const a of message.attachments||[]){try{const value=this.#descriptor(topic,messageId,a);this.#assertPresent(value);result.push({messageId,attachmentId:a.id,state:'available',type:value.blob.type});}catch(e){const rejected=this.db.prepare("SELECT 1 FROM attachment_uploads WHERE topic_key=? AND msg_id=? AND attachment_id=? AND expected_hash IN (?,?) AND name=? AND parse_error='UPLOAD_REJECTED:ATTACHMENT_TYPE_REJECTED' LIMIT 1").get(key,messageId,a.id,a.hash,a.blobHash||a.hash,a.name);result.push({messageId,attachmentId:a.id,state:rejected?'unsupported':e.code==='ATTACHMENT_BLOB_CORRUPT'?'corrupt':'missing',errorCode:rejected?'ATTACHMENT_TYPE_REJECTED':e.code});}}
   }return result;
   });
  }
