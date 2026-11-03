@@ -1,0 +1,170 @@
+{
+  "sourceCommit": "00d7c9a063fb05df44d80d51c5014135edcdf141",
+  "candidate": "/home/jenn/下载/NativeSync_Source_Data_V2_20261103.zip",
+  "candidateSha256": "8cdd4d2a65820d62903278d6406d20d41550c004a2e1fc1b64b83a912966dbec",
+  "sourceInputsSha256": "3c0310f20e6b0240f54bc5dbd5d77382b5a8fe26827bc6a8e474efce1e7b0f82",
+  "runtimeFiles": 85,
+  "supportFiles": 38,
+  "implementationCompleteLocally": true,
+  "localDevelopmentApproved": true,
+  "windowsInstallExecuted": false,
+  "productionInstallExecuted": false,
+  "latestProductionAcceptanceIsHistorical": "31/32 topics at 2026-11-03T11:38:23Z; not resampled or reclassified by local tests",
+  "androidAcceptanceCompleteForThisCandidate": false,
+  "sourceModeOperationBytes": 16777216,
+  "sourceModeMetadataBytes": 2097152,
+  "otherControlsBytes": 768000,
+  "selectedModeOperationBytes": 1048576,
+  "capability": "source-data-v2",
+  "databaseMigration": false,
+  "mainStateVersionChanged": false,
+  "dataRestored": false,
+  "realProviderCalls": 0,
+  "productionReadOnlyAccess": "Only hostname/account, host JSON parser and gateway body-limit projection; no code/config/service/data mutation",
+  "beforeDigestsEvidence": "Installed 1d19663 candidate verified in prior installation receipt; fresh maintenance-window target hashes required before any actual install",
+  "windowsWrites": [
+    {
+      "path": "VCPChat/modules/services/nativeSync/contracts.generated.cjs",
+      "beforeSha256": "9df5dfdfc906be81821c20c5cf3de2d11fc3e50ac2b977866de8c92fbcbc9cc9",
+      "afterSha256": "a46b5ec9e2cb35a92ea0089720d78156a7dd52d65c69f4cfd92a518b9876db07",
+      "action": "replace"
+    },
+    {
+      "path": "VCPChat/modules/services/nativeSync/runtime.js",
+      "beforeSha256": "cae24e1a18269d7d35dd8d32131b8c4cbcdba60db60af6b0564688f9cce18e5a",
+      "afterSha256": "a5063eef080bfea5f832111b18c5a9751463ab189edbe842b029ad2691985e78",
+      "action": "replace"
+    },
+    {
+      "path": "VCPChat/modules/services/nativeSync/sourceSnapshot.js",
+      "beforeSha256": "99ca50ad77431e992e666e24cd346a14703c1df27fc130bea86b7a18bca5ec8c",
+      "afterSha256": "09b6fa6fad9711da38ff337b213ff1ee941bc81813e39d591f514717e0b3738f",
+      "action": "replace"
+    }
+  ],
+  "productionWrites": [
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/connection.js",
+      "beforeSha256": "8a1011c7821e6990d84b85a660b2cee88de6a95b00fbc66dae8e270e17d213e2",
+      "afterSha256": "0cf333c93cbef33d3669111781ddb9215e0a6525b39aa1a16d4e88fa11020927",
+      "action": "replace",
+      "installedRelativePath": "Plugin/NativeSync/mobile/connection.js"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-DAYQLHk_.js",
+      "beforeSha256": null,
+      "afterSha256": "54f9f57a8025323b35178688c8ffbe3f3a84c8f58727c50a40a93212b576118a",
+      "action": "create",
+      "installedRelativePath": "apps/mobile/dist/assets/index-DAYQLHk_.js"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/index.html",
+      "beforeSha256": "5a9451ac0f386936251a551f625f06fe1c952d9c1608639bd079edd0a077f36d",
+      "afterSha256": "fce7e75f423a29905164a2a0f1ad58276faf2062ebfe99812f2eef987fd8069a",
+      "action": "replace",
+      "installedRelativePath": "apps/mobile/dist/index.html"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/capabilities.js",
+      "beforeSha256": "bebaf345829b44bb5648f328626de5a9664e66e5fc9b7a2358d5f2a29306874a",
+      "afterSha256": "40740c208543f289b3e1147e4da985be28a194df261eedfdab296663b17a2931",
+      "action": "replace",
+      "installedRelativePath": "Plugin/NativeSync/sync/capabilities.js"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/contracts.generated.cjs",
+      "beforeSha256": "9df5dfdfc906be81821c20c5cf3de2d11fc3e50ac2b977866de8c92fbcbc9cc9",
+      "afterSha256": "a46b5ec9e2cb35a92ea0089720d78156a7dd52d65c69f4cfd92a518b9876db07",
+      "action": "replace",
+      "installedRelativePath": "Plugin/NativeSync/sync/contracts.generated.cjs"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/httpService.js",
+      "beforeSha256": "44cf584d89cc1665b2829284f14da46846040560c6225f1ab50dc3cacbcf637c",
+      "afterSha256": "f98c5fc18e18520572e8be47e4dd0cd706a009c8031de77545c0caa387475e54",
+      "action": "replace",
+      "installedRelativePath": "Plugin/NativeSync/sync/httpService.js"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+      "beforeSha256": "9faf922309c053cde4ab850dab5d05ad962b575b4b9f35890735c43e0fe09c79",
+      "afterSha256": "d2b1c7d12b77a22d1345f0c88564c9ed79ac9da84a803ecf52b32790d9a3439c",
+      "action": "replace",
+      "installedRelativePath": "Plugin/NativeSync/sync/sourceCatalog.js"
+    }
+  ],
+  "retainOldAssets": [
+    "apps/mobile/dist/assets/index-Bq8qR-fB.js"
+  ],
+  "tests": [
+    {
+      "file": ".local/source-data-v2-20261103/targeted-final.tap",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "file": ".local/source-data-v2-20261103/associated-paths.tap",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "file": ".local/source-data-v2-20261103/contracts-final.tap",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    {
+      "file": ".local/source-data-v2-20261103/browser-candidate.tap",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  ],
+  "archiveVerified": true,
+  "candidatePayloadMatchedTestHostsBeforeAndAfterBrowser": 85,
+  "unsupportedOldCodecDowngradeAfterExtendedData": true,
+  "evidence": [
+    {
+      "path": ".local/source-data-v2-20261103/targeted-final.tap",
+      "sha256": "b3c4206ef9f9101331e10180cfc866a2ca45bba357c994517a73ede3d0f37de3"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/associated-paths.tap",
+      "sha256": "dd39bd4bcdc7acb8590a9a0eb2494e4f044af8c72f89371e7d4ab8ef7714502f"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/contracts-final.tap",
+      "sha256": "ce1c751f6d914d10c08bc26265c02b14a75a9a7d2521bfa477bef8108f4d1b47"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/browser-candidate.tap",
+      "sha256": "9e972173b1c685efb7337dbc13ccb3a36bb23a736cc21c95ac07760c30820bf2"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/CANDIDATE_VERIFIED.json",
+      "sha256": "e1ae2bffc78a2986d84b872dfbf2f09204c67f0084758a0d128dbed12445b5d0"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/READONLY_HOST_LIMITS.json",
+      "sha256": "5b29c4cf61b44a2cbdbfac302666d36f572f896fe1f42189bf86a0f1575d43ca"
+    },
+    {
+      "path": ".local/source-data-v2-20261103/mobile-v2.png",
+      "sha256": "feaae48d42e6f2154e6d7b022f3b64b8bda80ac79e5d173dffdfe76d74a90c69"
+    }
+  ]
+}

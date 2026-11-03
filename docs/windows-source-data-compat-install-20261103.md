@@ -1,5 +1,7 @@
 # Windows 真实历史兼容：追加安装回执与剩余边界
 
+后续：Jenn已批准补充本机开发；实现、定向证据和待安装候选见[Source数据v2交付](source-data-v2-local-20261103.md)。下文保留本次安装时31/32及范围待确认的历史事实。
+
 2026-11-03（Asia/Shanghai）。Jenn 明确批准“追加安装，Windows 已退出，生产请求已暂停”。本次安装已执行；**全量导入由29/32推进到31/32，尚未完成**。候选源码 `1d19663f3eff12b0bded7b9b9b2ee62fb82be7da`，ZIP 为 `NativeSync_Source_Data_Compat_20261103.zip`，SHA256 `a300c2b146d10e2b7fe0a7085f6be3a3a76fae5d6d39c2b9967b64c3d3b2745a`。开发场景结果见[此前开发交付](windows-source-data-compat-delivery-20261103.md)，不能代替下面的真实安装结果。
 
 ## 实际安装与备份
