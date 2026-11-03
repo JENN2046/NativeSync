@@ -47,3 +47,16 @@ export async function readHistoryBaseline(api,key,requestId,current=()=>true,onP
  }while(true);
  if(count!==snapshot.total)throw Error('历史分页未完成');return {rows,cursor:snapshot.watermark};
 }
+// Validate the complete page before mutating a reusable map or its cursor.
+export function applyHistoryDelta(rows,page,cursor,topic){
+ const same=t=>t&&t.ownerType===topic.ownerType&&t.ownerId===topic.ownerId&&t.topicId===topic.topicId;
+ const invalid=()=>{throw Object.assign(Error('历史增量校验失败'),{code:'HISTORY_PAGE_INVALID'});};
+ if(!same(page.topic)||!Array.isArray(page.events)||page.events.length>100||!Number.isSafeInteger(page.headSeq)||!Number.isSafeInteger(page.nextSeq)||page.nextSeq<cursor||page.nextSeq>page.headSeq||typeof page.hasMore!=='boolean'||(page.hasMore&&page.nextSeq===cursor))invalid();
+ let previous=cursor;
+ for(const event of page.events){
+  if(!same(event)||!Number.isSafeInteger(event.seq)||event.seq<=previous||event.seq>page.nextSeq||typeof event.msgId!=='string'||!event.msgId||!['delete','upsert'].includes(event.action)||(event.action==='upsert'&&event.message?.id!==event.msgId))invalid();
+  previous=event.seq;
+ }
+ for(const event of page.events){if(event.action==='delete')rows.delete(event.msgId);else rows.set(event.msgId,event.message);}
+ return page.nextSeq;
+}
