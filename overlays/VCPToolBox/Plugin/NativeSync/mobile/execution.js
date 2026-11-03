@@ -183,6 +183,7 @@ class ConversationExecution {
                 ordered.push(m);if(replyAfter.has(m.id))ordered.push(replyAfter.get(m.id));
             }
             if(byId.has(row.user_message_id))ordered.push(byId.get(row.user_message_id));
+            if(ordered.some(m=>m.desktopReferences?.length))throw error('DESKTOP_CONTEXT_REQUIRED',409);
             const messages = ordered.filter(m => ['user', 'assistant'].includes(m.role)).map(m => {
                 if (typeof m.content !== 'string') throw error('TEXT_MESSAGES_REQUIRED');
                 return { role: m.role, content: m.content };

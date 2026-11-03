@@ -256,7 +256,7 @@ class SourceSync{
   const pending=this.adapter.topics.filter(d=>this.plan(d)?.stage!=='complete'&&!this.deleted(d));
   for(let i=0;i<Math.min(1,pending.length);i++){
    const d=pending[(this.offset+i)%pending.length];
-   try{await this.step(d);}catch(e){if(e.syncStatePersistenceFailure)throw e;await this.adapter.transaction(n=>{const p=n.source.plans[this.topicKey(d)];if(p)p.error={code:e.code||'BACKFILL_FAILED',status:e.status||null};});}
+   try{await this.step(d);}catch(e){if(e.syncStatePersistenceFailure)throw e;await this.adapter.transaction(n=>{const p=n.source.plans[this.topicKey(d)];if(p)p.error={code:e.code||(/^[A-Z][A-Z0-9_]{0,79}$/.test(e.message||'')?e.message:'BACKFILL_FAILED'),status:e.status||null};});}
   }
   this.offset=pending.length?(this.offset+1)%pending.length:0;
   try{await this.releaseCompletedPayloads();this.cleanupError=null;}

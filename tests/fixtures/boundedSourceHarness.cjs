@@ -28,7 +28,7 @@ async function fixture(t,{scope=limited([selected,older]),seedOwners=true,execut
  const syncService=createSyncHttpService(store);
  const portal=new MobilePortal({store,config:{NativeMobileOrigin:'https://synthetic-mobile.invalid',NativeMobileTopics:JSON.stringify(configuredTopics),NativeMobileConfigSync:true,NativeMobileMaxConcurrency:1,NativeSyncDataDir:root},agentManager:{isAgent:a=>a==='synthetic-one'||executionBindings.some(t=>t.agentAlias===a)}});
  store.onSourceChange=()=>portal.refreshDirectoryTopics();
- const appHttp=express();appHttp.set('trust proxy','loopback');appHttp.use(express.json({limit:'2mb'}));
+ const appHttp=express();appHttp.set('trust proxy','loopback');appHttp.use(express.json({limit:'5mb'}));
  appHttp.use('/api/v1/sync',(req,res)=>{if(req.headers.authorization!=='Bearer synthetic-only')return res.status(401).json({});return syncService.handle(req,res);});
  appHttp.use('/mobile',portal.router);appHttp.use((e,req,res,next)=>res.status(e.status||400).json({error:{code:e.code||'TEST_HTTP_ERROR'}}));
  const server=http.createServer(appHttp);await new Promise(r=>server.listen(0,'127.0.0.1',r));

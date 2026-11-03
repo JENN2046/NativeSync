@@ -1,6 +1,7 @@
 'use strict';
 const fs=require('node:fs/promises'),path=require('node:path'),{fileURLToPath}=require('node:url'),{createHash}=require('node:crypto');
 const {wireTopic,fail}=require('./protocol');
+const {nativeReference}=require('./metadata');
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const MAX_FILE=20*1024*1024,CHUNK=65536;
 // Native send history keeps the FileManager identity inside its UI wrapper.
@@ -19,7 +20,7 @@ function materializedData(a,restored,frames,frameHashes){
 }
 class DesktopAttachments{
  constructor({queue,appDataRoot,connection,send,download,storeAttachment,onMaterialized=()=>{}}){
-  this.queue=queue;this.root=path.resolve(appDataRoot,'UserData','attachments');this.connection=connection;this.send=send;this.download=download;this.storeAttachment=storeAttachment;this.onMaterialized=onMaterialized;this.uploaded=new Map();this.skipped=0;
+  this.queue=queue;this.root=path.resolve(appDataRoot,'UserData','attachments');this.connection=connection;this.send=send;this.download=download;this.storeAttachment=storeAttachment;this.onMaterialized=onMaterialized;this.uploaded=new Map();this.rejected=new Map();this.skipped=0;this.skippedDetails=[];
  }
  async localFile(attachment){
   const raw=attachment._fileManagerData||attachment,source=raw.internalPath||attachment.internalPath||attachment.src;
@@ -41,13 +42,16 @@ class DesktopAttachments{
   const done=await this.send(route+'/uploads/'+started.uploadId+'/finish',{body:{}});if(done.hash!==value)throw fail('ATTACHMENT_HASH_MISMATCH');
  }
  async uploadLocal(){
-  const rows=await this.mapping();this.skipped=0;
+  const rows=await this.mapping();this.skipped=0;this.skippedDetails=[];
   for(const d of this.connection.topics){const t=this.find(rows,d),snapshot=await this.queue.readSnapshot(d);
    for(const message of snapshot.history)for(const attachment of message.attachments||[]){
+    let cache;
     try{
+     if(nativeReference(attachment))continue;
      const source=attachment._fileManagerData||attachment,value=attachment.blobHash||source.blobHash||attachment.hash||source.hash;
      if(!/^[a-f0-9]{64}$/.test(value||''))throw fail('ATTACHMENT_SOURCE_HASH_REQUIRED');
-     const {file,stat}=await this.localFile(attachment),cache=JSON.stringify([t.key,message.id,attachmentId(attachment),value,file,stat.size,stat.mtimeMs]);
+     const {file,stat}=await this.localFile(attachment);cache=JSON.stringify([t.key,message.id,attachmentId(attachment),value,file,stat.size,stat.mtimeMs]);
+     if(this.rejected.has(cache))throw fail(this.rejected.get(cache));
      const fresh=!this.uploaded.has(cache);
      if(fresh){const bytes=await fs.readFile(file);if(digest(bytes)!==value)throw fail('ATTACHMENT_SOURCE_HASH_MISMATCH');const name=path.win32.basename(path.basename(attachment.name||source.name||'attachment.txt'));await this.uploadBytes(t,message,attachment,bytes,name,value,source.type);this.uploaded.set(cache,true);}
      const frames=source.imageFrames||attachment.imageFrames;
@@ -57,7 +61,7 @@ class DesktopAttachments{
       if(JSON.stringify(source.frameHashes)!==JSON.stringify(hashes))await this.queue.mutate(d,history=>history.map(m=>m.id!==message.id?m:{...m,attachments:(m.attachments||[]).map(a=>{const data=a._fileManagerData||a;if(attachmentId(a)!==attachmentId(attachment)||(a.hash||data.hash)!==value||JSON.stringify(data.imageFrames||a.imageFrames)!==JSON.stringify(frames))return a;return {...a,frameHashes:hashes,...(a._fileManagerData?{_fileManagerData:{...a._fileManagerData,frameHashes:hashes}}:{})};})}));
      }
      if(this.uploaded.size>10000)this.uploaded.delete(this.uploaded.keys().next().value);
-    }catch(e){if(['ENOENT','ATTACHMENT_BLOB_MISSING','ATTACHMENT_SOURCE_OUTSIDE_ROOT','ATTACHMENT_SOURCE_HASH_REQUIRED'].includes(e.code)){this.skipped++;continue;}throw e;}
+    }catch(e){if(['ENOENT','ATTACHMENT_BLOB_MISSING','ATTACHMENT_SOURCE_OUTSIDE_ROOT','ATTACHMENT_SOURCE_HASH_REQUIRED','ATTACHMENT_FILE_TOO_LARGE','ATTACHMENT_TYPE_REJECTED'].includes(e.code)){this.skipped++;if(this.skippedDetails.length<100)this.skippedDetails.push({topicKey:t.key,messageId:message.id,attachmentId:attachmentId(attachment),code:e.code});if(cache&&e.code==='ATTACHMENT_TYPE_REJECTED'){this.rejected.set(cache,e.code);if(this.rejected.size>10000)this.rejected.delete(this.rejected.keys().next().value);}continue;}throw e;}
    }
   }
  }
@@ -66,6 +70,7 @@ class DesktopAttachments{
   const rows=await this.mapping();
   for(const d of this.connection.topics){const t=this.find(rows,d),snapshot=await this.queue.readSnapshot(d);
    for(const message of snapshot.history)for(const attachment of message.attachments||[]){
+    if(nativeReference(attachment))continue;
     const expected=attachment.blobHash||attachment.hash;if(!/^[a-f0-9]{64}$/.test(expected||''))continue;
     let local=false;try{const existing=await this.localFile(attachment);local=digest(await fs.readFile(existing.file))===expected;}catch(e){if(!['ENOENT','ATTACHMENT_BLOB_MISSING','ATTACHMENT_SOURCE_OUTSIDE_ROOT'].includes(e.code))throw e;}
     const data=attachment._fileManagerData||attachment,frameHashes=attachment.frameHashes||data.frameHashes;

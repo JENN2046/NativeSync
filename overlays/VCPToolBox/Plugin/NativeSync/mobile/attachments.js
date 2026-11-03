@@ -47,8 +47,8 @@ class AttachmentStore{
   if(input.frameIndex!==undefined&&(!Number.isSafeInteger(input.frameIndex)||input.frameIndex<0||input.frameIndex>=10||!input.messageId||!input.attachmentId))throw fail('INVALID_ATTACHMENT_UPLOAD',400);
   const previous=this.db.prepare('SELECT * FROM attachment_uploads WHERE principal=? AND topic_key=? AND request_id=?').get(principal,key,input.requestId);
   if(previous){if(previous.expires<=Date.now())throw fail('UPLOAD_EXPIRED',410);if(previous.name!==input.name||previous.size!==input.size||previous.expected_hash!==(input.expectedHash||null)||(input.messageId!==undefined&&previous.msg_id!==input.messageId)||(input.attachmentId!==undefined&&previous.attachment_id!==input.attachmentId)||previous.frame_index!==(input.frameIndex??null))throw fail('UPLOAD_ID_REUSED');return this.public(previous);}
-  if(this.db.prepare("SELECT count(*) AS n FROM attachment_uploads WHERE principal=? AND state!='ready' AND expires>?").get(principal,Date.now()).n>=16||this.db.prepare('SELECT count(*) AS n FROM attachment_uploads WHERE principal=? AND expires>?').get(principal,Date.now()+TTL-3600000).n>=200)throw fail('ATTACHMENT_UPLOAD_BUDGET',429);
-  const used=this.db.prepare("SELECT (SELECT coalesce(sum(size),0) FROM attachment_blobs)+(SELECT coalesce(sum(size),0) FROM attachment_uploads WHERE state!='ready') AS n").get().n;
+  if(this.db.prepare("SELECT count(*) AS n FROM attachment_uploads WHERE principal=? AND state!='ready' AND coalesce(parse_error,'') NOT LIKE 'UPLOAD_REJECTED:%' AND expires>?").get(principal,Date.now()).n>=16||this.db.prepare('SELECT count(*) AS n FROM attachment_uploads WHERE principal=? AND expires>?').get(principal,Date.now()+TTL-3600000).n>=200)throw fail('ATTACHMENT_UPLOAD_BUDGET',429);
+  const used=this.db.prepare("SELECT (SELECT coalesce(sum(size),0) FROM attachment_blobs)+(SELECT coalesce(sum(size),0) FROM attachment_uploads WHERE state!='ready' AND coalesce(parse_error,'') NOT LIKE 'UPLOAD_REJECTED:%') AS n").get().n;
   if(used+input.size>MAX_STORAGE)throw fail('ATTACHMENT_STORAGE_BUDGET',413);
   const id=randomUUID(),file=this.temporary(id);const fd=fs.openSync(file,'wx',0o600);fs.fsyncSync(fd);fs.closeSync(fd);
   try{this.db.prepare("INSERT INTO attachment_uploads(id,principal,topic_key,request_id,name,declared_type,size,expected_hash,expires,state,msg_id,attachment_id,frame_index) VALUES(?,?,?,?,?,?,?,?,?,'uploading',?,?,?)").run(id,principal,key,input.requestId,input.name,input.type||null,input.size,input.expectedHash||null,Date.now()+TTL,input.messageId||null,input.attachmentId||null,input.frameIndex??null);}catch(e){fs.unlinkSync(file);throw e;}
@@ -73,10 +73,20 @@ class AttachmentStore{
  finish(principal,key,id){
   if(this.closing)return Promise.reject(fail('ATTACHMENT_SERVICE_DRAINING',503));
   const existing=this.finishing.get(id);if(existing){this.get(principal,key,id);return existing;}
-  const work=this.complete(principal,key,id).finally(()=>this.finishing.delete(id));this.finishing.set(id,work);return work;
+  const work=this.complete(principal,key,id).catch(error=>{
+   if(error.code==='ATTACHMENT_TYPE_REJECTED'){
+    const row=this.get(principal,key,id);
+    if(row.state==='uploading'&&!row.execution_id){
+     const file=this.temporary(id);try{regular(file);fs.unlinkSync(file);}catch(e){if(e.code!=='ENOENT')throw e;}
+     this.db.prepare('UPDATE attachment_uploads SET parse_error=? WHERE id=?').run('UPLOAD_REJECTED:ATTACHMENT_TYPE_REJECTED',id);
+    }
+   }
+   throw error;
+  }).finally(()=>this.finishing.delete(id));this.finishing.set(id,work);return work;
  }
  async complete(principal,key,id){
   const r=this.get(principal,key,id);if(r.state==='ready'){this.readBlob(r.hash);this.linkExisting(r);return this.public(r);}
+  if(r.parse_error==='UPLOAD_REJECTED:ATTACHMENT_TYPE_REJECTED')throw fail('ATTACHMENT_TYPE_REJECTED',415);
   if(r.offset!==r.size)throw fail('UPLOAD_INCOMPLETE');
   const temp=this.temporary(id);let bytes;if(fs.existsSync(temp)){regular(temp);bytes=fs.readFileSync(temp);}else if(r.state==='finalizing'&&r.hash)bytes=this.readBlob(r.hash);else throw fail('UPLOAD_BINARY_MISSING');const digest=hash(bytes);
   if(bytes.length!==r.size||(r.expected_hash&&digest!==r.expected_hash))throw fail('ATTACHMENT_HASH_MISMATCH');
@@ -152,7 +162,7 @@ class AttachmentStore{
   return this.store.readSnapshot(()=>{
   const topic=this.topic(key),result=[],entries=this.store.readProjected(()=>this.db.prepare('SELECT * FROM messages WHERE owner_type=? AND owner_id=? AND topic_id=? AND msg_id IN (SELECT value FROM json_each(?))').all(topic.ownerType,topic.ownerId,topic.topicId,JSON.stringify(messageIds)));
   for(const {row,message} of entries){const messageId=row.msg_id;if(row.deleted)continue;
-   for(const a of message.attachments||[]){try{const value=this.locate(key,messageId,a.id,false);result.push({messageId,attachmentId:a.id,state:'available',type:value.blob.type});}catch(e){result.push({messageId,attachmentId:a.id,state:e.code==='ATTACHMENT_BLOB_CORRUPT'?'corrupt':'missing',errorCode:e.code});}}
+   for(const a of message.attachments||[]){try{const value=this.locate(key,messageId,a.id,false);result.push({messageId,attachmentId:a.id,state:'available',type:value.blob.type});}catch(e){const rejected=this.db.prepare("SELECT 1 FROM attachment_uploads WHERE topic_key=? AND msg_id=? AND attachment_id=? AND expected_hash IN (?,?) AND name=? AND parse_error='UPLOAD_REJECTED:ATTACHMENT_TYPE_REJECTED' LIMIT 1").get(key,messageId,a.id,a.hash,a.blobHash||a.hash,a.name);result.push({messageId,attachmentId:a.id,state:rejected?'unsupported':e.code==='ATTACHMENT_BLOB_CORRUPT'?'corrupt':'missing',errorCode:rejected?'ATTACHMENT_TYPE_REJECTED':e.code});}}
   }return result;
   });
  }

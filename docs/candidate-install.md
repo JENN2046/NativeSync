@@ -44,3 +44,5 @@ SCOPE.json的codeRollbackBaseline是早期选定模式的公共夹具组装输�
 2026-11-02（America/Adak）已按用户授权安装`a27f601`至日常桌面及腾讯生产，精确目标、备份和回退边界见[本次安装回执](effective-rules-multisource-20261102.md#日常与生产安装回执)。旧手机权限及只读状态保留，联合配对未创建。
 
 2026-11-03多来源转换修正：仅移除full转换对“任意其他来源存在”的整库排斥；真实目录身份碰撞和按来源读写屏障保留。Windows安装已完成但扩围受阻，生产单文件修复尚待批准，见[执行记录](windows-full-source-install-20261103.md)。
+
+真实历史兼容候选增加desktop-references-v1元数据能力，Source操作有界4MiB、批量传输60秒，旧选定模式限制保持。先安装新服务端/读取屏障，再安装匹配桌面；已有新引用后不支持直接退旧codec，保持full范围及数据向前恢复。临时拒绝附件诊断沿用既有列，原件不删。详见[开发交付与降版边界](windows-source-data-compat-delivery-20261103.md)。

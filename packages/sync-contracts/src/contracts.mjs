@@ -12,11 +12,11 @@ function identity(value) {
 }
 function contentMessage(value, topicId = '_') {
     const warnings = new BoundedWarnings();
-    const message = canonicalizeMessage(value, topicId, warnings);
+    const message = canonicalizeMessage(metadata().projectDesktopReferences(value), topicId, warnings);
     if (warnings.count) throw new Error('INVALID_ATTACHMENT');
     return message;
 }
-function canonicalMessage(value, topicId = '_') { return metadata().preserveMetadata(value,contentMessage(value,topicId)); }
+function canonicalMessage(value, topicId = '_') { const projected=metadata().projectDesktopReferences(value);return metadata().preserveMetadata(projected,contentMessage(projected,topicId)); }
 const messageKey = value => { const v = identity(value); return JSON.stringify([v.ownerType, v.ownerId, v.topicId, v.msgId]); };
 const messageHash = message => messageContentHash(contentMessage(message, message.topicId || '_'));
 const tombstoneHash = id => sha256(`deleted:${messageKey(id)}`);
@@ -28,8 +28,47 @@ return { identity, canonicalMessage, sha256, stable: stableStringify, messageKey
 
 export function createMetadata({stable,sha256,byteLength}){
 const fail=code=>Object.assign(new Error(code),{code,status:409});
-const controls=Object.freeze(['contextCompaction','isThinking','tool_calls','tool_call_id','continuity']);
+const controls=Object.freeze(['contextCompaction','isThinking','tool_calls','tool_call_id','continuity','desktopReferences']);
 const emptyHash=()=>sha256(stable({}));
+const validHash=value=>typeof value==='string'&&/^[a-f0-9]{64}$/i.test(value);
+const nativeReference=a=>a&&typeof a==='object'&&(a.isLiveReference===true||a._fileManagerData?.isLiveReference===true)&&!validHash(a.hash)&&!validHash(a._fileManagerData?.hash);
+function reference(value){
+    if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(k=>!['id','name','kind','index','availability','workspaceRef','target'].includes(k))||typeof value.id!=='string'||!value.id||value.id.length>512||typeof value.name!=='string'||!value.name||value.name.length>500||!Number.isSafeInteger(value.index)||value.index<0||value.index>1000||value.availability!=='desktop-only'||!['workspace','file'].includes(value.kind))throw fail('INVALID_DESKTOP_REFERENCE');
+    const result={id:value.id,name:value.name,kind:value.kind,index:value.index,availability:'desktop-only'};
+    if(value.kind==='workspace'){
+        const w=value.workspaceRef;
+        if(value.target!==undefined||!w||typeof w!=='object'||Array.isArray(w)||Object.keys(w).some(k=>!['workspaceId','alias','relPath'].includes(k))||typeof w.workspaceId!=='string'||!w.workspaceId||w.workspaceId.length>200||typeof w.alias!=='string'||w.alias.length>200||typeof w.relPath!=='string'||!w.relPath||w.relPath.length>4096||/[\x00-\x1f]/.test(w.relPath))throw fail('INVALID_DESKTOP_REFERENCE');
+        result.workspaceRef={workspaceId:w.workspaceId,alias:w.alias,relPath:w.relPath};
+    }else{
+        if(value.workspaceRef!==undefined||typeof value.target!=='string'||!value.target||value.target.length>4096||/[\x00-\x1f]/.test(value.target))throw fail('INVALID_DESKTOP_REFERENCE');
+        result.target=value.target;
+    }
+    return result;
+}
+function references(values){
+    if(!Array.isArray(values)||values.length>1000)throw fail('INVALID_DESKTOP_REFERENCE');
+    const rows=values.map(reference),ids=new Set(),indices=new Set();
+    for(const row of rows){if(ids.has(row.id)||indices.has(row.index))throw fail('INVALID_DESKTOP_REFERENCE');ids.add(row.id);indices.add(row.index);}
+    return rows.sort((a,b)=>a.index-b.index);
+}
+function projectDesktopReferences(message){
+    if(!message||typeof message!=='object'||Array.isArray(message))return message;
+    let refs=message.desktopReferences===undefined?[]:references(message.desktopReferences);
+    const attachments=message.attachments;
+    if(attachments!==undefined&&attachments!==null&&!Array.isArray(attachments))return message;
+    const native=[];
+    for(const [index,a]of (attachments||[]).entries())if(nativeReference(a)){
+        const data=a._fileManagerData||a,workspace=data.workspaceRef;
+        native.push(reference({id:a.id||data.id,name:a.name||data.name,kind:workspace?'workspace':'file',index,availability:'desktop-only',...(workspace?{workspaceRef:workspace}:{target:data.sourcePath||data.internalPath||a.src})}));
+    }
+    if(native.length){if(refs.length&&stable(refs)!==stable(references(native)))throw fail('DESKTOP_REFERENCE_CONFLICT');refs=references(native);}
+    if(!refs.length)return message;
+    const ordinary=(attachments||[]).filter(a=>!nativeReference(a));
+    if(refs.some(r=>ordinary.some(a=>(a.id||a._fileManagerData?.id)===r.id))||refs.some(r=>r.index>=ordinary.length+refs.length))throw fail('INVALID_DESKTOP_REFERENCE');
+    const result={...message,desktopReferences:refs};
+    if(ordinary.length)result.attachments=ordinary;else delete result.attachments;
+    return result;
+}
 function boundedJson(value,depth=0){
     if(depth>8)throw fail('INVALID_CONTROL_METADATA');
     if(value===null||typeof value==='boolean'||(typeof value==='number'&&Number.isFinite(value)))return value;
@@ -39,7 +78,9 @@ function boundedJson(value,depth=0){
     throw fail('INVALID_CONTROL_METADATA');
 }
 function fieldsFrom(message){
+    message=projectDesktopReferences(message);
     const fields={};
+    if(message.desktopReferences?.length)fields.desktopReferences=references(message.desktopReferences);
     if(message.contextCompaction!==undefined){
         const c=message.contextCompaction;
         if(!c||c.kind!=='vchat-context-checkpoint'||c.version!==1||message.role!=='user'||typeof c.checkpoint!=='string'||!c.checkpoint.trim()||c.checkpoint.length>128000||typeof message.content!=='string'||!message.content.includes(c.checkpoint))throw fail('INVALID_CHECKPOINT_METADATA');
@@ -75,13 +116,15 @@ function fieldsFrom(message){
     return fields;
 }
 function withFields(message,envelope){
+    message=projectDesktopReferences(message);
     const result={...message};for(const key of controls)delete result[key];
     const fields=envelope.fields;
     for(const key of controls)if(Object.hasOwn(fields,key))result[key]=fields[key];
     if(result.attachments)result.attachments=result.attachments.map(a=>{
         const copy={...a};for(const k of ['extractedText','imageFrames','blobHash','frameHashes'])delete copy[k];
-        const data=fields.attachmentData?.find(item=>item.id===a.id||item.contentHash===a.hash);
-        copy.id=data?.id||a.id||'attachment_'+a.hash;
+        const native=a._fileManagerData||a,id=a.id||native.id,hash=a.hash||native.hash;
+        const data=fields.attachmentData?.find(item=>item.id===id)||fields.attachmentData?.find(item=>item.contentHash===hash);
+        copy.id=data?.id||id||'attachment_'+hash;
         if(data)for(const k of ['extractedText','imageFrames','blobHash','frameHashes'])if(Object.hasOwn(data,k))copy[k]=data[k];
         return copy;
     });
@@ -90,6 +133,8 @@ function withFields(message,envelope){
 function envelopeFor(message,version){const fields=fieldsFrom(message);return {version,hash:sha256(stable(fields)),fields};}
 function validateEnvelope(message,envelope){
     if(!envelope||Object.keys(envelope).some(k=>!['version','hash','fields'].includes(k))||!Number.isSafeInteger(envelope.version)||envelope.version<1||!envelope.fields||Object.keys(envelope.fields).some(k=>![...controls,'attachmentData'].includes(k)))throw fail('INVALID_CONTROL_METADATA');
+    const supplied=projectDesktopReferences(message)?.desktopReferences;
+    if(supplied!==undefined&&stable(supplied)!==stable(envelope.fields.desktopReferences||[]))throw fail('INVALID_METADATA_DIGEST');
     const normalized=fieldsFrom(withFields(message,envelope));
     // R1-B envelopes predate attachment identity binding. Preserve their digest
     // on read; a new publisher may advance them to the richer R1-C projection.
@@ -106,7 +151,7 @@ function preserveMetadata(source,target){
     if(source._nativeSyncMetadata)return withFields(target,validateEnvelope(target,source._nativeSyncMetadata));
     const cleaned=withFields(target,{fields:fieldsFrom(target)});delete cleaned._nativeSyncMetadata;return cleaned;
 }
-return {fieldsFrom,withFields,envelopeFor,validateEnvelope,preserveMetadata,emptyHash,controlFields:controls};
+return {fieldsFrom,withFields,envelopeFor,validateEnvelope,preserveMetadata,emptyHash,controlFields:controls,projectDesktopReferences,nativeReference};
 }
 
 export function createSourceScope({identity,stable,sha256}){

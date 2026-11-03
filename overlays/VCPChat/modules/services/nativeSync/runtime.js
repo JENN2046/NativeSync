@@ -18,17 +18,29 @@ function syncHeaders(connection){
     return connection.topics?.length?{'X-NativeSync-Topics':Buffer.from(JSON.stringify(connection.topics.map(t=>[t.itemType||'agent',t.itemId,t.topicId]))).toString('base64url')}:{};
 }
 function createSyncRequest(connection,timeoutMs=8000) {
-    const {url,token}=connection;
-    return async(route,{body}={})=>{
+    const {url,token}=connection;let referencesSupported=false;
+    const send=async(route,{body}={})=>{
+        if(body?.message&&(body.metadata?.fields?.desktopReferences?.length||body.message._nativeSyncMetadata?.fields?.desktopReferences?.length||require('./metadata').fieldsFrom(body.message).desktopReferences?.length)&&!referencesSupported){
+            if(connection.scopeMode!=='source')throw fail('DESKTOP_REFERENCE_SOURCE_REQUIRED');
+            const info=await send('/api/v1/sync/source/info?'+new URLSearchParams({sourceId:connection.sourceId,deviceId:connection.deviceId}));
+            if(info.sourceId!==connection.sourceId||info.deviceId!==connection.deviceId||info.spaceId!==connection.spaceId)throw fail('SOURCE_BINDING_CHANGED');
+            if(info.desktopReferences!==true)throw fail('DESKTOP_REFERENCE_SERVER_UPGRADE_REQUIRED');
+            referencesSupported=true;
+        }
         route=require('./connection').sourceRoute(connection,route);
-        let response;
-        try { response=await fetch(url+route,{method:body?'POST':'GET',headers:{...syncHeaders(connection),Authorization:`Bearer ${token}`,'Content-Type':'application/json','X-NativeSync-Protocol':'2','X-NativeSync-Capabilities':'attachments-v1,message-intents-v1'},body:body?JSON.stringify(body):undefined,redirect:'error',signal:AbortSignal.timeout(timeoutMs)}); }
-        catch { throw fail('NETWORK_UNAVAILABLE'); }
-        let value;try{value=await response.json();}catch{}
-        if(!response.ok)throw Object.assign(fail(/^[A-Z][A-Z0-9_]{0,79}$/.test(value?.error?.code||'')?value.error.code:'SYNC_HTTP_ERROR'),{status:response.status});
+        const serialized=body?JSON.stringify(body):undefined;
+        const bulk=connection.scopeMode==='source'&&(/\/source\/(push|pull)(?:\?|$)/.test(route)||/\/source\/baselines(?:\/|$)/.test(route));
+        const deadline=bulk?Math.max(timeoutMs,60000):timeoutMs;
+        let response,value;
+        try {
+            response=await fetch(url+route,{method:body?'POST':'GET',headers:{...syncHeaders(connection),Authorization:`Bearer ${token}`,'Content-Type':'application/json','X-NativeSync-Protocol':'2','X-NativeSync-Capabilities':'attachments-v1,message-intents-v1,desktop-references-v1'},body:serialized,redirect:'error',signal:AbortSignal.timeout(deadline)});
+        } catch { throw fail('NETWORK_UNAVAILABLE'); }
+        try { value=await response.json(); } catch(error) { if(response.ok&&error?.name!=='SyntaxError')throw fail('NETWORK_UNAVAILABLE'); }
+        if(!response.ok)throw Object.assign(fail(/^[A-Z][A-Z0-9_]{0,79}$/.test(value?.error?.code||'')?value.error.code:(response.status===413?'BODY_TOO_LARGE':'SYNC_HTTP_ERROR')),{status:response.status});
         if(!value)throw fail('CORRUPT_HTTP_RESPONSE');
         return value;
     };
+    return send;
 }
 
 async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated = false, notify, notifyExecutionStatus, intervalMs = 250, executionIntervalMs = 5000, readSettings, readAgentConfig, readGroupConfig, readTavernRules, readEffectiveTavernRules, readExecutionPolicy, thumbnail, request, requestBinary, storeAttachment, ipcMain, sourceFault, agentConfigEvents }) {
@@ -130,7 +142,7 @@ async function createNativeSyncRuntime({ queue, appDataRoot, args = [], isolated
     configurationTimer?.unref?.();
     const timer = setInterval(() => {
         if (stopped || running) return;
-        running = (async () => { if (!prepared) await prepare(); if(sourceSync){await sourceSync.tick();executionStatus?.addTopics(adapter.topics);} if(connection?.publishExecutionConfigs && Date.now()-lastConfigCheck>=5000){await publishConfiguration();lastConfigCheck=Date.now();} adapter.configurationError=sourcePublisher?(sourcePublisher.error||(sourcePublisher.errors.size?'SOURCE_CONFIGURATION_INCOMPLETE':null)):publicationError; const checkAttachments=attachments&&Date.now()-lastAttachmentCheck>=5000; if(checkAttachments)try{await attachments.uploadLocal();adapter.attachmentError=null;}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';} await adapter.synchronize(); adapter.lastTransportError=null; if(checkAttachments){try{await attachments.restoreRemote();}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';}lastAttachmentCheck=Date.now();adapter.attachmentSkipped=attachments.skipped;} if(sourceSync)await sourceSync.report(); })().catch(error => {
+        running = (async () => { if (!prepared) await prepare(); if(sourceSync){await sourceSync.tick();executionStatus?.addTopics(adapter.topics);} if(connection?.publishExecutionConfigs && Date.now()-lastConfigCheck>=5000){await publishConfiguration();lastConfigCheck=Date.now();} adapter.configurationError=sourcePublisher?(sourcePublisher.error||(sourcePublisher.errors.size?'SOURCE_CONFIGURATION_INCOMPLETE':null)):publicationError; const checkAttachments=attachments&&Date.now()-lastAttachmentCheck>=5000; if(checkAttachments)try{await attachments.uploadLocal();adapter.attachmentError=null;}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';} await adapter.synchronize(); adapter.lastTransportError=null; if(checkAttachments){try{await attachments.restoreRemote();}catch(e){adapter.attachmentError=e.code||'ATTACHMENT_SYNC_FAILED';}lastAttachmentCheck=Date.now();adapter.attachmentSkipped=attachments.skipped;adapter.attachmentSkippedDetails=attachments.skippedDetails;} if(sourceSync)await sourceSync.report(); })().catch(error => {
             adapter.degraded = error.code || 'SYNC_FAILED';
             adapter.lastTransportError={code:adapter.degraded,status:error.status??null};
         }).finally(() => { running = null; });

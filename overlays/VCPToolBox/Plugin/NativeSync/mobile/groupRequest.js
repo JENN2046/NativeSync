@@ -24,6 +24,7 @@ function watcher(topic,history,seq){
  return {status:'active',currentSession:{groupId:topic.ownerId,topicId:topic.topicId,filePath:null,storage:'NativeSyncJournal',seq,lastModified:last.toISOString(),lastModifiedDisplay:last.toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai'}),modifiedTimestamp:modified,size:Buffer.byteLength(JSON.stringify(history)),messageCount:history.length},timestamp:now.toISOString(),displayTime:now.toLocaleTimeString('zh-CN',{timeZone:'Asia/Shanghai'})};
 }
 async function groupRequest({topic,config,member,history,currentUserId,requestId,store,attachments,seq}){
+ if(history.some(m=>m.desktopReferences?.length))throw fail('DESKTOP_CONTEXT_REQUIRED');
  const group=config.group,policy=config.executionPolicy||{},rules=config.tavernRules||[],name=member.name||member.id;
  let prompt=require('./snapshotPrompt').snapshotPrompt(member,`你是${name}。`);
  let groupPrompt=group.groupPrompt||'';

@@ -290,6 +290,7 @@ class NativeSyncAdapter {
             // remain in History; CAS upload can occur later without an online
             // dependency or a changed operation identity.
             if(raw&&!intent.localOnly)for(const attachment of raw.attachments||[]){
+                if(require('./metadata').nativeReference(attachment))continue;
                 const data=attachment._fileManagerData||attachment,frames=data.imageFrames||attachment.imageFrames;
                 if(Array.isArray(frames)&&frames.length){
                     if(frames.length>10)throw fail('ATTACHMENT_FRAME_LIMIT');
@@ -425,13 +426,13 @@ class NativeSyncAdapter {
         for(const d of this.topics){
             if(this.state.localCommits[this.topicKey(d)])try{await this.queue.run(d,()=>this.reconcileLocal(d));}catch(error){
                 if(error.syncStatePersistenceFailure)throw error;
-                if(['HISTORY_SOURCE_MISSING','EACCES','EPERM','INVALID_HISTORY','INVALID_HISTORY_JSON'].includes(error.code))await this.transaction(next=>{const record=next.localCommits[this.topicKey(d)];if(record){record.stage='conflicted';record.error={code:error.code};}});
+                if(['HISTORY_SOURCE_MISSING','DESKTOP_REFERENCE_LOCAL_DATA_REQUIRED','DESKTOP_REFERENCE_LOCAL_CONFLICT','EACCES','EPERM','INVALID_HISTORY','INVALID_HISTORY_JSON'].includes(error.code))await this.transaction(next=>{const record=next.localCommits[this.topicKey(d)];if(record){record.stage='conflicted';record.error={code:error.code};}});
                 else if(!['LOCAL_COMMIT_NOT_COMMITTED','LOCAL_COMMIT_HISTORY_CONFLICT'].includes(error.code))throw error;
             }
         }
         if(this.state.pending)try{await this.applyRemote(this.state.pending.event,true);}catch(error){
             if(error.syncStatePersistenceFailure)throw error;
-            if(['SOURCE_BASELINE_REQUIRED','SOURCE_DIRECTORY_DELETED','RECOVERY_HISTORY_CONFLICT','LOCAL_CONTENT_CONFLICT','UNSYNCED_LOCAL_CONFLICT','HISTORY_SOURCE_MISSING','EACCES','EPERM','INVALID_HISTORY','INVALID_HISTORY_JSON'].includes(error.code))await this.parkProjection(this.state.pending.event,error);
+            if(['SOURCE_BASELINE_REQUIRED','SOURCE_DIRECTORY_DELETED','RECOVERY_HISTORY_CONFLICT','LOCAL_CONTENT_CONFLICT','UNSYNCED_LOCAL_CONFLICT','HISTORY_SOURCE_MISSING','DESKTOP_REFERENCE_LOCAL_DATA_REQUIRED','DESKTOP_REFERENCE_LOCAL_CONFLICT','EACCES','EPERM','INVALID_HISTORY','INVALID_HISTORY_JSON'].includes(error.code))await this.parkProjection(this.state.pending.event,error);
             else if(!['LOCAL_COMMIT_NOT_COMMITTED','LOCAL_COMMIT_HISTORY_CONFLICT'].includes(error.code))throw error;
         }
         await this.bootstrapApproved();
@@ -558,7 +559,7 @@ class NativeSyncAdapter {
             try{await this.applyRemote(event);}
             catch(error){
                 if(error.syncStatePersistenceFailure)throw error;
-                if(['SOURCE_BASELINE_REQUIRED','SOURCE_DIRECTORY_DELETED','UNSYNCED_LOCAL_CONFLICT','LOCAL_CONTENT_CONFLICT','LOCAL_COMMIT_NOT_COMMITTED','LOCAL_COMMIT_HISTORY_CONFLICT','RECOVERY_HISTORY_CONFLICT','HISTORY_SOURCE_MISSING','EACCES','EPERM','INVALID_HISTORY','INVALID_HISTORY_JSON'].includes(error.code)){
+                if(['SOURCE_BASELINE_REQUIRED','SOURCE_DIRECTORY_DELETED','UNSYNCED_LOCAL_CONFLICT','LOCAL_CONTENT_CONFLICT','LOCAL_COMMIT_NOT_COMMITTED','LOCAL_COMMIT_HISTORY_CONFLICT','RECOVERY_HISTORY_CONFLICT','HISTORY_SOURCE_MISSING','DESKTOP_REFERENCE_LOCAL_DATA_REQUIRED','DESKTOP_REFERENCE_LOCAL_CONFLICT','EACCES','EPERM','INVALID_HISTORY','INVALID_HISTORY_JSON'].includes(error.code)){
                     await this.parkProjection(event,error);continue;
                 }
                 throw error;
@@ -584,7 +585,7 @@ class NativeSyncAdapter {
             if (prior?.seq >= event.seq) return history;
             if (this.state.outbox.some(op => messageKey(op) === key)) throw fail('UNSYNCED_LOCAL_CONFLICT');
             const index = history.findIndex(m => m.id === id.msgId);
-            const actual = index < 0 ? null : messageHash(history[index]);
+            const actual = index < 0 ? null : messageHash(this.canonical(history[index],d.topicId));
             const expected = prior && !prior.deleted ? prior.hash : null;
             const alreadyApplied = event.action === 'delete' ? actual === null : actual === event.hash;
             if (actual !== expected && !alreadyApplied) throw fail('LOCAL_CONTENT_CONFLICT');
@@ -593,8 +594,8 @@ class NativeSyncAdapter {
             if(proof&&!this.sameEvent(proof.event,event))throw fail('RECOVERY_EVENT_MISMATCH');
             if (proof && this.queue.revision(history) !== proof.beforeRevision && this.queue.revision(history) !== proof.afterRevision) throw fail('RECOVERY_HISTORY_CONFLICT');
             if (event.action === 'delete') { if (index >= 0) history.splice(index, 1); }
-            else if (index >= 0) history[index] = event.message._nativeSyncMetadata?withFields({ ...history[index], ...this.canonical(event.message, d.topicId) },event.message._nativeSyncMetadata):{ ...history[index], ...this.canonical(event.message, d.topicId) };
-            else history.push(this.canonical(event.message, d.topicId));
+            else if (index >= 0) history[index] = this.source?require('./sourceSnapshot').materializeSourceMessage(history[index],event.message,d.topicId):(event.message._nativeSyncMetadata?withFields({ ...history[index], ...this.canonical(event.message, d.topicId) },event.message._nativeSyncMetadata):{ ...history[index], ...this.canonical(event.message, d.topicId) });
+            else { if(event.message.desktopReferences?.length)throw fail('DESKTOP_REFERENCE_LOCAL_DATA_REQUIRED');history.push(this.canonical(event.message, d.topicId)); }
             const afterRevision = this.queue.revision(history);
             await this.transaction(next => {
                 if (next.pending && next.pending.event.seq !== event.seq) throw fail('SYNC_RECOVERY_REQUIRED');
@@ -624,7 +625,7 @@ class NativeSyncAdapter {
         }finally{this.busy=false;}
     }
     async synchronize() { await this.flush(); await this.pull(); }
-    diagnostics() { return { ...(this.sourceDiagnostics?{source:this.sourceDiagnostics()}:{}), degraded: this.degraded,lastTransportError:this.lastTransportError||null, configurationError:this.configurationError||null, attachmentError:this.attachmentError||null, cursor: this.state.cursor,receivedCursor:this.state.cursor,materializedThrough:this.state.inbox.length?Math.min(...this.state.inbox.map(x=>x.event.seq))-1:this.state.cursor,inboundBuffered:this.state.inbox.length,conflicts:this.state.outbox.filter(op=>op.status).map(op=>({opId:op.opId,msgId:op.msgId,code:op.error?.code,status:op.error?.status})),localCommits:Object.values(this.state.localCommits).map(c=>({id:c.id,source:c.source,stage:c.stage,code:c.error?.code})),receipts:Object.values(this.state.receipts),drift:this.state.drift,pending: Boolean(this.state.pending),inboxCleanupError:this.inboxCleanupError||null, outboxSize: this.state.outbox.length }; }
+    diagnostics() { return { ...(this.sourceDiagnostics?{source:this.sourceDiagnostics()}:{}), degraded: this.degraded,lastTransportError:this.lastTransportError||null, configurationError:this.configurationError||null, attachmentSkippedDetails:this.attachmentSkippedDetails||[], attachmentError:this.attachmentError||null, cursor: this.state.cursor,receivedCursor:this.state.cursor,materializedThrough:this.state.inbox.length?Math.min(...this.state.inbox.map(x=>x.event.seq))-1:this.state.cursor,inboundBuffered:this.state.inbox.length,conflicts:this.state.outbox.filter(op=>op.status).map(op=>({opId:op.opId,msgId:op.msgId,code:op.error?.code,status:op.error?.status})),localCommits:Object.values(this.state.localCommits).map(c=>({id:c.id,source:c.source,stage:c.stage,code:c.error?.code})),receipts:Object.values(this.state.receipts),drift:this.state.drift,pending: Boolean(this.state.pending),inboxCleanupError:this.inboxCleanupError||null, outboxSize: this.state.outbox.length }; }
     close() {
         if(this.closing)return this.closing;
         this.closing=(async()=>{

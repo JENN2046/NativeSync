@@ -5,6 +5,7 @@ const path = require('node:path');
 const { identity } = require('../sync/protocol');
 const { ConversationExecution, error, digest, historyReady } = require('./execution');
 const { MobileConnection } = require('./connection');
+const {requireReferenceReader}=require('../sync/capabilities');
 const { entryId, sessionMarker } = require('./submissionRecovery');
 const cookieName = '__Secure-vcp_mobile';
 const protectedHttps = req => Boolean(req.socket?.encrypted) || (req.secure === true && ['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket?.remoteAddress));
@@ -92,12 +93,12 @@ class MobilePortal {
             try{const topic=this.authorize(req);if(!this.sourceCatalog)throw error('SOURCE_PROTOCOL_UNAVAILABLE',409);if(!req.body||Object.keys(req.body).some(k=>k!=='requestId'))throw error('INVALID_CURSOR');res.json(this.sourceCatalog.beginMobile(req.mobileSession.id,topic,req.body.requestId));}catch(e){next(e);}
         });
         this.router.get('/api/conversations/:key/baseline/:id',(req,res,next)=>{
-            try{const topic=this.authorize(req);if(!this.sourceCatalog)throw error('SOURCE_PROTOCOL_UNAVAILABLE',409);if(Object.keys(req.query).some(k=>!['after','limit','executions'].includes(k)))throw error('INVALID_CURSOR');res.json(this.sourceCatalog.mobilePage(req.mobileSession.id,topic,req.params.id,Number(req.query.after||0),Number(req.query.limit||100)));}catch(e){next(e);}
+            try{const topic=this.authorize(req);if(!this.sourceCatalog)throw error('SOURCE_PROTOCOL_UNAVAILABLE',409);if(Object.keys(req.query).some(k=>!['after','limit','executions'].includes(k)))throw error('INVALID_CURSOR');res.json(requireReferenceReader(this.sourceCatalog.mobilePage(req.mobileSession.id,topic,req.params.id,Number(req.query.after||0),Number(req.query.limit||100)),req.headers['x-nativesync-capabilities']));}catch(e){next(e);}
         });
         this.router.get('/api/conversations/:key/executions',(req,res,next)=>{try{const topic=this.authorize(req);res.json(this.engine.page(topic.key,req.mobileSession.id,req.query));}catch(e){next(e);}});
         this.router.get('/api/conversations/:key/execution-request',(req,res,next)=>{try{const topic=this.authorize(req);if(Object.keys(req.query).some(k=>k!=='requestId'))throw error('INVALID_EXECUTION_QUERY');res.json(this.engine.request(topic.key,req.mobileSession.id,req.query.requestId));}catch(e){next(e);}});
         this.router.get('/api/conversations/:key/events',(req,res,next)=>{
-            try{const topic=this.authorize(req);if(Object.keys(req.query).some(k=>!['after','limit','executions'].includes(k)))throw error('INVALID_CURSOR');const result=this.store.pull(Number(req.query.after||0),Number(req.query.limit||100),[JSON.stringify([topic.ownerType,topic.ownerId,topic.topicId])]);const state=this.catalog(req.mobileSession).find(t=>t.key===topic.key);res.json({...result,topic:{ownerType:topic.ownerType,ownerId:topic.ownerId,topicId:topic.topicId},...(req.query.executions==='paged'?{executionProtocol:2}:{executions:this.engine.list(topic.key,req.mobileSession.id)}),topicState:state});}catch(e){next(e);}
+            try{const topic=this.authorize(req);if(Object.keys(req.query).some(k=>!['after','limit','executions'].includes(k)))throw error('INVALID_CURSOR');const result=this.store.pull(Number(req.query.after||0),Number(req.query.limit||100),[JSON.stringify([topic.ownerType,topic.ownerId,topic.topicId])]);requireReferenceReader(result,req.headers['x-nativesync-capabilities']);const state=this.catalog(req.mobileSession).find(t=>t.key===topic.key);res.json({...result,topic:{ownerType:topic.ownerType,ownerId:topic.ownerId,topicId:topic.topicId},...(req.query.executions==='paged'?{executionProtocol:2}:{executions:this.engine.list(topic.key,req.mobileSession.id)}),topicState:state});}catch(e){next(e);}
         });
         this.router.get('/api/conversations/:key', (req,res,next) => {
             try {
@@ -108,7 +109,7 @@ class MobilePortal {
                 const page = rows.slice(0,200),messages=this.store.projectRows(page);
                 const ready=historyReady(this.db,topic);
                 return { messages: page.map((r,i)=>({seq:r.seq,id:r.id,deleted:Boolean(r.deleted),message:messages[i]})), next:page.at(-1)?.seq??after, hasMore:rows.length>200, ...(req.query.executions==='paged'?{executionProtocol:2}:{executions:this.engine.list(topic.key,req.mobileSession.id)}),topicState:{historyReady:ready,executable:this.catalog(req.mobileSession).find(t=>t.key===topic.key).executable,unavailableReason:this.catalog(req.mobileSession).find(t=>t.key===topic.key).unavailableReason,...this.engine.configs.public(topic.key)} };
-                });res.json(result);
+                });requireReferenceReader(result,req.headers['x-nativesync-capabilities']);res.json(result);
             } catch(e) { next(e); }
         });
         this.router.post('/api/conversations/:key/messages', (req,res,next) => {
