@@ -1,0 +1,215 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "sourceCommit": "a7c676c6b74d27d26183a41feca516785be8d277",
+  "sourceInputsSha256": "58991117da2f7c4cf05c0e73873429cdb67b6c6c37c9f910f68e3cd309dcb65e",
+  "runtimeFiles": 86,
+  "supportFiles": 40,
+  "sourceDirty": false,
+  "testedPayloadMatches": true,
+  "productionWrites": [
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/historyResponse.js",
+      "before": null,
+      "after": "56bc47ad6c4a9411bd1f13dc883747c3c6b52a1ff42715b6b8b1b3f534f6d03f"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/portal.js",
+      "before": "7bfe95b2eb17a5d125ba306e02c2f3d92e004d528b6f9fb555c6d2c23338b056",
+      "after": "e9b630e117e1666b32849d2c12e20e8ec9d922714d98ef9687326e2e8075fad2"
+    }
+  ],
+  "zipSha256": "82583a4f776b6f44c39ae24b1a07ac13d369a10f674b915d492cb408d5a39b73",
+  "productionInstalled": false,
+  "productionCodeOrConfigChanged": false,
+  "pwaChanged": false,
+  "nginxChanged": false,
+  "windowsChanges": 0,
+  "newDependencies": 0,
+  "syncProtocolOrDatabaseSchemaChanged": false,
+  "profile": {
+    "totalTargetMs": 18419.60000014305,
+    "largePageMs": 12640.400000095367,
+    "largePageDownloadMs": 11405.800000190735,
+    "largePageSharePercent": 68.62472583550782,
+    "previewToNextRequestGapMs": 69.90000009536743,
+    "largePageToEventsGapMs": 53.39999985694885,
+    "eventsToUiReadyMs": 146.20000004768372,
+    "largePageEncodedBytes": 2521793,
+    "largePageDecodedBytes": 13126025,
+    "modelPosts": 0,
+    "originalSelectionRestored": true
+  },
+  "sourceCompressionBench": {
+    "rawBytes": 12635343,
+    "rawSha256": "93c200ff54ba9f3ae14d4fec2e9e1f49a965ec9975263bc3c2fe13dc4c37c426",
+    "brotli": [
+      {
+        "quality": 3,
+        "bytes": 876665,
+        "elapsedMs": 48.18813899999998,
+        "decodedHashMatches": true
+      },
+      {
+        "quality": 4,
+        "bytes": 783363,
+        "elapsedMs": 67.59482500000001,
+        "decodedHashMatches": true
+      },
+      {
+        "quality": 5,
+        "bytes": 701678,
+        "elapsedMs": 100.99415300000004,
+        "decodedHashMatches": true
+      }
+    ],
+    "gzipLevel3": {
+      "bytes": 2257588,
+      "elapsedMs": 78.887976
+    },
+    "productionCodeOrConfigurationChanged": false
+  },
+  "compressionPolicy": {
+    "encoding": "br",
+    "quality": 4,
+    "minimumBytes": 65536,
+    "maximumBytes": 16777216,
+    "maximumActiveJobs": 1,
+    "waitingQueue": false,
+    "fallback": "existing JSON response and deployed Nginx gzip; no rejection for oversize or busy jobs",
+    "scope": "three existing mobile GET history exits only; host JSON serialization retained"
+  },
+  "verification": {
+    "directHttpGroupsPassed": 3,
+    "pwaCasePassed": 1,
+    "nginxCoexistencePassed": true,
+    "decodedHashPreserved": true,
+    "storageCorruptionStill500": true,
+    "cacheAndPendingSubmissionPreserved": true,
+    "androidCandidateAccepted": false,
+    "firstBudgetTestFailure": "mock restoration API typo; corrected test only, reran failed case"
+  },
+  "nginxCoexistence": {
+    "nginxVersion": "1.28.3",
+    "productionSnippetUsed": true,
+    "brotliPreservedWithoutDoubleEncoding": true,
+    "gzipFallbackPassed": true,
+    "identityFallbackPassed": true,
+    "decodedHashMatches": true,
+    "results": {
+      "br": {
+        "status": 200,
+        "encoding": "br",
+        "wireBytes": 1495986,
+        "decodedBytes": 9040098,
+        "sha256": "79befaffc8c150e2ce75c2dc7caba34b2b13c844b5435fbef4c0f1520271725f",
+        "cacheControl": "no-store",
+        "vary": "Accept-Encoding",
+        "headerMs": 5.66,
+        "totalMs": 11.13
+      },
+      "gzip": {
+        "status": 200,
+        "encoding": "gzip",
+        "wireBytes": 1630755,
+        "decodedBytes": 9040098,
+        "sha256": "79befaffc8c150e2ce75c2dc7caba34b2b13c844b5435fbef4c0f1520271725f",
+        "cacheControl": "no-store",
+        "vary": "Accept-Encoding",
+        "headerMs": 3.38,
+        "totalMs": 116.23
+      },
+      "identity": {
+        "status": 200,
+        "encoding": null,
+        "wireBytes": 9040098,
+        "decodedBytes": 9040098,
+        "sha256": "79befaffc8c150e2ce75c2dc7caba34b2b13c844b5435fbef4c0f1520271725f",
+        "cacheControl": "no-store",
+        "vary": "Accept-Encoding",
+        "headerMs": 3.36,
+        "totalMs": 37.66
+      }
+    },
+    "productionChanged": false
+  },
+  "productionReadonlyPreflight": {
+    "atUtc": "2026-11-03T17:48:10.872420+00:00",
+    "identityVerified": true,
+    "files": {
+      "Plugin/NativeSync/mobile/portal.js": {
+        "exists": true,
+        "sha256": "7bfe95b2eb17a5d125ba306e02c2f3d92e004d528b6f9fb555c6d2c23338b056"
+      },
+      "Plugin/NativeSync/mobile/historyResponse.js": {
+        "exists": false,
+        "sha256": null
+      }
+    },
+    "nodeVersion": "v24.22.1",
+    "gzipSnippetSha256": "7ab56f0357fcc52b3d5775ac2a16cf23c57042dd44d3699f4db8c91647a49df0",
+    "pwaIndexSha256": "2d601ad48d10905eb7d0cd7aaabfa296fa76b5605c8d7570300a596629c9bd9d",
+    "services": {
+      "nginx.service": {
+        "ActiveState": "active",
+        "MainPID": "2922"
+      },
+      "vcptoolbox.service": {
+        "ActiveState": "active",
+        "MainPID": "1821319"
+      }
+    },
+    "productionChanged": false
+  },
+  "requiredInstall": {
+    "normalBackendStopAndStart": true,
+    "pauseNewProductionRequestsAndSettleWork": true,
+    "consistentWalAwareBackup": true,
+    "windowsExit": false,
+    "nginxReload": false,
+    "pwaRefreshOrRePairRequired": false,
+    "codeRollbackOnly": true
+  },
+  "evidence": [
+    {
+      "path": ".local/first-open-performance-20261103/PHONE_PROFILE.json",
+      "sha256": "100271c599a9646f473187ef4e15aeee27adb3d5e73a394870b6c7602b690328"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PROFILE_SUMMARY.json",
+      "sha256": "d85f9958b51788469461b2e8d0cefb27472c2b10783e0d6891e65eb561a509be"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/SOURCE_COMPRESSION_BENCH.json",
+      "sha256": "22aefd7fd0a19cc9ab5e295fb026500166678bb05af348b3998865801188adf2"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/transport.tap",
+      "sha256": "75d3b8c37732a37c98a896e5b4f23826d5102a89d618d02bd0daba68d6ce7569"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/budget-retry.tap",
+      "sha256": "a6de7588fd4e6c033e6e394dfd9dbeeaef5cfe3d2c036cf3e85580cd014c57fc"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/pwa.tap",
+      "sha256": "27ba81da2c07916dd079d5cdeb357e948108789ff8de9adeeec7e08095075d5e"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/NGINX_COEXISTENCE.json",
+      "sha256": "e3359a9522a3b7164733ba4b10bcd4e9c0ffb369086d8e19add6b0a959c29c76"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/CANDIDATE_VERIFIED.json",
+      "sha256": "f1eec0c52f46ce7395911b9beb199acf8377f6d155fefbee2b29bd0b38caa057"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PRODUCTION_READONLY_PREFLIGHT.json",
+      "sha256": "61626b12dd0c0286f3db6f8c4b5af9f3ffc41a135516685867ddac2f3a535297"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/candidate/MANIFEST.json",
+      "sha256": "26e9500b0b4eaa3046e93011e13482bf8137d223a0c49d9aeca77e589f5f5c9e"
+    }
+  ]
+}
