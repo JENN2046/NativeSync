@@ -1,0 +1,91 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "status": "validated; production installation pending separate confirmation",
+  "productionInstalled": false,
+  "nativeSyncRuntimeChanged": false,
+  "nginxVersion": "1.28.3",
+  "productionFiles": [
+    {
+      "path": "/etc/nginx/snippets/nativesync-history-gzip.conf",
+      "action": "create",
+      "before": null,
+      "after": "7ab56f0357fcc52b3d5775ac2a16cf23c57042dd44d3699f4db8c91647a49df0"
+    },
+    {
+      "path": "/etc/nginx/sites-available/vcptoolbox",
+      "action": "insert one include in public HTTPS server",
+      "before": "66479d2f129307ddbd40fa72ad79c82f8f2eb2e8293128c024057c18376fa2e6",
+      "after": "bf2c87eabb8e3dcdc96c7041bfe3fe4b0a437f444e5cb9d53f0b501b35c63842"
+    }
+  ],
+  "keepSymlink": "/etc/nginx/sites-enabled/vcptoolbox -> /etc/nginx/sites-available/vcptoolbox",
+  "patchSha256": "2bd47d85572703766ef48e53b55c109f190b7bb10eef86e765b1a521a56a8596",
+  "reloadOnly": "nginx.service",
+  "backendRestartRequired": false,
+  "windowsExitRequired": false,
+  "configuration": {
+    "gzipLevel": 3,
+    "mime": "application/json",
+    "minimumKnownLengthBytes": 1024,
+    "gzipProxied": [
+      "no-store",
+      "auth"
+    ],
+    "varyAcceptEncoding": true,
+    "proxyBuffering": "off"
+  },
+  "localResults": {
+    "fixtureBytes": 9040098,
+    "gzipBytes": 1630755,
+    "sameDecodedSha256": true,
+    "noStorePreserved": true,
+    "identityFallbackPassed": true,
+    "unauthorizedStatus": 401,
+    "blockedPublicRoutes": {
+      "/admin_api/server/lifecycle": 404,
+      "/v1/native-conversation": 404,
+      "/AdminPanelLegacy/": 404
+    },
+    "nonHistoryJsonRoutesUncompressed": 4,
+    "streamingFirstChunkBeforeBackendFinished": true,
+    "realModelCalls": 0,
+    "privateDataCopied": false
+  },
+  "productionStagedSyntax": {
+    "syntaxPassed": true,
+    "productionNginxVersion": "nginx version: nginx/1.28.3 (Ubuntu)",
+    "activeVhostSha256": "66479d2f129307ddbd40fa72ad79c82f8f2eb2e8293128c024057c18376fa2e6",
+    "candidateVhostSha256": "bf2c87eabb8e3dcdc96c7041bfe3fe4b0a437f444e5cb9d53f0b501b35c63842",
+    "snippetSha256": "7ab56f0357fcc52b3d5775ac2a16cf23c57042dd44d3699f4db8c91647a49df0",
+    "stage": "/home/ubuntu/nativesync-release-stage/history-origin-gzip-20261103",
+    "nginxServiceBeforeAndAfter": {
+      "ActiveState": "active",
+      "InvocationID": "157cb0db7ee7419eb845ca45cc957c9d",
+      "MainPID": "2922"
+    },
+    "activeConfigChanged": false,
+    "nginxReloaded": false,
+    "backendRestarted": false
+  },
+  "productionLatencyOrAndroidImprovementVerified": false,
+  "rollback": "restore only matching configuration backup and remove only matching newly-created snippet, nginx -t then graceful reload; do not restore database/state/cursors",
+  "evidence": [
+    {
+      "path": ".local/history-origin-gzip-20261103/LOCAL_VALIDATION.json",
+      "sha256": "f7cd9b1311ae3f740e023828181ed68830fe7e7224b2f992ad2352e5f2f8ff95"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/PRODUCTION_SYNTAX.json",
+      "sha256": "c74ffc42435ff07be50596af46a4050d958c99709eb79a8832f3482c462aed98"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/validate-local.py",
+      "sha256": "1eb612169689986a9d43b2ed8c603bba03a4c885fb9dbf0bcb3c53c395bd4284"
+    },
+    {
+      "path": ".local/history-origin-gzip-20261103/stage-syntax.py",
+      "sha256": "fc6a7876a35c56d94b2441790f87f85707f95cda331e57ee6e6f038dca0bab6d"
+    }
+  ]
+}

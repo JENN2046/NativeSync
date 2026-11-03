@@ -1,0 +1,10 @@
+--- a/etc/nginx/sites-available/vcptoolbox
++++ b/etc/nginx/sites-available/vcptoolbox
+@@ -80,6 +80,7 @@
+         proxy_read_timeout 600s;
+         proxy_send_timeout 600s;
+     }
++    include /etc/nginx/snippets/nativesync-history-gzip.conf;
+     location / {
+         proxy_pass http://127.0.0.1:6005;
+         proxy_http_version 1.1;

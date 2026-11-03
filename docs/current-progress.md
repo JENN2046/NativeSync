@@ -4,6 +4,8 @@
 
 ## 最新本机状态
 
+[历史JSON源站压缩候选](history-origin-gzip-20261103.md)已准备：仅公开HTTPS server一条include和新增历史location片段，gzip等级3，保留鉴权/no-store及原代理行为。本机同版本Nginx 1.28.3合成9.04 MB压为1.63 MB，解压摘要一致、identity/权限/路由范围/模拟SSE通过；生产暂存候选nginx -t通过，活动配置及主进程保持。生产尚未安装或reload，按此前约定等待这份两路径清单的追加确认；无需退出Windows或重启后端，手机收益未验收。
+
 [源站JSON压缩补充核实](mobile-network-readonly-20261103.md)已完成：生产Nginx HTTPS读取同一份12.64 MB真实历史JSON，identity、gzip及br/gzip协商均无Content-Encoding、仍发送12.64 MB；同站点HTML gzip对照通过。源站JSON未压缩已由配置线索升级为直接响应证据，原Nginx TLS测量缺口已关闭；生产配置未改。离线gzip约2.03 MB只作减量估算，尚未验证上线收益，也不认定手机44–49秒全部由出口带宽造成。
 
 [手机历史网络只读核对](mobile-network-readonly-20261103.md)已完成：实机a78ce02页面的完整网络记录证实zstd压缩，大历史页13.13 MB解压后对应约1.14 MB压缩体；同一现有页三次GET复读仍需42.54–49.17秒，主要在收响应体阶段。切话题/重开会重读完整基线，同话题正常轮询只读增量。源站代表性大消息本机Pull约0.70秒；Nginx仅gzip on而未配置JSON类型，源站至Cloudflare压缩仍需单独验证。未改生产配置或新增配对/基线；没有把带宽套餐不足或手机性能通过当作结论，测量限制已列明。
