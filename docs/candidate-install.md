@@ -40,3 +40,5 @@ SCOPE.json的codeRollbackBaseline是早期选定模式的公共夹具组装输�
 手机只显示已有会话获准访问的来源，并可按来源筛选；同名Agent保持独立身份。新的联合配对需先确认`/mobile/api/connection`能力`multiSourcePairing`为true，然后使用原受保护配对入口提交`scopeMode:"sources"`与`sources:[{sourceId,snapshot}]`。每项snapshot必须明确为true（当前话题固定快照）或false（该已批准来源及未来新增内容）。未知/重复来源、缺少明确选择、单一来源请求试图添加其他来源均拒绝。
 
 这些能力不修改已有Source授权或旧手机会话，不自动解除只读限制。日常/生产安装需使用当次匹配目标清单；不要因新候选存在就套用旧固定清单或恢复数据。
+
+2026-11-02（America/Adak）已按用户授权安装`a27f601`至日常桌面及腾讯生产，精确目标、备份和回退边界见[本次安装回执](effective-rules-multisource-20261102.md#日常与生产安装回执)。旧手机权限及只读状态保留，联合配对未创建。
