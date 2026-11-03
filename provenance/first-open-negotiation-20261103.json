@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "sourceCommit": "f8ed5b4383b1982772e888666f775458365a4ada",
+  "sourceInputsSha256": "989cad28289313e345fbdd01d878ee9e8eeeee52b70122e87f86331824e4b5a9",
+  "sourceDirty": false,
+  "zip": "/home/jenn/下载/NativeSync_First_Open_Negotiation_20261103.zip",
+  "zipSha256": "f17c2f0d90c21e1f4cc4261a2f92a39298d1efe84abda20a7006eccc3194e770",
+  "runtimeFiles": 86,
+  "supportFiles": 40,
+  "productionInstalled": false,
+  "productionWrites": [
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/historyResponse.js",
+      "before": "56bc47ad6c4a9411bd1f13dc883747c3c6b52a1ff42715b6b8b1b3f534f6d03f",
+      "after": "da698236da627f3e0cc9dd1d845e7773830bb4aa768e58b1f9ba5dfdded77530"
+    }
+  ],
+  "otherRuntimeFilesByteIdenticalToInstalledCandidate": true,
+  "pwaChanged": false,
+  "nginxChanged": false,
+  "newDependenciesInstalled": 0,
+  "existingHostDependency": "negotiator 1.0.0, already installed and verified; preferred encoding API used",
+  "normalBackendStopStartRequired": true,
+  "windowsExitRequired": false,
+  "newPairingRequired": false,
+  "verification": {
+    "oldCodeFailureReproduced": "gzip, br selects gzip",
+    "directGroupsPassed": 3,
+    "realAuthorizedHistoryExitsUseProductionHeaderOrder": true,
+    "higherQualityAndExplicitDisabledRespected": true,
+    "storageCorruptionRemains500": true,
+    "noQueueAndFailureFallbackPreserved": true,
+    "candidatePayloadAndSupportAndZipVerified": true,
+    "testedHelperShaMatchesFinalCandidate": true,
+    "phoneActualNewEncodingAndLatencyAccepted": false
+  },
+  "authorization": "Pending separate approval; prior explicit approval named a7c676c.",
+  "evidence": [
+    {
+      "path": ".local/first-open-negotiation-20261103/transport.tap",
+      "sha256": "3df845404d557db7819917748be5da1bf5b4b182248814993247013c243da1c9"
+    },
+    {
+      "path": ".local/first-open-negotiation-20261103/history-exits-proxy-order.tap",
+      "sha256": "f7897cfe037ffdc7529fc29033e9af13424e1cc9201ba41310e2f1240e597e60"
+    },
+    {
+      "path": ".local/first-open-negotiation-20261103/candidate/MANIFEST.json",
+      "sha256": "16a9047b6051e07d6f7de405acef841ddd649f3da1e316ea959ab52d9120edac"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/negotiation-repro.tap",
+      "sha256": "c41f30bdfc52fc601fb5f5f7198409a12ce9a5c9d382b8ed4acf2a764560bf54"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PROXY_ENCODING_HEADER.json",
+      "sha256": "45fddadf6a0893988fec2e5b7bb8ea1f275d4dbdae33cc53c011cc08b431c384"
+    }
+  ]
+}

@@ -83,6 +83,6 @@
 
 仅修改historyResponse.js，复用宿主已有negotiator（生产1.0.0，未新增安装依赖），通过其preferred选项在同权重时优先br。显式较高权重仍优先；br q=0、缺少协商、identity、繁忙/压缩失败及超范围回退保持。portal.js、Nginx和PWA不再修改。
 
-旧代码已用 `gzip, br` 复现失败。补丁在独立本机测试进程加载与生产相同的已有negotiator 1.0.0，协商与回退、无排队/释放槽位、三个实际授权读取出口的3组检查通过；包含Chrome常见顺序、同权重、通配符、大小写、较高gzip/identity权重、显式禁用，以及未配对401和损坏Head仍500。未重跑未修改的PWA、AA/工具和安装矩阵。完整候选的摘要与追加单文件清单将在封存后补充。
+旧代码已用 `gzip, br` 复现失败。补丁在独立本机测试进程加载与生产相同的已有negotiator 1.0.0，协商与回退、无排队/释放槽位、三个实际授权读取出口的3组检查通过；包含Chrome常见顺序、同权重、通配符、大小写、较高gzip/identity权重、显式禁用，以及未配对401和损坏Head仍500。未重跑未修改的PWA、AA/工具和安装矩阵。补充源码已本地提交 `f8ed5b4383b1982772e888666f775458365a4ada`，完整候选86项载荷/40项支持文件校验通过，构建时工作树干净；除helper外与已安装候选字节相同。候选ZIP：[NativeSync_First_Open_Negotiation_20261103.zip](/home/jenn/下载/NativeSync_First_Open_Negotiation_20261103.zip)，SHA256 `f17c2f0d90c21e1f4cc4261a2f92a39298d1efe84abda20a7006eccc3194e770`。追加单文件摘要 `56bc47ad6c4a9411bd1f13dc883747c3c6b52a1ff42715b6b8b1b3f534f6d03f` → `da698236da627f3e0cc9dd1d845e7773830bb4aa768e58b1f9ba5dfdded77530`，详见[补充清单](../provenance/first-open-negotiation-20261103.json)。
 
 按用户此前“生产追加安装另确认”及本次精确授权a7c676c的边界，补充候选须另获安装批准，届时只需追加historyResponse.js并正常停启后端。现有一致备份和code/INSTALL回执保留；代码回退须先复核在途结清及当前摘要，再恢复portal.js、移除新增helper、正常启动，绝不恢复数据库、state、游标或Source绑定。
