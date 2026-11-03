@@ -77,7 +77,8 @@ class SourceCatalog{
    if(prior){const receipt=JSON.parse(prior.value);if(receipt.requestHash!==requestHash)throw fail('IDEMPOTENCY_KEY_REUSED');this.db.exec('COMMIT');return {...receipt,replayed:true};}
    if(scopeHash(grant.scope)!==body.expectedScopeHash)throw fail('SOURCE_SCOPE_CHANGED');
    expansion(grant.scope,body.newScope);if(!grant.approvedScope||stable(normalizeScope(grant.approvedScope))!==stable(next))throw fail('SCOPE_NOT_APPROVED',403);
-   if(!next&&this.db.prepare('SELECT 1 FROM source_catalog_entities WHERE source_id<>? LIMIT 1').get(value.sourceId))throw fail('SOURCE_IDENTITY_COLLISION');
+   // Full-root approval is not catalog ownership: publish() admits each exact
+   // identity, and scoped transport still derives topics from that source only.
    for(const t of next?.topics||[])for(const topicId of ['',t.topicId]){const owner=this.db.prepare('SELECT source_id FROM source_catalog_entities WHERE owner_type=? AND owner_id=? AND topic_id=?').get(t.ownerType,t.ownerId,topicId);if(owner&&owner.source_id!==value.sourceId)throw fail('SOURCE_IDENTITY_COLLISION');}
    const keys=grant.scope.topics.map(t=>{const row=this.entity(value.sourceId,t.ownerType,t.ownerId,t.topicId);if(!row||(!row.ready&&!row.deleted))throw fail('SOURCE_SCOPE_NOT_SETTLED');return JSON.parse(row.metadata).key;});
    if(new Set(keys).size!==keys.length||keys.some(k=>typeof k!=='string'||!opaque(k)))throw fail('SOURCE_SCOPE_NOT_SETTLED');

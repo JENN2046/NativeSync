@@ -88,3 +88,39 @@ test('explicit approved full-root transition preserves original identities and f
  const f=await fixture(t);await f.adopt();await f.pump();const oldPhone=await f.phone();approve(f,{mode:'full'});await f.close();f.connection.sourceScope={mode:'full'};f.connection.scopeTransition={opId:'full-root-explicit',expectedScopeHash:scopeHash(oldScope)};await f.open();await f.pump();assert.equal(f.adapter.state.source.binding.scope,undefined);assert.equal(f.adapter.fullSource,true);assert.equal((await oldPhone.call('/directory?kind=topics&limit=100')).topics.length,2);
  await widenedFiles(f);await f.sync.discover();await f.pump();const phone=await f.phone();assert.equal(phone.topics.length,6);assert.equal((await oldPhone.call('/directory?kind=topics&limit=100')).topics.length,2);const before=f.store.metrics();await f.close();await f.open();await f.pump();approve(f,{mode:'full'});assert.deepEqual(f.store.metrics(),before);assert.equal(f.store.sourceCatalog.grants.get('sourceA').scope,undefined);f.assertOldFacts();
 });
+
+// A full-root grant still admits concrete topic identities through the existing
+// catalog. Another disjoint source must not prevent that explicit grant.
+async function approveWithForeignSource(f) {
+ const config={NativeSyncFullSources:JSON.stringify([
+  {sourceId:'sourceA',deviceId:'deviceA',scope:oldScope,approvedScope:{mode:'full'}},
+  {sourceId:'sourceB',deviceId:'deviceB',scope:{mode:'full'}}
+ ]),NativeMobileTopics:JSON.stringify(f.portal.staticTopics)};
+ const catalog=new SourceCatalog(f.store,config);f.store.sourceCatalog=catalog;f.portal.sourceCatalog=catalog;
+ const foreign={ownerType:'agent',ownerId:'foreign-owner',topicId:'foreign-topic'},binding={sourceId:'sourceB',deviceId:'deviceB',spaceId:f.connection.spaceId};
+ catalog.publish(binding,{opId:'foreign-directory',baseRevision:0,agents:[{ownerType:'agent',ownerId:foreign.ownerId,name:'Foreign synthetic owner'}],topics:[{...foreign,name:'Foreign synthetic topic',sourceState:'available'}],removed:[]});
+ f.store.apply({...foreign,deviceId:'deviceB',opId:'foreign-message',action:'upsert',baseHash:null,msgId:'foreign-message',message:message('foreign-message','SYNTHETIC_FOREIGN_SOURCE_CONTENT')});
+ f.portal.refreshDirectoryTopics();
+ return {config,catalog,binding,foreign,key:catalog.entity('sourceB',foreign.ownerType,foreign.ownerId,foreign.topicId)&&JSON.parse(catalog.entity('sourceB',foreign.ownerType,foreign.ownerId,foreign.topicId).metadata).key};
+}
+
+test('approved full-root transition coexists with a disjoint source and preserves both old phone rights and peer data',async t=>{
+ const f=await fixture(t);await f.adopt();await f.pump();const oldPhone=await f.phone(),unused=f.portal.createPairing({scopeMode:'source',sourceId:'sourceA'}),peer=await approveWithForeignSource(f);
+ const peerBefore=stable({binding:f.store.db.prepare('SELECT * FROM source_bindings WHERE source_id=?').get('sourceB'),scope:f.store.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceScope:sourceB'),directory:f.store.db.prepare('SELECT * FROM source_catalog_entities WHERE source_id=? ORDER BY topic_id').all('sourceB'),message:f.store.db.prepare('SELECT * FROM messages WHERE owner_id=?').get(peer.foreign.ownerId)});
+ await f.close();f.connection.sourceScope={mode:'full'};f.connection.scopeTransition={opId:'multisource-full',expectedScopeHash:scopeHash(oldScope)};await f.open();await f.pump();
+ assert.equal(f.adapter.state.source.binding.scope,undefined);assert.equal((await oldPhone.call('/directory?kind=topics&limit=100')).topics.length,2);const oldUnused=await activate(f,unused);assert.equal((await oldUnused('/directory?kind=topics&limit=100')).body.topics.length,2);
+ const current=await f.phone();assert(current.topics.length>2);assert(current.topics.every(x=>x.ownerId!==peer.foreign.ownerId));assert.equal(await current.status('/conversations/'+peer.key),403);
+ const a=await f.send('/api/v1/sync/pull?after_seq=0&limit=500'),b=await createSyncRequest({...f.connection,sourceId:'sourceB',deviceId:'deviceB'})('/api/v1/sync/pull?after_seq=0&limit=500');
+ assert(!JSON.stringify(a).includes('SYNTHETIC_FOREIGN_SOURCE_CONTENT'));assert.deepEqual(b.events.map(e=>e.msgId),['foreign-message']);
+ const peerAfter=stable({binding:f.store.db.prepare('SELECT * FROM source_bindings WHERE source_id=?').get('sourceB'),scope:f.store.db.prepare('SELECT value FROM native_sync_metadata WHERE key=?').get('sourceScope:sourceB'),directory:f.store.db.prepare('SELECT * FROM source_catalog_entities WHERE source_id=? ORDER BY topic_id').all('sourceB'),message:f.store.db.prepare('SELECT * FROM messages WHERE owner_id=?').get(peer.foreign.ownerId)});assert.equal(peerAfter,peerBefore);
+ const replay=await f.send('/api/v1/sync/source/scope-transition',{body:{opId:'multisource-full',expectedScopeHash:scopeHash(oldScope),newScope:{mode:'full'}}});assert.equal(replay.replayed,true);const facts=f.store.metrics();await f.close();const reopened=new SourceCatalog(f.store,peer.config);f.store.sourceCatalog=reopened;f.portal.sourceCatalog=reopened;await f.open();await f.pump();assert.deepEqual(f.store.metrics(),facts);f.assertOldFacts();
+});
+
+test('full-root transition cannot claim, read, push to or baseline a peer-owned identity',async t=>{
+ const f=await fixture(t);await f.adopt();await f.pump();const peer=await approveWithForeignSource(f);await f.close();f.connection.sourceScope={mode:'full'};f.connection.scopeTransition={opId:'full-collision-barrier',expectedScopeHash:scopeHash(oldScope)};await f.open();await f.pump();
+ const before=digest(f),binding={sourceId:'sourceA',deviceId:'deviceA',spaceId:f.connection.spaceId};
+ assert.throws(()=>f.store.sourceCatalog.publish(binding,{opId:'claim-peer',baseRevision:f.store.sourceCatalog.revision('sourceA'),agents:[{ownerType:'agent',ownerId:peer.foreign.ownerId,name:'Attempted claim'}],topics:[{...peer.foreign,name:'Attempted claim'}],removed:[]}),e=>e.code==='SOURCE_IDENTITY_COLLISION');assert.equal(digest(f),before);
+ await assert.rejects(()=>f.send('/api/v1/sync/push',{body:{...peer.foreign,deviceId:'deviceA',opId:'write-peer',action:'upsert',baseHash:null,msgId:'unapproved',message:message('unapproved')}}),e=>e.status===403&&e.code==='TOPIC_NOT_ALLOWED');assert.equal(digest(f),before);
+ await assert.rejects(()=>f.send('/api/v1/sync/source/baselines',{body:{...peer.foreign,planId:'read-peer'}}),e=>e.status===403&&e.code==='SOURCE_TOPIC_UNAVAILABLE');assert.equal(digest(f),before);
+ const own=await f.send('/api/v1/sync/pull?after_seq=0&limit=500');assert(!own.events.some(e=>e.ownerId===peer.foreign.ownerId));assert.equal(digest(f),before);
+});

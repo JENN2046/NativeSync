@@ -45,10 +45,14 @@ Normal source binding/info reject stale in-memory pin views; source mobile
 authorization additionally checks the granted tuple, not merely sourceId.
 Accepted old topic deletions remain hidden, not resurrected by an expansion.
 
-Limited additions are exact, monotone, max128; explicit full approval reuses the
-legacy full-root implementation and rejects existing foreign catalog ownership.
-Future native-path/identity errors remain discovery failures, never automatic
-ownership takeover. Old cookies stay on old keys while newly approved source
+Limited additions are exact, monotone, max128. Explicit full approval admits the
+source root and future discovery; another disjoint source does not block this
+authorization transition. It does not grant ownership of every identity: catalog
+publish still atomically rejects a peer-owned owner/topic, and desktop transport
+still derives its exact read/write topics from that source catalog. Full CAS
+does not attest an unpublished native directory; installation preflight checks
+known identities, and future collisions remain publication/discovery errors.
+Future native-path/identity errors never cause automatic ownership takeover. Old cookies stay on old keys while newly approved source
 pairings see the current authorized collection/root. Repeated/concurrent opIds
 replay the same receipt; changed payload or stale old digest fails closed.
 On restart, original configured scope plus the same approvedScope restores the
@@ -100,3 +104,10 @@ existing two-topic data. Continuous real writes, data expansion, installation,
 phone sending, real models/tools/AA and Git publication still need Jenn's exact
 authorization. sourcePaused is not a completed-topic write freeze. Failures keep
 state/receipts and same-scope fences; never clear/replay/rebuild another space.
+
+2026-11-03 compatibility correction: the former blanket foreign-source check
+blocked a Windows limited-to-full transition whenever the already approved Linux
+source had any catalog row. The revised admission removes only that blanket
+check; static approvedScope, binding, settled old topics, receipt transaction,
+phone freezing, unique catalog admission and scoped transport remain. See the
+Windows upgrade report for local proof and exact production installation status.
