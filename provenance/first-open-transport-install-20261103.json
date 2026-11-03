@@ -1,0 +1,158 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "candidateCommit": "a7c676c6b74d27d26183a41feca516785be8d277",
+  "candidateZipSha256": "82583a4f776b6f44c39ae24b1a07ac13d369a10f674b915d492cb408d5a39b73",
+  "productionInstalled": true,
+  "productionFilesChanged": [
+    {
+      "path": "Plugin/NativeSync/mobile/historyResponse.js",
+      "before": null,
+      "after": "56bc47ad6c4a9411bd1f13dc883747c3c6b52a1ff42715b6b8b1b3f534f6d03f"
+    },
+    {
+      "path": "Plugin/NativeSync/mobile/portal.js",
+      "before": "7bfe95b2eb17a5d125ba306e02c2f3d92e004d528b6f9fb555c6d2c23338b056",
+      "after": "e9b630e117e1666b32849d2c12e20e8ec9d922714d98ef9687326e2e8075fad2"
+    }
+  ],
+  "backup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/first-open-transport-20261103",
+  "consistentBackupSha256": "70b0ed5d554fd49ebb7f9e784117a99f0d11abc1eed8587f647599dcfebb3c81",
+  "normalBackendStopStart": true,
+  "serviceBefore": {
+    "ActiveState": "active",
+    "InvocationID": "33566daad2c54c3bb07f7d713ef1afe0",
+    "MainPID": "1821319",
+    "Result": "success"
+  },
+  "serviceAfter": {
+    "ActiveState": "active",
+    "InvocationID": "eb4fb5e6bf5c4e5cb1ffcd511d9c9244",
+    "MainPID": "1871386",
+    "Result": "success"
+  },
+  "adminPidPreserved": true,
+  "nginxServicePreserved": true,
+  "protectedPwaAndNginxFilesPreserved": true,
+  "configurationUnchanged": true,
+  "verifiedProductionPayloadFiles": 58,
+  "integrity": {
+    "mode": "read-only",
+    "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+    "checked": {
+      "messages": 1170,
+      "journal": 1175,
+      "applied_ops": 1175
+    },
+    "issues": 0,
+    "samples": [],
+    "sampleLimit": 20,
+    "ok": true
+  },
+  "headSeq": 1175,
+  "tablesChangedDuringNormalReads": [
+    "source_baselines",
+    "source_observations"
+  ],
+  "acceptedLedgerAndAuthorizationUnchanged": true,
+  "databaseStateOrCursorRestored": false,
+  "windowsChanged": false,
+  "phone": {
+    "sessionPreserved": true,
+    "submissionStoragePreserved": true,
+    "originalSelectionRestored": true,
+    "modelOrToolPosts": 0,
+    "pairPosts": 0,
+    "coldOpenMs": 13157.700000047684,
+    "largePage": {
+      "category": "baseline-rest",
+      "target": true,
+      "inTargetPhase": true,
+      "startMs": 9642.699999809265,
+      "endMs": 19672.099999904633,
+      "durationMs": 10029.400000095367,
+      "ttfbMs": 1337.7000000476837,
+      "downloadMs": 8690.200000047684,
+      "encodedBytes": 2523355,
+      "decodedBytes": 13126025,
+      "protocol": "h3",
+      "status": 200
+    },
+    "observedEncodings": [
+      {
+        "encoding": "gzip",
+        "cacheControl": "no-store",
+        "status": 200
+      },
+      {
+        "encoding": "gzip",
+        "cacheControl": "no-store",
+        "status": 200
+      },
+      {
+        "encoding": "gzip",
+        "cacheControl": "no-store",
+        "status": 200
+      }
+    ],
+    "cachedReturn": {
+      "stage": "cached-return",
+      "elapsedMs": 2390,
+      "baselineStarts": 0,
+      "baselinePages": 0,
+      "baselineBodyBytes": 0,
+      "events": 1,
+      "sessions": 1,
+      "directory": 2
+    },
+    "cacheAcceptancePassed": true,
+    "firstOpenOptimizationAccepted": false,
+    "realDecodedHashCheck": "Not established: supplemental browser read failed with PHONE_EVALUATION_FAILED; no raw body exported; no passing digest claimed."
+  },
+  "failure": {
+    "observedOriginRequestAcceptEncoding": "gzip, br",
+    "observedPublicResponseEncoding": "gzip",
+    "cause": "Existing accepts negotiation honors client header order for equal weights; gzip, br selects gzip, so Brotli is skipped.",
+    "priorTestGap": "Only br, gzip and explicit quality fallback headers were covered; actual production order was missed.",
+    "runtimeBehavior": "Existing gzip fallback remains functional; no performance benefit attributed to the observed timing difference.",
+    "resolutionStatus": "Local single-helper fix and targeted regression passed; not installed on production."
+  },
+  "evidence": [
+    {
+      "path": ".local/first-open-performance-20261103/PRODUCTION_INSTALL.json",
+      "sha256": "4b83a3d4c323486925901194d38a39eb52e5b6956852603124a30c33c4d4e145"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PRODUCTION_VERIFIED.json",
+      "sha256": "ac4c92463b75331a5f38aec03cc5e4973f7c650a250d0c857f32a7474bcba7e2"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PRODUCTION_VERIFIED_FINAL.json",
+      "sha256": "12a3e59bb90e75f5922898fafbceeebe43b519ad0e8f102c67fd0a59b8ca0594"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PHONE_PROFILE_AFTER.json",
+      "sha256": "b9f8776356cc498217031207456c194194e5d5b99dc46a8e3198991329ce626b"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PHONE_CACHE_ACCEPTANCE.json",
+      "sha256": "0bb10b8fe73865a046cd78befd8be69e17e22324fd832df7d7bff3bd405b779f"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PHONE_SAFETY_BEFORE.json",
+      "sha256": "06a0800b46c105d1ad0f7361e92a813175aec6d93f799a28b22da5ff5b49c4ed"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PHONE_SAFETY_AFTER.json",
+      "sha256": "f22bee2310f759ffcac8b868e06f917ef24216ebfde0207869c7906d41101cdb"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/PROXY_ENCODING_HEADER.json",
+      "sha256": "45fddadf6a0893988fec2e5b7bb8ea1f275d4dbdae33cc53c011cc08b431c384"
+    },
+    {
+      "path": ".local/first-open-performance-20261103/negotiation-repro.tap",
+      "sha256": "c41f30bdfc52fc601fb5f5f7198409a12ce9a5c9d382b8ed4acf2a764560bf54"
+    }
+  ]
+}

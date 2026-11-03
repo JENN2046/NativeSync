@@ -1,5 +1,7 @@
 'use strict';
 const zlib = require('node:zlib');
+const Negotiator = require('negotiator');
+const ENCODINGS = ['br', 'gzip', 'identity'];
 
 // Transport only: res.json still performs the host's original serialization,
 // after authorization and storage projection have completed. No body cache or
@@ -17,7 +19,9 @@ function historyResponseCompression(req, res, next) {
         const size = Buffer.byteLength(body);
         if (size < MIN_BYTES || size > MAX_BYTES) return send.call(res, body);
         res.vary('Accept-Encoding');
-        if (active || req.acceptsEncodings('br', 'gzip', 'identity') !== 'br') return send.call(res, body);
+        // Quality values win; choose br when supported encodings have equal weight,
+        // independently of browser/proxy header order (commonly gzip, br).
+        if (active || new Negotiator(req).encodings(ENCODINGS, { preferred: ENCODINGS })[0] !== 'br') return send.call(res, body);
         active++;
         try {
             zlib.brotliCompress(Buffer.from(body), { params: {
