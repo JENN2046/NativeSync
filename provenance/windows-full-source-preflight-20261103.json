@@ -1,0 +1,355 @@
+{
+  "status": "preflight-complete-not-installed",
+  "checkedAtUtc": "2026-11-03T07:56:42.4825755Z",
+  "host": {
+    "name": "QLL-6",
+    "sshAlias": "qll6",
+    "root": "P:\\AGENTS_OS_Workspace\\runtime\\VCPChat",
+    "appDataRoot": "P:\\AGENTS_OS_Workspace\\runtime\\VCPChat\\AppData",
+    "gitHead": "49e7ced6ab4d70ee8d6c55879b8458daddd95df1",
+    "gitBranch": "codex/local-native-owner-binding-20261030",
+    "reviewedTrackedCodeChanges": [],
+    "electronPackageVersion": "44.0.0"
+  },
+  "payload": {
+    "sourceCommit": "a27f6019d931558a1914b719c6ff4a72b2217317",
+    "candidateSha256": "97fbdf0ca9d1dd62c5d84653cf6197bf34eb6a622ef73f16d49eec497ef76d6f",
+    "unchangedFiles": 6,
+    "replacePayloadFiles": 13,
+    "newPayloadFiles": 9
+  },
+  "hostCompatibilityPatch": {
+    "path": "compat/host-patches/VCPChat-qll6-full-source-20261103.patch",
+    "sha256": "b02a008b9758fc258ab7a221e18c153c4fec3c40ac32e09b611ac9ab5c8ac8c7",
+    "hostFiles": 3,
+    "dependencies": [
+      {
+        "path": "modules/services/conversationOverrides.js",
+        "sha256": "aa410ef26fdd6955b481f6deda81ff40c30b02148dd313c3207effcb06177d78"
+      },
+      {
+        "path": "modules/services/conversationContext.js",
+        "sha256": "82193ec2cc05d4222983b52dfdc9dfc397dfb0b7180600fee627cc2126ee213e"
+      },
+      {
+        "path": "modules/services/historyMutationQueue.js",
+        "sha256": "d6606731d89e7339aa803bd82676c107c0bcc5b0fcb29a9560ec8d0dc8c9bb26"
+      },
+      {
+        "path": "modules/appFeatures.js",
+        "sha256": "380ec63d704ef219f2154e1e62f9ddd215bd3fea3f01b85413dc72e293076fe1"
+      },
+      {
+        "path": "modules/services/quitAdmission.cjs",
+        "sha256": "72a55b032cadf204c6bab1f90e4f2e094693f60e7f0692cf2e2cd977f2ce817c"
+      },
+      {
+        "path": "preloads/core/registry.js",
+        "sha256": "c5c441b204e5cace53835c725a177f9e4a1ce0bea6073b64cc6502d7b1aa4c33"
+      },
+      {
+        "path": "VCPDistributedServer/Plugin/VCPMobileSync/sync/canonical.js",
+        "sha256": "388d514fdd5f5451a707987ca31de3391da52e12d99c39d16d032fa749e3f3d3"
+      },
+      {
+        "path": "VCPDistributedServer/Plugin/VCPMobileSync/core/hash.js",
+        "sha256": "88bd3d0a901c0555813309eb6a9ba6a9fc6b00fc48df4b8894bcde05bb36dbb2"
+      },
+      {
+        "path": "VCPDistributedServer/Plugin/VCPMobileSync/dto/agent.dto.js",
+        "sha256": "3716f57108f79d79504e318c0ccd1bb564493704df90820e2abd9f63d1cfd86c"
+      },
+      {
+        "path": "VCPDistributedServer/Plugin/VCPMobileSync/dto/group.dto.js",
+        "sha256": "907ab1af490b3c7ed915d52a2c7c8fcc80991be2edd5a1055d00e2fc51cb8dba"
+      },
+      {
+        "path": "VCPDistributedServer/Plugin/VCPMobileSync/config/defaults.js",
+        "sha256": "5756985ce3043bc157df87b587192d9dfc4ff5a78198ca988c2dd10094b623a0"
+      },
+      {
+        "path": "preloads/core/define.js",
+        "sha256": "20d0e2f920ffc864dd650aa549da3e080b47a562a24da2ac94746ac4f94e0d76"
+      }
+    ]
+  },
+  "codeWrites": [
+    {
+      "path": "modules/nativeSyncSettings/feature.json",
+      "kind": "payload",
+      "before": null,
+      "after": "8992f6adf51c25193e4444969fbb3fbd128c7d8834843124fbfeccbf646eb82b",
+      "operation": "create"
+    },
+    {
+      "path": "modules/nativeSyncSettings/index.js",
+      "kind": "payload",
+      "before": null,
+      "after": "eac34c2a01b34946f0c8842458d2c79001cfd0ddd72a669ac09f5a013bbefee6",
+      "operation": "create"
+    },
+    {
+      "path": "modules/nativeSyncSettings/preloadApi.js",
+      "kind": "payload",
+      "before": null,
+      "after": "f35b46581c04d8c4bbb1afaaeb1f99256e08ffc5b5934a7e99aec3362bcfe542",
+      "operation": "create"
+    },
+    {
+      "path": "modules/nativeSyncSettings/renderer.js",
+      "kind": "payload",
+      "before": null,
+      "after": "5a52fd69f492b22feabb639af1a14d9ae9ac5bf4618e14638fd951717a63c436",
+      "operation": "create"
+    },
+    {
+      "path": "modules/nativeSyncSettings/service.cjs",
+      "kind": "payload",
+      "before": null,
+      "after": "2dcc0b035b14a814f4ee69ad69b0ce1993da2574d7f0c271bbf06927ff6fc828",
+      "operation": "create"
+    },
+    {
+      "path": "modules/nativeSyncSettings/settings.css",
+      "kind": "payload",
+      "before": null,
+      "after": "89e0acdfa2294c9521f56fb3bf98245be86222a99d59f343c513a95f8118905f",
+      "operation": "create"
+    },
+    {
+      "path": "modules/services/nativeSync/adapter.js",
+      "kind": "payload",
+      "before": "5384252bddc1e75e0aee28976fca921bc29b633e703a10805c105c5d37c923ff",
+      "after": "8400b4f0530233add1a0c58578f2f838c2377b12ad52d53c48acd0de8b5b120e",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/attachments.js",
+      "kind": "payload",
+      "before": "fb6a825aad30676400a8c23946f7fd8a3d17cfd5d4d76f0607b3680f84a0a0c6",
+      "after": "81f264a761868c1e07aba3d9c9c25a46896851c7929d1025a5482e7b6ab13eb3",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/connection.js",
+      "kind": "payload",
+      "before": "707d95dc490f2b7d68b7cfb1ad2c5ec96b689cfb7f7aba8cca93206c80b84722",
+      "after": "77d989be1fc79cff54a90f55fd6a5c1b60582c29224f9261c8b7bb99f9d7f589",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/contracts.generated.cjs",
+      "kind": "payload",
+      "before": null,
+      "after": "91ec9dbd605f0b4476572f3db19df3d622d6a9b662dfff2dfaf072b40964f1bd",
+      "operation": "create"
+    },
+    {
+      "path": "modules/services/nativeSync/executionConfigs.js",
+      "kind": "payload",
+      "before": "2c81ad9c4fef7ea3b42c6ed07b8e451c0ff4bdb1e21b53ce112b3f5099597c0a",
+      "after": "8e4f12b5b2acd0e402b3b2215d47c9daaed008b7de23ecb6049a858412eee507",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/executionStatus.js",
+      "kind": "payload",
+      "before": "9c8607af4646b07c1c73718227d94bea97e4d2664e71a1bf60d1f8f15ff97a02",
+      "after": "7f677b373b41da8603868ee71772b19d7657eb992b56486df714120002dc6b0c",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/inboxPages.js",
+      "kind": "payload",
+      "before": null,
+      "after": "9bd62d14ff30d97fad41de8797b6c972a0f8764f4aca5477c5832af9d0bb686a",
+      "operation": "create"
+    },
+    {
+      "path": "modules/services/nativeSync/localAttachment.js",
+      "kind": "payload",
+      "before": "312b946f526fe12cda75b34f3f6cfd75101476813fd3abf85f8768bd5208ea81",
+      "after": "00309b1e6d1590060eef38553466563c585bc317f2287f179280402e666f880e",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/metadata.js",
+      "kind": "payload",
+      "before": "8048264b72ef3689a667f6dee1096849c534cdd0a0db8295eb2485ad0113d577",
+      "after": "27e2b3602d7512b90d7823c6ec55f10515c419b901b8b49893c8e2d5d6261f08",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/protocol.js",
+      "kind": "payload",
+      "before": "69477661d4688d4c715046452bb3191023deffacf23b1f021fb15e99bdde33f1",
+      "after": "f44c702ee4caccbb5951f777bb1bb9251863e62fc1ed6f20f2359cee4f017783",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/queries.js",
+      "kind": "payload",
+      "before": "e21c2f18228e545f7043b2508a72d935bbf90e67618f7b0ba03a6db385fdb669",
+      "after": "489a4db686f809037677a773b643890f206c19a00ca6a41c7c850b49a0c7941b",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/runtime.js",
+      "kind": "payload",
+      "before": "21e0896c246a6cc53a808c1555ae259c6b7ac78978af65389ea4d0e1bcd04364",
+      "after": "ed256d92775696f307481d45b110a10ad88c6b77d6813f495721be5ad6296664",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/sourceDirectory.js",
+      "kind": "payload",
+      "before": "4d854b5dcfbf43b9f52dd0912b0265d682aed8c0850be7219dafeab222c08a64",
+      "after": "567e1d4398b2b82ea3acdf101edb7c305dbcc62118564d05f844884d412084a9",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/sourceExecutionPublication.js",
+      "kind": "payload",
+      "before": null,
+      "after": "d72d5b93dfcb715980ac800bd9d23d5af9ad7013771df1007cac967eafb64e1b",
+      "operation": "create"
+    },
+    {
+      "path": "modules/services/nativeSync/sourceScope.js",
+      "kind": "payload",
+      "before": "33b5bdbe01391ac90841064f0a9c64ca5af6825d62aad0cfa66a92d583a53f29",
+      "after": "2632ec09959e689671373328092d7227fa4a4f0bcc99775a96455cad32e731b4",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/services/nativeSync/sourceSync.js",
+      "kind": "payload",
+      "before": "4f49d08329e26c111852c35a1dfd5a595782c6a7c6d7b651721ba60bc09b456c",
+      "after": "71d915278072f93ecf0204389ca6c2bbbc2f34744820cd996568a3be8debd356",
+      "operation": "replace"
+    },
+    {
+      "path": "main.js",
+      "kind": "host-adaptation",
+      "before": "21f947b0351c78fea2495e8ab40d40fc5ed30c6d63061c8e819b258d8d6d6330",
+      "after": "9c5018785f40f729cacea05d2bfd819a7174be081a5124965d1cc56c7f132848",
+      "operation": "replace"
+    },
+    {
+      "path": "Groupmodules/groupchat.js",
+      "kind": "host-adaptation",
+      "before": "4ea8d59b035c41141be10985f4b1929362381e3e79f75f16aa1d8c177ecc9425",
+      "after": "e54f0d855077999977001569babf15d3884d1fcb5302f3a64ec650cc66f0eaf9",
+      "operation": "replace"
+    },
+    {
+      "path": "modules/renderer/nativeExecutionStatus.js",
+      "kind": "host-adaptation",
+      "before": "699f56022449c555ca936f79fd314d694fa613c9dbeb8cd9d6cb74ca5089a752",
+      "after": "da6d55eb07db3adb2f565602b9fa0ff088bb7f90d5c922e5cf6cf22046b7894e",
+      "operation": "replace"
+    }
+  ],
+  "sourceTransition": {
+    "sourceId": "source_a0b7cf2e3e7feebb23508a4d",
+    "deviceId": "nswin_62df7bdc-7035-430c-b37a-4ae3537bc14e",
+    "spaceId": "5e13c6f5-028b-4c7f-9c42-a6973a446170",
+    "from": "limited:2",
+    "to": {
+      "mode": "full"
+    },
+    "expectedScopeHash": "0830f0d14093d1bc99da47eca15e718806c3e73edb6d866b113582081d57c1e8",
+    "connectionBeforeSha256": "c9ef83c39562c21518e28d7927897be351910abfe2ff2c34f84e234d2837e65c",
+    "serverPluginConfigBeforeSha256": "c4334b1c4357cb5cc8d81e6d3bd87dbb5c2a2f2cf9695c310abc33c057a69df7",
+    "serverGrantChanges": {
+      "approvedScope": {
+        "mode": "full"
+      },
+      "executionMode": "all-supported"
+    },
+    "clientConfigurationChanges": {
+      "sourceScope": {
+        "mode": "full"
+      },
+      "scopeTransition": {
+        "opId": "generate-once-and-retain-for-retry",
+        "expectedScopeHash": "0830f0d14093d1bc99da47eca15e718806c3e73edb6d866b113582081d57c1e8"
+      },
+      "executionMode": "all-supported",
+      "executionTopics": [],
+      "publishExecutionConfigs": true,
+      "publishCatalog": true,
+      "syncAttachments": true
+    },
+    "preserve": [
+      "sourceId",
+      "deviceId",
+      "spaceId",
+      "sourceRoot",
+      "cursor",
+      "acked",
+      "receipts",
+      "accepted message identities",
+      "server current pin until controlled CAS",
+      "Linux Source grant and sessions"
+    ],
+    "oldMobileScope": "frozen to old exact topic keys by existing transition transaction",
+    "newPhonePairing": "separate explicit pairing after import; never expand old cookies"
+  },
+  "inventory": {
+    "agents": 4,
+    "groups": 1,
+    "nativeTopics": 31,
+    "historiesPresent": 31,
+    "historyBytes": 36590839,
+    "largestHistoryBytes": 18573519,
+    "attachmentFilesOnDisk": 16,
+    "attachmentBytesOnDisk": 41841204,
+    "attachmentFilesOver20MiB": 0,
+    "attachmentReferenceCompletionNotEstablished": true,
+    "crossSourceCollisionCount": 0,
+    "serverAvailableBytesAtSample": 768028672
+  },
+  "verification": {
+    "patchIndependentApply": true,
+    "javascriptSyntaxFiles": 23,
+    "settingsSelectedChecksPassed": 4,
+    "effectiveRulesChecksPassedAfterCompletingFixtureDependencies": 3,
+    "hostAdapterChecks": {
+      "earlyStartupRulesReady": true,
+      "nativeSingleAndGroupRulesEquivalent": true,
+      "invalidOwnerAndPathRejected": true,
+      "readFailureHasNoFallback": true,
+      "globalRulesUnchanged": true,
+      "windowsFeatureDiscoveryAndPreloadRegistration": true,
+      "sequentialGroupMaxTokensPassed": true,
+      "productionRequests": 0
+    },
+    "liveCodePathsRechecked": 37,
+    "liveCodeDrift": [],
+    "queueState": {
+      "ExpectedDevice": true,
+      "Cursor": 417,
+      "Outbox": 0,
+      "Inbox": 0,
+      "Pending": false,
+      "LocalCommits": 0,
+      "Drift": 0
+    },
+    "realWindowsElectronInstallAccepted": false,
+    "windowsFullImportAccepted": false,
+    "androidAccepted": false,
+    "realModelOrToolRequests": 0
+  },
+  "rollback": {
+    "fileInstallBeforeNewProcessStart": "restore 16 replaced files and remove only 9 installer-created unchanged files by receipt hashes; never restore data",
+    "afterNewRuntimeStartOrScopeCommit": "old Windows full-source downgrade not validated; do not advertise it; retain accepted full scope and data and recover forward with candidate/host patch",
+    "dbStateCursorSourceScopeRestore": false
+  },
+  "evidenceRoot": "/home/jenn/NativeSync/.local/windows-full-source-20261103",
+  "executionState": {
+    "windowsRuntimeOrAppDataModified": false,
+    "productionChanged": false,
+    "newPairingCreated": false
+  }
+}

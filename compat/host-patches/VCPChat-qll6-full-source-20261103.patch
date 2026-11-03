@@ -1,0 +1,48 @@
+--- a/main.js
++++ b/main.js
+@@ -1292,6 +1292,15 @@
+             agentConfigEvents: agentConfigManager,
+             readGroupConfig: id => groupChat.getAgentGroupConfig(id),
+             readTavernRules: () => tavernHandlers.getActiveRules(),
++            readEffectiveTavernRules: async descriptor => {
++                const owner = require('./modules/services/conversationContext').normalizeOwner({ type: descriptor.itemType || 'agent', id: descriptor.itemId });
++                const config = owner.type === 'group'
++                    ? await groupChat.getAgentGroupConfig(owner.id)
++                    : await agentConfigManager.readAgentConfig(owner.id);
++                if (!config || config.error) throw new Error('Native conversation configuration unavailable');
++                const store = await tavernHandlers.readStore();
++                return require('./modules/services/conversationOverrides').resolveOverrides({ overrides: config.conversationOverrides, rules: store.rules }).rules;
++            },
+             readExecutionPolicy: async () => { const s=await appSettingsManager.readSettings(); return {userName:s.userName||'用户',enableThoughtChainInjection:s.enableThoughtChainInjection===true,enableContextSanitizer:s.enableContextSanitizer===true,contextSanitizerDepth:s.contextSanitizerDepth===undefined?2:Number(s.contextSanitizerDepth),enableVcpToolInjection:s.enableVcpToolInjection===true}; },
+             storeAttachment: (...args) => fileManager.storeFile(...args),
+             notifyExecutionStatus: change => {
+--- a/Groupmodules/groupchat.js
++++ b/Groupmodules/groupchat.js
+@@ -1292,6 +1292,7 @@
+                     body: JSON.stringify(buildGroupRequestBody(messagesForAI, {
+                         model: modelConfigForAgent.model,
+                         temperature: modelConfigForAgent.temperature,
++                        max_tokens: modelConfigForAgent.max_tokens,
+                         stream: modelConfigForAgent.stream
+                     }, messageIdForAgentResponse)),
+                     signal: controller.signal
+--- a/modules/renderer/nativeExecutionStatus.js
++++ b/modules/renderer/nativeExecutionStatus.js
+@@ -50,7 +50,16 @@
+     };
+     function render(value) {
+         view = value;
+-        if (!value?.enabled) { panel.hidden = true; jobs.replaceChildren(); clearResult(); return; }
++        if (!value?.enabled) {
++            jobs.replaceChildren(); clearResult();
++            panel.hidden = !value?.degraded;
++            if (value?.degraded) {
++                summary.textContent = 'NativeSync 接入未完成';
++                local.textContent = '同步尚未启动，请核对本机接入配置；此处不会重试提交消息。';
++                observed.textContent = `原因：${value.degraded}`;
++            }
++            return;
++        }
+         panel.hidden = false;
+         const freshness = value.freshness === 'current' ? '本次已核对' : value.freshness === 'last-known' ? '最近已知' : '尚未取得状态';
+         const delivery = localDeliveryText(value.local);
