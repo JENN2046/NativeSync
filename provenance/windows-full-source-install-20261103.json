@@ -1,0 +1,90 @@
+{
+  "status": "partial-windows-installed-full-transition-not-accepted",
+  "hostPlanCommit": "6b568c0",
+  "windows": {
+    "installed": true,
+    "files": 25,
+    "backup": "P:\\NativeSync-Local-Backups\\QLL6-full-20261103T082519399Z",
+    "originalDataFilesPreserved": 69,
+    "originalSettingsPreserved": true,
+    "nativeSQLiteBackup": {
+      "consistentSQLiteBackup": true,
+      "sha256": "43f8d91c2f5c9aa0ac0ee39ae97b4dca48f8c484ba2270890c87f915219ca142",
+      "databaseRestored": false
+    },
+    "cursorBefore": 417,
+    "sourceStage": {
+      "AtUtc": "2026-11-03T08:28:15.9213380Z",
+      "Staged": true,
+      "SourceId": "source_a0b7cf2e3e7feebb23508a4d",
+      "DeviceId": "nswin_62df7bdc-7035-430c-b37a-4ae3537bc14e",
+      "SpaceId": "5e13c6f5-028b-4c7f-9c42-a6973a446170",
+      "Before": "c9ef83c39562c21518e28d7927897be351910abfe2ff2c34f84e234d2837e65c",
+      "After": "0c3f33b879923fee5147532dc508372d4548d262a0c730a14268f574cc3a9d78",
+      "OperationId": "win_full_20261103_ccef75206691487dbf8950e80ba5807c",
+      "ExpectedScopeHash": "0830f0d14093d1bc99da47eca15e718806c3e73edb6d866b113582081d57c1e8",
+      "StateUnchanged": true,
+      "CursorPreserved": 417,
+      "TransitionAccepted": false,
+      "ConfigurationOnly": true,
+      "Backup": "P:\\NativeSync-Local-Backups\\QLL6-full-20261103T082519399Z"
+    }
+  },
+  "production": {
+    "approvedFullScopeStaged": true,
+    "sourceActiveScope": "limited:2",
+    "backup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/windows-full-source-20261103",
+    "snapshotSha256": "a10e30f83f89573c292b15d6aaf0880d1318b4a7df5d71b88ae940a79d9801fe",
+    "beforeClientStartFacts": {
+      "beforeClientStart": true,
+      "authorityTablesPreserved": {
+        "messages": true,
+        "journal": true,
+        "applied_ops": true,
+        "source_bindings": true,
+        "mobile_sessions": true,
+        "mobile_pairings": true,
+        "mobile_executions": true
+      },
+      "headSeq": 417,
+      "storageOK": true
+    },
+    "configBefore": "c4334b1c4357cb5cc8d81e6d3bd87dbb5c2a2f2cf9695c310abc33c057a69df7",
+    "configAfter": "a100a61f87ae6f0e87a09659731a2bb9e234cbf10810645ed10341de4fe414ab",
+    "serviceAfter": {
+      "ActiveState": "active",
+      "InvocationID": "68cde081cc844a128652de570202a79a",
+      "MainPID": "1687302",
+      "Result": "success"
+    },
+    "adminPidPreserved": true,
+    "newCodeFixInstalled": false
+  },
+  "extraFixCandidate": {
+    "sourceCommit": "79e2c3fbcb692cc8593b5d77306f2c5b22d8144e",
+    "sourceDirty": false,
+    "candidate": "/home/jenn/下载/NativeSync_MultiSource_Transition_20261103.zip",
+    "sha256": "8204b9655c91d9cdfafdae4bb0f313d2d99b3dda22795952ad458910bad0308f",
+    "runtimeFiles": 84,
+    "unchangedRuntimeFiles": 83,
+    "changedRuntimeFile": "VCPToolBox/Plugin/NativeSync/sync/sourceCatalog.js",
+    "beforeSha256": "efa70c1ab0c08ef2906dc4e04274cdc8dbba6f4c761a44b2dccddc833618f501",
+    "afterSha256": "7d957a3748cc4c776daa6d3f3e2d53801c285efabfd8590ca6f3bc4d3f04ba2b",
+    "supportFilesVerified": 38,
+    "oldGuardReproductions": 2,
+    "targetedChecksPassed": 9,
+    "productionFileStillBefore": true,
+    "productionFixInstalled": false,
+    "windowsCodeInstalled": true,
+    "fullTransitionAccepted": false
+  },
+  "realModelOrToolRequestsByThisTask": 0,
+  "newPhonePairingCreated": false,
+  "noDatabaseStateOrCursorRestore": true,
+  "remaining": [
+    "approve and install one additional production sourceCatalog.js fix",
+    "normal Windows restart using original entry",
+    "verify accepted scope receipt, 31 histories and actual attachment references",
+    "separately explicit new phone pairing and acceptance"
+  ]
+}

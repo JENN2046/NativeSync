@@ -25,3 +25,5 @@ Windows 连接作为独立步骤保存：同一 sourceId/deviceId/spaceId/source
 当前生产仍以原两话题 pin 生效，现有账本和旧手机权限保持。下一步的结束证据应是：转换回执被接受、Windows binding full 持久化、31话题及真实附件引用完成或列明异常、原接受身份/哈希保留，并另作明确的新手机配对。上述证据当前尚未取得。
 
 本机集中证据：`/home/jenn/NativeSync/.local/windows-full-source-20261103`，含 CODE_INSTALL、SOURCE_STAGE、PRODUCTION_GRANT_INSTALL、PRODUCTION_BEFORE_CLIENT_START、Windows progress、转换反例及9项回归。私有备份留在各自宿主，不进入 Git 或交付包。
+
+新增修复源码提交为 `79e2c3fbcb692cc8593b5d77306f2c5b22d8144e`。统一候选 `NativeSync_MultiSource_Transition_20261103.zip` 的 SHA256 为 `8204b9655c91d9cdfafdae4bb0f313d2d99b3dda22795952ad458910bad0308f`；84项运行文件中83项与原候选逐字节一致，只有 sourceCatalog.js 改变，38项支持文件和ZIP校验通过。生产目标 before 为 `efa70c1ab0c08ef2906dc4e04274cdc8dbba6f4c761a44b2dccddc833618f501`，拟安装 after 为 `7d957a3748cc4c776daa6d3f3e2d53801c285efabfd8590ca6f3bc4d3f04ba2b`；现场仍为 before。机器回执见[安装状态](../provenance/windows-full-source-install-20261103.json)。
