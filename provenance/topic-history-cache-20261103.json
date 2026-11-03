@@ -1,0 +1,122 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "sourceCommit": "166550132051950234ab88ab17b1dc4734448c35",
+  "sourceInputsSha256": "5e565865580daf4b58b2d928623528de68a22032ea9bb7d496694c78e47c7b26",
+  "sourceDirty": false,
+  "candidate": "/home/jenn/下载/NativeSync_Topic_History_Cache_20261103.zip",
+  "candidateSha256": "a21f8fa602acd1ce1c259a1d6ef837c642a473b12da2108c016d993292460368",
+  "runtimeFiles": 85,
+  "supportFiles": 40,
+  "testedPayloadEqualsCandidate": true,
+  "productionInstalled": false,
+  "windowsWrites": 0,
+  "backendRuntimeChanged": false,
+  "nginxChanges": false,
+  "productionWrites": [
+    {
+      "candidatePath": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-D4Ywii__.js",
+      "installedPath": "apps/mobile/dist/assets/index-D4Ywii__.js",
+      "before": null,
+      "after": "efba81ab6aeaf12ff2f2f1c2696b18b8173a5674dc5b64fa6bc58fc9461937f3"
+    },
+    {
+      "candidatePath": "VCPToolBox/Plugin/NativeSync/mobile-dist/index.html",
+      "installedPath": "apps/mobile/dist/index.html",
+      "before": "9c1742fb9785a72ad024788120d635eb9a12720cb5f4bfcfd362e659082ed36f",
+      "after": "2d601ad48d10905eb7d0cd7aaabfa296fa76b5605c8d7570300a596629c9bd9d"
+    }
+  ],
+  "retainOldAssets": [
+    "apps/mobile/dist/assets/index-CcV6qDxz.js"
+  ],
+  "cache": {
+    "scope": "same page, same recovery entry/session marker and exact source/owner/topic identity; history protocol2 and completed source history only",
+    "maxSuspendedTopics": 3,
+    "maxEstimatedBytes": 33554432,
+    "budgetMetric": "UTF-16 strings and container estimate, not process RSS; active history excluded",
+    "persistentHistoryStorage": false,
+    "restore": "live session and directory check, then authorized validated delta; hidden and new submissions blocked until catch-up completes",
+    "oversizeOrEviction": "fall back to full baseline"
+  },
+  "validation": {
+    "moduleChecks": 2,
+    "actualPwaCombinedCase": 1,
+    "associatedMultisourceDraftCase": 1,
+    "browserEvidence": {
+      "cachedSwitchBaselineRequests": 0,
+      "cachedSwitchBaselineBytes": 0,
+      "deltaEditDeleteAppend": true,
+      "hiddenUntilChecked": true,
+      "revokedTopicHidden": true,
+      "revokedCacheNeedsFreshBaseline": true,
+      "newCookieSessionDoesNotReuseHistory": true,
+      "localStorageUnchanged": true,
+      "pendingSubmissionPreserved": true,
+      "modelSends": 0
+    },
+    "realModelRequests": 0,
+    "privateHistoryCopied": false,
+    "androidCandidateAcceptance": false
+  },
+  "productionReadonlyPreflight": {
+    "atUtc": "2026-11-03T16:50:17.610803+00:00",
+    "identityVerified": true,
+    "files": {
+      "index.html": {
+        "exists": true,
+        "sha256": "9c1742fb9785a72ad024788120d635eb9a12720cb5f4bfcfd362e659082ed36f"
+      },
+      "assets/index-CcV6qDxz.js": {
+        "exists": true,
+        "sha256": "584eedd5d214cf5c6a43a27edb6ce999ed8f8bc21a8331d9da5acf6bc9a6e2f4"
+      },
+      "assets/index-PVIWXUde.css": {
+        "exists": true,
+        "sha256": "c4661591b57c9bbda914e647a212ed9fdded8a50dbce8033ff5ce25a2ad4c898"
+      },
+      "assets/index-D4Ywii__.js": {
+        "exists": false,
+        "sha256": null
+      }
+    },
+    "gzipSnippetSha256": "7ab56f0357fcc52b3d5775ac2a16cf23c57042dd44d3699f4db8c91647a49df0",
+    "services": {
+      "nginx.service": {
+        "ActiveState": "active",
+        "MainPID": "2922"
+      },
+      "vcptoolbox.service": {
+        "ActiveState": "active",
+        "MainPID": "1821319"
+      }
+    },
+    "productionChanged": false
+  },
+  "evidence": [
+    {
+      "path": ".local/topic-history-cache-20261103/unit.tap",
+      "sha256": "42a6752e6c2be46f6f746f2c2479eaac0c2562be64770877b622136aff588966"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/browser-final.tap",
+      "sha256": "181cec78d71fda8a9a91fa4816109bf67795357789581afc3b3e659d424d48af"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/multisource-browser.tap",
+      "sha256": "d793f26183d3ad254f7f832e1924feb0aced29df0983c2ab53e5915c426d0aa3"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/CANDIDATE_VERIFIED.json",
+      "sha256": "2f21ecfb7705b0d1d9d431d2a853732e5e8bcde8430f5de75757b90982495f55"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/PRODUCTION_READONLY_PREFLIGHT.json",
+      "sha256": "782f36eb0f17109c53a09c91ddb0d8e0741c114b90394b92087ff24fc42289d8"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/candidate/MANIFEST.json",
+      "sha256": "7a2cdc50eb7af1b5f8a304fe83081c1296af949c0c868816ce5d7122f2a5e87c"
+    }
+  ]
+}
