@@ -1,0 +1,85 @@
+{
+  "atUtc": "2026-11-03T16:00:19.870261+00:00",
+  "identityVerified": true,
+  "originAddress": "127.0.0.1:443 with SNI/Host vcp.skmt617.top",
+  "trust": "exact installed public leaf certificate via verified SSH and existing sudo; per-process partial-chain trust plus hostname/expiry checks",
+  "publicCertificateSha256": "e61e8b025c6a6edbf5810c6604a23b8266ba69c607f8e0a178bb944b97e0a660",
+  "nginxConfigSha256": "65cd6444523625d8fe336506bd9ee723338bfaab422bd9562f71a88d0d8d4812",
+  "nginxConfigurationUnchanged": true,
+  "compressionDirectives": [
+    "gzip on;"
+  ],
+  "readOnlyGetRequests": 4,
+  "productionCodeOrConfigurationChanged": false,
+  "historyResults": [
+    {
+      "kind": "history-identity",
+      "acceptEncoding": "identity",
+      "status": 200,
+      "server": "nginx/1.28.3 (Ubuntu)",
+      "contentType": "application/json; charset=utf-8",
+      "contentEncoding": null,
+      "rawBodyBytes": 12635343,
+      "decodedBodyBytes": 12635343,
+      "totalMs": 749.1,
+      "decodedSha256": "93c200ff54ba9f3ae14d4fec2e9e1f49a965ec9975263bc3c2fe13dc4c37c426",
+      "offlineGzipLevel6Bytes": 2030480,
+      "tlsHostnameVerified": true,
+      "pathKind": "Source-authorized history JSON on same production vhost"
+    },
+    {
+      "kind": "history-gzip",
+      "acceptEncoding": "gzip",
+      "status": 200,
+      "server": "nginx/1.28.3 (Ubuntu)",
+      "contentType": "application/json; charset=utf-8",
+      "contentEncoding": null,
+      "rawBodyBytes": 12635343,
+      "decodedBodyBytes": 12635343,
+      "totalMs": 744.0,
+      "decodedSha256": "93c200ff54ba9f3ae14d4fec2e9e1f49a965ec9975263bc3c2fe13dc4c37c426",
+      "offlineGzipLevel6Bytes": 2030480,
+      "tlsHostnameVerified": true,
+      "pathKind": "Source-authorized history JSON on same production vhost"
+    },
+    {
+      "kind": "history-br-gzip",
+      "acceptEncoding": "br, gzip",
+      "status": 200,
+      "server": "nginx/1.28.3 (Ubuntu)",
+      "contentType": "application/json; charset=utf-8",
+      "contentEncoding": null,
+      "rawBodyBytes": 12635343,
+      "decodedBodyBytes": 12635343,
+      "totalMs": 797.9,
+      "decodedSha256": "93c200ff54ba9f3ae14d4fec2e9e1f49a965ec9975263bc3c2fe13dc4c37c426",
+      "offlineGzipLevel6Bytes": 2030480,
+      "tlsHostnameVerified": true,
+      "pathKind": "Source-authorized history JSON on same production vhost"
+    }
+  ],
+  "htmlControl": {
+    "status": 200,
+    "contentType": "text/html; charset=utf-8",
+    "contentEncoding": "gzip",
+    "rawBodyBytes": 355,
+    "decodedBodyBytes": 564,
+    "decodedSha256": "9c1742fb9785a72ad024788120d635eb9a12720cb5f4bfcfd362e659082ed36f"
+  },
+  "conclusion": "Production Nginx sends the representative authorized history JSON uncompressed even when gzip or br,gzip is accepted; HTML gzip control passes.",
+  "limits": [
+    "Representative Source-authorized history Pull uses same vhost and generic proxy location; not a direct measurement of the mobile cookie history route or captured Cloudflare-origin request.",
+    "Offline gzip size is a feasibility estimate, not an installed performance result.",
+    "Purchased bandwidth and each network hop contribution are not established."
+  ],
+  "evidence": [
+    {
+      "path": ".local/mobile-network-20261103/ORIGIN_COMPRESSION_VERIFIED.json",
+      "sha256": "14e8ddae203d381d22aca31e86834c2b23a38fa331913b5b1c36d4deb7fd5be0"
+    },
+    {
+      "path": ".local/mobile-network-20261103/origin-compression-probe.py",
+      "sha256": "4099b12e440e9bc0b795b250796e6f3a449835ce71087faa38195b902825b5e7"
+    }
+  ]
+}

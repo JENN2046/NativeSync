@@ -2,6 +2,27 @@
 
 2026-11-03（America/Adak）。用户要求优先核对真实网络传输后，使用已解锁、USB连接的Android生产会话读取网络指标，并对现有历史快照做GET复读。没有清数据、切换账号、创建配对/历史基线、发送模型/工具请求或修改生产代码、Nginx配置。手机确认加载的是候选a78ce02资源 `index-CcV6qDxz.js`，当前渲染40条消息。
 
+## 补充：源站JSON未压缩已经直接核实
+
+用户随后要求优先核实源站压缩，已补做生产Nginx HTTPS只读对照，关闭了首次测量的直接Nginx TLS缺口。目标仍为 `VM-0-13-ubuntu / ubuntu`，连接127.0.0.1:443，SNI/Host保留 `vcp.skmt617.top`；使用当前已接受的Source身份和范围，读取同一条真实大历史消息。三次响应正文SHA256相同。
+
+| 请求声明支持的编码 | 返回Content-Encoding | 实际响应体 |
+|---|---|---:|
+| identity | 无 | 12,635,343 B |
+| gzip | 无 | 12,635,343 B |
+| br, gzip | 无 | 12,635,343 B |
+| gzip，改读同站点HTML作对照 | gzip | 355 B，解压564 B |
+
+全部200，Server为nginx/1.28.3，历史类型application/json，HTML对照text/html。真实Nginx在客户端明确支持压缩时仍把历史JSON原样输出，HTML压缩正常；这排除了“探针没声明压缩”或“整个gzip模块没有工作”。三次历史本机HTTPS接收总耗时约0.74–0.80秒。
+
+源站JSON未压缩从配置线索升级为直接响应证据。前一轮手机记录的zstd压缩属于公网交付，不能用手机约1 MB的接收量推定源站出口也是约1 MB。代表性历史JSON离线gzip level6由12.64 MB降至2.03 MB，约减少84%；这是减量可行性，不是已经上线后的提速幅度，也还不能证明44–49秒等待全部来自服务器出口。
+
+本次验证利用服务器**已有、已核对的sudo管理能力**执行 `openssl x509`，仅提取已安装公开服务器证书；输出不含私钥。通过受信任SSH取得的确切公开证书仅用于当前探测进程的partial-chain限定信任，保留域名和有效期校验，未修改系统信任库、文件权限或Nginx，也没有使用CERT_NONE或no-check-certificate。直接CA下载的403未通过伪造身份重试。
+
+测量范围仍明确：这是同一生产vhost、同一通用代理location的Source授权历史Pull；没有冒用手机Cookie，也不是对Cloudflare回源请求的抓包。JSON出口不压缩已确认；具体手机路由的回源字节与云套餐带宽上限未实测。生产配置测量前后摘要相同。
+
+建议先做限定历史JSON范围的源站压缩候选验证，再按新授权上线并用手机前后对照；本轮没有安装配置改动。[补充机器证据](../provenance/mobile-origin-compression-20261103.json)。下文保留此前手机与首次源站测量记录。
+
 ## 结论
 
 公网历史响应已经压缩，但大页接收仍慢；切换话题或重新打开页面会重复读完整历史，使等待反复发生。已证实的瓶颈在大响应传输阶段，尚不能把它精确归因于云服务器套餐带宽、源站至Cloudflare、或Cloudflare至手机中的某一段。
@@ -35,7 +56,7 @@
 
 源站后端响应没有Content-Encoding。Nginx有效配置只发现 `gzip on;`，没有gzip_types、gzip_proxied或Brotli设置；按[NGINX官方默认值](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_types)，gzip_types默认仅text/html，因此源站配置没有给application/json开启gzip。这是配置核对结论，**不是已抓到源站至Cloudflare该次流量的证明**。该代表性JSON离线gzip level6约2.03 MB，说明源站出口存在可验证的减量空间，不能直接当作安装收益。
 
-未完成直接Nginx TLS响应测量：专用Origin证书文件对当前账户不可读，系统信任库不含该Origin CA，从服务器下载官方公共根证书又返回403。未越过文件权限或关闭证书校验，保留这个测量缺口。普通浏览器信任与Origin CA用途不同，参考[Cloudflare官方说明](https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/)。
+首次测量当时未完成直接Nginx TLS响应测量：专用Origin证书文件对普通账户不可读，系统信任库不含该Origin CA，从服务器下载官方公共根证书又返回403。此后已通过上方补充验证关闭该缺口，保留首次失败事实。普通浏览器信任与Origin CA用途不同，参考[Cloudflare官方说明](https://developers.cloudflare.com/ssl/origin-configuration/origin-ca/)。
 
 最初Source探针误用转换前配置中的scope hash，被403 SOURCE_SCOPE_MISMATCH拒绝；核对代码和当前已接受Source pin后修正探针，生产授权没有改动。
 

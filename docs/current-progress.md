@@ -4,6 +4,8 @@
 
 ## 最新本机状态
 
+[源站JSON压缩补充核实](mobile-network-readonly-20261103.md)已完成：生产Nginx HTTPS读取同一份12.64 MB真实历史JSON，identity、gzip及br/gzip协商均无Content-Encoding、仍发送12.64 MB；同站点HTML gzip对照通过。源站JSON未压缩已由配置线索升级为直接响应证据，原Nginx TLS测量缺口已关闭；生产配置未改。离线gzip约2.03 MB只作减量估算，尚未验证上线收益，也不认定手机44–49秒全部由出口带宽造成。
+
 [手机历史网络只读核对](mobile-network-readonly-20261103.md)已完成：实机a78ce02页面的完整网络记录证实zstd压缩，大历史页13.13 MB解压后对应约1.14 MB压缩体；同一现有页三次GET复读仍需42.54–49.17秒，主要在收响应体阶段。切话题/重开会重读完整基线，同话题正常轮询只读增量。源站代表性大消息本机Pull约0.70秒；Nginx仅gzip on而未配置JSON类型，源站至Cloudflare压缩仍需单独验证。未改生产配置或新增配对/基线；没有把带宽套餐不足或手机性能通过当作结论，测量限制已列明。
 
 [手机性能修复已按新授权安装生产](mobile-performance-install-20261103.md)：候选a78ce02只改生产4路径，Windows0改动；一致备份、正常停启、57项生产载荷及新页面/JS/CSS响应摘要通过。1170消息/1175 Journal与回执、两个Source绑定、5手机会话/12配对及原执行记录保持，存储issues=0。现有手机无需重新配对，Android性能、保存和重开待用户实测。此前[本机候选](mobile-performance-20261103.md)的3项直接回归及1项关联Chrome证据复用，未重跑旧矩阵。
