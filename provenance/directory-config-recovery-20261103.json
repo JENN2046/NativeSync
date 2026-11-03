@@ -1,0 +1,80 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "localDevelopmentComplete": true,
+  "productionCodeOrConfigurationChanged": false,
+  "windowsCodeOrConfigurationChanged": false,
+  "runtimeSourceChanged": [
+    "overlays/VCPToolBox/apps/mobile/src/App.vue"
+  ],
+  "backendRuntimeChanged": false,
+  "protocolOrDatabaseSchemaChanged": false,
+  "verification": {
+    "actualChromeDirectoryRecoveryPassed": true,
+    "draftAndHistoryPreserved": true,
+    "sameRevisionRecovery": true,
+    "permissionNoticePreserved": true,
+    "existingIdentityGuardPassed": true,
+    "realNativeManagerSyntheticSnapshotBindingPassed": true,
+    "oldAcceptedTasksAndJournalPreserved": true,
+    "realModelOrToolCalls": 0,
+    "newAndroidAcceptance": false
+  },
+  "productionProposal": {
+    "nativeMobileTopicsRowsBefore": 4,
+    "nativeMobileTopicsRowsAfter": 35,
+    "agentBindingsAdded": 30,
+    "groupBindingsAdded": 1,
+    "existingRowsPreserved": true,
+    "sourceScopeOrSessionsChanged": false,
+    "globalAgentMapChanged": false,
+    "privatePlanPath": ".local/directory-config-recovery-20261103/PRIVATE_BINDING_INSTALL_PLAN.json",
+    "privatePlanSha256": "39c7b0262c97748aa5b35efa3619821812f3201064ee22d77e821983d18ab243",
+    "beforePluginConfigSha256": "a100a61f87ae6f0e87a09659731a2bb9e234cbf10810645ed10341de4fe414ab",
+    "normalBackendStopStartRequired": true,
+    "windowsExitOrCodeChangeRequired": false,
+    "realPublicationResults": "pending approved production installation and existing Windows publisher acknowledgements"
+  },
+  "phoneStatus": "Readonly debugger initially timed out; later adb reported no device. No reload, data clearing or new pairing performed.",
+  "priorTestHarnessFailures": [
+    "wrong local Puppeteer dependency path",
+    "initial test waited for editable unintended topic",
+    "wrong snapshotPrompt module path; fixed test only, reran affected case"
+  ],
+  "evidence": [
+    {
+      "path": ".local/directory-config-recovery-20261103/directory-old-final.tap",
+      "sha256": "cfa2553d15bb7b6f3947e6ce2c4dcda043f73ebc70705797de4c151dc82da3c8"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/directory-after.tap",
+      "sha256": "075ad52aa9f5434121e29cc737445f5e568b859faf12f820c93cd6272fa29a08"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/bindings.tap",
+      "sha256": "16e72573388d8dc08b975c0e38d9e10ec44a17561db664ddf231bbe5a392e170"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/bindings-retry.tap",
+      "sha256": "2e900f7c4febe84deb2353ebbaf0701bc4c2e0ad55f5f4ac8c942d9a1238ec00"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/PHONE_READONLY.json",
+      "sha256": "6e8770bd13bef10bb0ffabbf133053e22da179fd5e3221e98322e71fc82b246d"
+    }
+  ],
+  "privateEvidenceDigests": [
+    {
+      "path": ".local/directory-config-recovery-20261103/WINDOWS_REFERENCE_METADATA.json",
+      "sha256": "d18fb918b212196500742e9979272d33a38e6f317e23c19251b0eb08b5f46727"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/SERVER_ALIAS_BINDING_METADATA.json",
+      "sha256": "1dab52bc78122884074995b30e5c9b041773c27336a42485767bab37c3fd97e9"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/WINDOWS_EFFECTIVE_RULE_METADATA_FINAL.json",
+      "sha256": "c5466f566cb1f7ec2ec69c359c99eb0cd7e68041fec2fa4fd045945047b89bb7"
+    }
+  ]
+}
