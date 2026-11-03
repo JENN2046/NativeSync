@@ -1,0 +1,140 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "installedSourceCommit": "a78ce02139c6246df72f3a594184dc78d1be6318",
+  "phoneAsset": "index-CcV6qDxz.js",
+  "productionCodeOrConfigChanged": false,
+  "newPairingOrBaselineCreated": false,
+  "modelOrToolRequestsSent": 0,
+  "phoneExistingCompletedHistoryPages": [
+    {
+      "encodedBytes": 55338,
+      "decodedBytes": 167058,
+      "transferBytes": 55638,
+      "durationMs": 47246.699999809265,
+      "fetchStart": 61960.5,
+      "requestStart": 61963.09999990463,
+      "responseStart": 63668.09999990463,
+      "responseEnd": 109205.59999990463,
+      "dnsMs": 0,
+      "connectMs": 0,
+      "ttfbMs": 1705,
+      "downloadMs": 45537.5,
+      "protocol": "h3",
+      "workerStart": 61959.59999990463,
+      "deliveryType": "",
+      "responseStatus": 200
+    },
+    {
+      "encodedBytes": 1137393,
+      "decodedBytes": 13126025,
+      "transferBytes": 1137693,
+      "durationMs": 228320,
+      "fetchStart": 109285.59999990463,
+      "requestStart": 109286.70000004768,
+      "responseStart": 111199.59999990463,
+      "responseEnd": 337595.5,
+      "dnsMs": 0,
+      "connectMs": 0,
+      "ttfbMs": 1912.8999998569489,
+      "downloadMs": 226395.90000009537,
+      "protocol": "h3",
+      "workerStart": 109276.20000004768,
+      "deliveryType": "",
+      "responseStatus": 200
+    }
+  ],
+  "phoneRepeatedSamePage": [
+    {
+      "status": 200,
+      "encoding": "zstd",
+      "cacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "decodedBytes": 13126025,
+      "elapsedMs": 43852.799999952316,
+      "headersMs": 1520.8999998569489
+    },
+    {
+      "status": 200,
+      "encoding": "zstd",
+      "cacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "decodedBytes": 13126025,
+      "elapsedMs": 49171.60000014305,
+      "headersMs": 1257
+    }
+  ],
+  "thirdSample": {
+    "status": 200,
+    "decodedBytes": 13126025,
+    "elapsedMs": 42539.89999985695,
+    "headersMs": 2013.8999998569489,
+    "encoding": "zstd",
+    "cacheControl": "no-store",
+    "sameExistingBaseline": true
+  },
+  "thirdSampleCdpCompleteWireAccounting": false,
+  "representativeSourceHistoryBackend": {
+    "pathKind": "Source-authorized history pull, not mobile cookie route",
+    "route": "backend-loopback",
+    "status": 200,
+    "contentType": "application/json; charset=utf-8",
+    "contentEncoding": null,
+    "cacheControl": "no-store",
+    "vary": null,
+    "wireBodyBytes": 12635343,
+    "decodedBodyBytes": 12635343,
+    "headerMs": 678.0,
+    "totalMs": 696.9,
+    "downloadBodyMs": 18.9,
+    "decodedSha256": "93c200ff54ba9f3ae14d4fec2e9e1f49a965ec9975263bc3c2fe13dc4c37c426",
+    "offlineGzipBytes": 2030480
+  },
+  "nginxCompressionDirectives": [
+    "gzip on;"
+  ],
+  "nginxDirectTlsResponseMeasured": false,
+  "resourceTimingRepeatEncodedFieldsExcluded": true,
+  "sourceCodeFindings": {
+    "sameTopicRefresh": "delta after completed baseline",
+    "topicSwitch": "resets history map/cursor and loads full baseline",
+    "pageReload": "no persistent history cache; full baseline",
+    "serviceWorker": "excludes /mobile/api/",
+    "attachmentOpen": "fetch no-store; saving the opened blob does not refetch"
+  },
+  "unresolved": [
+    "cloud bandwidth purchased limit not verified",
+    "origin-to-Cloudflare and Cloudflare-to-phone bottleneck not separated",
+    "nginx direct TLS HTTP response not measured"
+  ],
+  "evidence": [
+    {
+      "path": ".local/mobile-network-20261103/PHONE_EXISTING_DETAILED.json",
+      "sha256": "11f9e7982d3702cd67655a9c9f1f3bc9da38eb7e5b46b4061b19055041ab42da"
+    },
+    {
+      "path": ".local/mobile-network-20261103/PHONE_REPEATED_HISTORY.json",
+      "sha256": "179e46635ae1464758b553e1813397e45462e502569e2669174ddee7ff1428b1"
+    },
+    {
+      "path": ".local/mobile-network-20261103/PHONE_WIRE_VERIFIED.json",
+      "sha256": "a20229afa12b8514216f52d5a6b8c3dea4e8d5dfc6ac3846174a6c1704c1de8b"
+    },
+    {
+      "path": ".local/mobile-network-20261103/PHONE_PAGE_VERSION.json",
+      "sha256": "1657fe43ba4753e75304a6c2465b4ad0eb10857418f2efe651c95984ec118a74"
+    },
+    {
+      "path": ".local/mobile-network-20261103/ORIGIN_HISTORY_METRICS.json",
+      "sha256": "090bce75a461911be12361ae7870aeca3dde3005ab089f03e3363ec94fff3a77"
+    },
+    {
+      "path": ".local/mobile-network-20261103/NGINX_COMPRESSION_CONFIG.json",
+      "sha256": "dbf8bbeb3d387b5738bf8b916fcd42a5cfd750f2641ec91211a73512f95a5be7"
+    },
+    {
+      "path": ".local/mobile-network-20261103/MEASUREMENT_LIMITS.json",
+      "sha256": "20d8b803f51954999711e19727f7ec1e15e55827f1b061614bfa1a9842ee7ed8"
+    }
+  ]
+}
