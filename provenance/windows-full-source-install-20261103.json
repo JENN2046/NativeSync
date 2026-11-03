@@ -1,5 +1,5 @@
 {
-  "status": "partial-windows-installed-full-transition-not-accepted",
+  "status": "partial-full-scope-accepted-29-of-32-history-ready",
   "hostPlanCommit": "6b568c0",
   "windows": {
     "installed": true,
@@ -32,7 +32,7 @@
   },
   "production": {
     "approvedFullScopeStaged": true,
-    "sourceActiveScope": "limited:2",
+    "sourceActiveScope": "full",
     "backup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/windows-full-source-20261103",
     "snapshotSha256": "a10e30f83f89573c292b15d6aaf0880d1318b4a7df5d71b88ae940a79d9801fe",
     "beforeClientStartFacts": {
@@ -53,12 +53,14 @@
     "configAfter": "a100a61f87ae6f0e87a09659731a2bb9e234cbf10810645ed10341de4fe414ab",
     "serviceAfter": {
       "ActiveState": "active",
-      "InvocationID": "68cde081cc844a128652de570202a79a",
-      "MainPID": "1687302",
+      "InvocationID": "80bc49f895ae4f5587103d8603ddc3f6",
+      "MainPID": "1696555",
       "Result": "success"
     },
     "adminPidPreserved": true,
-    "newCodeFixInstalled": false
+    "newCodeFixInstalled": true,
+    "transitionFixBackup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/windows-multisource-transition-fix-20261103",
+    "transitionFixSnapshotSha256": "a9bf76a07cc897a68b0234ed5289df70af145c02cd516116f26f0effa85fb941"
   },
   "extraFixCandidate": {
     "sourceCommit": "79e2c3fbcb692cc8593b5d77306f2c5b22d8144e",
@@ -74,17 +76,116 @@
     "oldGuardReproductions": 2,
     "targetedChecksPassed": 9,
     "productionFileStillBefore": true,
-    "productionFixInstalled": false,
+    "productionFixInstalled": true,
     "windowsCodeInstalled": true,
-    "fullTransitionAccepted": false
+    "fullTransitionAccepted": true
   },
   "realModelOrToolRequestsByThisTask": 0,
   "newPhonePairingCreated": false,
   "noDatabaseStateOrCursorRestore": true,
   "remaining": [
-    "approve and install one additional production sourceCatalog.js fix",
-    "normal Windows restart using original entry",
-    "verify accepted scope receipt, 31 histories and actual attachment references",
-    "separately explicit new phone pairing and acceptance"
-  ]
+    "approve shared-reference contract and bounded large-message compatibility plan",
+    "complete remaining two oversized-message topics and one desktop-reference group topic",
+    "verify all supported attachment references, retain unsupported live-reference exceptions",
+    "explicit new phone pairing and Android acceptance"
+  ],
+  "latestAcceptance": {
+    "atUtc": "2026-11-03T09:22:38.535Z",
+    "scopeAccepted": true,
+    "transitionOperationId": "win_full_20261103_ccef75206691487dbf8950e80ba5807c",
+    "topics": 32,
+    "historyReady": 29,
+    "cursor": 1073,
+    "inboxPreserved": 69,
+    "originalAcceptedRows": {
+      "messages": {
+        "total": 412,
+        "missing": 0,
+        "changed": 0,
+        "changedColumns": []
+      },
+      "journal": {
+        "total": 417,
+        "missing": 0,
+        "changed": 0,
+        "changedColumns": []
+      },
+      "applied_ops": {
+        "total": 417,
+        "missing": 0,
+        "changed": 0,
+        "changedColumns": []
+      }
+    },
+    "oldPhonePermissions": {
+      "mobile_sessions": {
+        "original": 4,
+        "missing": 0,
+        "scopeMismatch": 0,
+        "identityMismatch": 0,
+        "expectedFrozen": 1
+      },
+      "mobile_pairings": {
+        "original": 11,
+        "missing": 0,
+        "scopeMismatch": 0,
+        "identityMismatch": 0,
+        "expectedFrozen": 1
+      }
+    },
+    "messageProofs": {
+      "total": 808,
+      "matched": 707,
+      "notYetAccepted": 101,
+      "mismatch": 0
+    },
+    "localDataPreserved": {
+      "atUtc": "2026-11-03T09:26:15.847Z",
+      "validOriginalMessages": 808,
+      "localIdentityAndHashMatches": 808,
+      "missing": 0,
+      "changed": 0,
+      "invalidOriginalMessages": 1,
+      "invalidOriginalRawUnchanged": 1,
+      "desktopLiveReferences": 63,
+      "liveReferencesWithHistoricalText": 63,
+      "historicalTextBytes": 6155669,
+      "workspaceFilesRead": false
+    },
+    "attachmentLocalCounts": {
+      "references": 79,
+      "desktopLiveReferences": 63,
+      "immutableReferences": 16,
+      "matchingLocalBlob": 16,
+      "unavailable": 0,
+      "invalidFrameEncoding": 0
+    },
+    "uploadedReferenceProof": {
+      "immutableAttachmentReferences": 16,
+      "linkedReferences": 4,
+      "linkedFileHashMatches": 4,
+      "pendingReferences": 12
+    },
+    "serverPayloadFilesVerified": 56,
+    "storage": {
+      "mode": "read-only",
+      "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+      "checked": {
+        "messages": 1068,
+        "journal": 1073,
+        "applied_ops": 1073
+      },
+      "issues": 0,
+      "samples": [],
+      "sampleLimit": 20,
+      "ok": true
+    },
+    "configuration": {
+      "publishedWithoutIssue": 1,
+      "reasons": {
+        "CONFIG_PROMPT_SNAPSHOT_UNAVAILABLE": 28,
+        "EXECUTION_CONFIG_REQUIRED": 3
+      }
+    }
+  }
 }
