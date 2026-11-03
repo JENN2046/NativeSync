@@ -1,0 +1,85 @@
+{
+  "sourceCommit": "1d19663f3eff12b0bded7b9b9b2ee62fb82be7da",
+  "candidateSha256": "a300c2b146d10e2b7fe0a7085f6be3a3a76fae5d6d39c2b9967b64c3d3b2745a",
+  "installationExecuted": true,
+  "windowsChangedFiles": 6,
+  "productionChangedPaths": 11,
+  "allPayloadFilesMatched": 85,
+  "windowsHostPatchesMatched": 3,
+  "topics": 32,
+  "completedTopics": 31,
+  "fullAcceptanceComplete": false,
+  "cursor": 1110,
+  "inbox": 0,
+  "outbox": 0,
+  "originalLocalCanonicalMessagesMatched": 808,
+  "originalUncanonicalMessageRawPreserved": 1,
+  "originalServerMessagesUnchanged": 1068,
+  "originalServerJournalAndReceiptsUnchangedEach": 1073,
+  "originalValidMessagesAccepted": 744,
+  "originalValidMessagesPending": 64,
+  "storageIssues": 0,
+  "ordinaryAttachmentOccurrences": {
+    "availableHashMatch": 6,
+    "unsupported": 2,
+    "messageNotYetAccepted": 8
+  },
+  "desktopReferencesLocalPreserved": 63,
+  "desktopReferenceHistoricalTextBytes": 6155669,
+  "phoneScopesExpanded": false,
+  "newPhonePairingCreated": false,
+  "dataRestored": false,
+  "remainingGroup": {
+    "duplicateIdentityMetadataEqual": true,
+    "conflictingDuplicates": 0,
+    "ordinaryOccurrences": 7,
+    "uniqueMetadataEntries": 6,
+    "contentBytes": 8582401,
+    "proposedDeduplicatedMetadataBytes": 1240355,
+    "proposedOperationBytes": 13875716,
+    "measurementIsAcceptance": false
+  },
+  "additionalContractRevisionApproved": false,
+  "evidence": [
+    {
+      "path": ".local/windows-data-compat-20261103/PRODUCTION_INSTALL.json",
+      "sha256": "b978a9ddeec416bc88c1336b2d591776d97beb177631a7d929e0062a681fd249"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/WINDOWS_INSTALL.json",
+      "sha256": "9d0dcfbf5479586847d7caacc77f76d0bd95413daa17ebd191be2849ffe687bc"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/INSTALLED_FILES_VERIFIED.json",
+      "sha256": "255d2f5e92346e005f6c2967314cbac76492aac1ee7bebf4da832a720e351814"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/WINDOWS_PROGRESS_FINAL.json",
+      "sha256": "8d1ba81ffd3fd7206c794bb1833ebf8461953580ba44b9d1949ed3f995017088"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/LOCAL_DATA_PRESERVED_AFTER_INSTALL.json",
+      "sha256": "a2e9353a56ea86e7fb966b78a13c8c0cd9fac11f1883fac03fad4e0505734bd9"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/SERVER_ACCEPTANCE_LATEST.json",
+      "sha256": "372e307cd3bcd44783b43730326a6ad19a92492d5ec2ea22d1ec1dcdfefef936"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/ATTACHMENT_RESULTS_AFTER_INSTALL.json",
+      "sha256": "2439f27a5b3fbf1879dbe301ab0915d03ad701b3d62c6f7b0a0f6901b44dd7fe"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/STORAGE_CHECK_AFTER_INSTALL.json",
+      "sha256": "cc78a32ed4913767c61c2f8794a60c99092df74eee37207dd1b2a82c2e2ccdce"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/GROUP_ATTACHMENT_SHAPE.json",
+      "sha256": "615032b80ec4f420c00d63d440075fc113c38db5e289f66c7cfd942a8eb8a85e"
+    },
+    {
+      "path": ".local/windows-data-compat-20261103/GROUP_PROPOSED_SIZE_MEASUREMENT.json",
+      "sha256": "96fda8a0f37ed093151d27a740754e192fcaa20181fb22786ce822c5ea62495c"
+    }
+  ]
+}
