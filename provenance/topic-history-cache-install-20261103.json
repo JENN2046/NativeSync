@@ -1,0 +1,199 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "sourceCommit": "166550132051950234ab88ab17b1dc4734448c35",
+  "candidateSha256": "a21f8fa602acd1ce1c259a1d6ef837c642a473b12da2108c016d993292460368",
+  "productionInstalled": true,
+  "productionPathsChanged": 2,
+  "backendOrNginxReloaded": false,
+  "windowsChanged": false,
+  "backup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/topic-history-cache-20261103",
+  "candidateProductionFilesMatched": 57,
+  "originStatic": {
+    "files": [
+      {
+        "path": "/mobile/",
+        "status": 200,
+        "hashMatched": true
+      },
+      {
+        "path": "/mobile/assets/index-D4Ywii__.js",
+        "status": 200,
+        "hashMatched": true
+      }
+    ],
+    "modelRequests": 0
+  },
+  "oldAssetsRetained": true,
+  "configurationIncludingGzipUnchanged": true,
+  "identityAndPermissionsPreserved": {
+    "sourceBindings": {
+      "rows": 2,
+      "sha256": "53a14c2ae1e0be89bc057fe0ad604fda0beee7ee939fa67d9f32bc352854ca4f"
+    },
+    "mobileSessions": {
+      "rows": 5,
+      "sha256": "8ad15c0c43d88919f7414945321a97bb586509ac8379fe95adac4e99a7b4215b"
+    },
+    "pairings": {
+      "rows": 12,
+      "sha256": "1f537e9c00770e3b2f4f4440d313f563ea4f5aabd39d4411c2b236442c94d318"
+    },
+    "ledger": {
+      "messages": 1170,
+      "journal": 1175,
+      "receipts": 1175,
+      "headSeq": 1175
+    }
+  },
+  "servicesUnchanged": {
+    "nginx.service": {
+      "ActiveState": "active",
+      "InvocationID": "157cb0db7ee7419eb845ca45cc957c9d",
+      "MainPID": "2922"
+    },
+    "vcptoolbox.service": {
+      "ActiveState": "active",
+      "InvocationID": "33566daad2c54c3bb07f7d713ef1afe0",
+      "MainPID": "1821319"
+    },
+    "vcptoolbox-admin.service": {
+      "ActiveState": "active",
+      "InvocationID": "a0bc1715d16340f8bd126be22dd341ca",
+      "MainPID": "1233828"
+    }
+  },
+  "databaseStateOrCursorRestored": false,
+  "modelRequestsSent": 0,
+  "android": {
+    "status": "controlled real Android topic-switch acceptance passed",
+    "usbConnected": true,
+    "deviceAwake": true,
+    "debugSocketPresent": true,
+    "pageReloadedByAgent": true,
+    "userConfirmedDraftSaved": true,
+    "draftSafetyCheckCompleted": true,
+    "newCandidateInteractionAcceptance": true,
+    "initialDebugTimeoutResolvedAfterForeground": true,
+    "firstAcceptanceScriptDiscarded": "read selectors before directory initialization completed; no product fix or data clearing used",
+    "result": {
+      "atUtc": "2026-11-03T17:12:51.736Z",
+      "requests": {
+        "baselineStarts": 1,
+        "baselinePages": 2,
+        "events": 5,
+        "sessions": 7,
+        "directory": 17,
+        "modelOrToolPosts": 0,
+        "pairPosts": 0
+      },
+      "stages": [
+        {
+          "stage": "warm-target",
+          "elapsedMs": 24576,
+          "baselineStarts": 1,
+          "baselinePages": 2
+        },
+        {
+          "stage": "switch-away",
+          "elapsedMs": 3076
+        },
+        {
+          "stage": "cached-return",
+          "elapsedMs": 3024,
+          "baselineStarts": 0,
+          "baselinePages": 0,
+          "baselineBodyBytes": 0,
+          "events": 1,
+          "sessions": 1,
+          "directory": 2
+        }
+      ],
+      "reloaded": false,
+      "userBefore": {
+        "asset": "index-D4Ywii__.js",
+        "visibleMessages": 10,
+        "visibleIdsSha256": "8567fdea03ca717389857859486cc7ffb078647b5aa506ab451f2af72546e353",
+        "submissionStorageSha256": "5072e8bcd1314288ae0485b68fec5cc029e29408bbdf3bf5fc34d589c5c32130",
+        "recoverySha256": "741fb1bc6aff580cdead3e7ad70a29f7bc08b5b00b7195e8721d4fe21c819f96",
+        "paired": true
+      },
+      "target": {
+        "group": true,
+        "messageCount": 65
+      },
+      "targetBefore": {
+        "asset": "index-D4Ywii__.js",
+        "visibleMessages": 40,
+        "visibleIdsSha256": "3e297aad1c70651242fbee8583030db6b0d01853935e862de7f54e621f26d639",
+        "submissionStorageSha256": "5072e8bcd1314288ae0485b68fec5cc029e29408bbdf3bf5fc34d589c5c32130",
+        "recoverySha256": "741fb1bc6aff580cdead3e7ad70a29f7bc08b5b00b7195e8721d4fe21c819f96",
+        "paired": true
+      },
+      "targetAfter": {
+        "asset": "index-D4Ywii__.js",
+        "visibleMessages": 40,
+        "visibleIdsSha256": "3e297aad1c70651242fbee8583030db6b0d01853935e862de7f54e621f26d639",
+        "submissionStorageSha256": "5072e8bcd1314288ae0485b68fec5cc029e29408bbdf3bf5fc34d589c5c32130",
+        "recoverySha256": "741fb1bc6aff580cdead3e7ad70a29f7bc08b5b00b7195e8721d4fe21c819f96",
+        "paired": true
+      },
+      "sameVisibleMessageIds": true,
+      "sameSession": true,
+      "originalSelectionRestored": true,
+      "userAfter": {
+        "asset": "index-D4Ywii__.js",
+        "visibleMessages": 10,
+        "visibleIdsSha256": "8567fdea03ca717389857859486cc7ffb078647b5aa506ab451f2af72546e353",
+        "submissionStorageSha256": "5072e8bcd1314288ae0485b68fec5cc029e29408bbdf3bf5fc34d589c5c32130",
+        "recoverySha256": "741fb1bc6aff580cdead3e7ad70a29f7bc08b5b00b7195e8721d4fe21c819f96",
+        "paired": true
+      },
+      "submissionStoragePreserved": true,
+      "sessionPreserved": true,
+      "accepted": true
+    },
+    "finalState": {
+      "atUtc": "2026-11-03T17:15:47.492Z",
+      "sessionStatus": 200,
+      "selectionStoredMatchesView": true,
+      "newAssetLoaded": true,
+      "hasHistory": true,
+      "historyLoading": false
+    }
+  },
+  "evidence": [
+    {
+      "path": ".local/topic-history-cache-20261103/PRODUCTION_INSTALL.json",
+      "sha256": "d9d578ae5eb0a6e188b4452513ee694b4fd42f151e5cdecd38c98b60baddfd24"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/install-production.py",
+      "sha256": "58fc3f52f6201cf487702e05a6a09aa139c5651c35174c43f332d7cee48bfc4a"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/PHONE_SAFETY_BEFORE.json",
+      "sha256": "de2f8eb43753336bf8e66ac5272633e6882388592c5c906eef8686a1f7b6f67b"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/PHONE_FIRST_WALK.json",
+      "sha256": "cc52e3d2f9819cbf528f80c3c28fbe442c025f234b07c52f2c9af6054fc810b3"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/PHONE_CACHE_ACCEPTANCE.json",
+      "sha256": "060adc4a1496296ae48087ef29b28658403a38ce0934a91a44de002ed3caccf7"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/PHONE_FINAL_STATE.json",
+      "sha256": "4d5aa5c7f465228d37865ed2904260fb5d54a1ad58307e87b44d7ca385d8b9e1"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/PRODUCTION_IDENTITY_FINAL.json",
+      "sha256": "a71affa22bc60eb7977bea43365f7c7f95e932ed3698f3e94b1310e8f8bbc90b"
+    },
+    {
+      "path": ".local/topic-history-cache-20261103/phone-verify-switch-r2.cjs",
+      "sha256": "9f8694c7795df8b451a08ea5c019544c75b6bfee0ea08f53409f152bfcd317cd"
+    }
+  ]
+}
