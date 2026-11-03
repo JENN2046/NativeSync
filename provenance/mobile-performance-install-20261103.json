@@ -1,0 +1,62 @@
+{
+  "atLocal": "2026-11-03T05:25:09.779199-10:00",
+  "sourceCommit": "a78ce02139c6246df72f3a594184dc78d1be6318",
+  "candidateSha256": "4a1fb00213e2771ad52349a09c8e89d1b193c212c9a52a6e1a2b9eac1706ccae",
+  "productionInstalled": true,
+  "productionPathsChanged": 4,
+  "windowsFilesChanged": 0,
+  "productionBackup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/mobile-performance-20261103",
+  "consistentSQLiteSha256": "ab34cc4ca04b593e38fa9825e85a1ef90ce8064605cfe81a5156d8f2c733229c",
+  "normalBackendStopAndStart": true,
+  "adminPidPreserved": true,
+  "configurationUnchanged": true,
+  "candidateProductionFilesMatched": 57,
+  "newOriginStaticFilesMatched": 3,
+  "oldPwaAssetsRetained": true,
+  "acceptedRowsUnchanged": {
+    "messages": 1170,
+    "journal": 1175,
+    "applied_ops": 1175
+  },
+  "mobileSessionsPreserved": 5,
+  "pairingsPreserved": 12,
+  "existingMobileScopesExpanded": false,
+  "sourceBindingsAndExecutionRowsUnchanged": true,
+  "journalHead": 1175,
+  "originalWindowsMessagesHashMatched": 809,
+  "windowsTopicsReady": 32,
+  "storageIssues": 0,
+  "tablesChangedAfterRestart": [
+    "source_observations"
+  ],
+  "idle": {
+    "state": "RUNNING",
+    "activeRequests": 0,
+    "activeAA": 0,
+    "activeTools": 0,
+    "activeSyncWork": 0
+  },
+  "realModelOrToolRequestsSentByAgent": 0,
+  "databaseStateOrCursorRestored": false,
+  "androidPerformanceAcceptance": "pending user actual-use confirmation",
+  "publicNetworkValidation": "private origin hashes checked; actual phone confirmation pending",
+  "availableBytesAtVerification": 847708160,
+  "evidence": [
+    {
+      "path": ".local/mobile-performance-20261103/PRODUCTION_INSTALL.json",
+      "sha256": "5e6e8b137cb61c50c2457bc27005db90438bdef222f190e0c95636755794ef0f"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/PRODUCTION_VERIFIED.json",
+      "sha256": "15cf787feefa55919fd2ef9b11d95d6a891c3932d17b87c0934e6d245ac6873a"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/SERVER_ACCEPTANCE_LATEST.json",
+      "sha256": "cbe967dc38566819a7654920c717471aef649dbd23db7762915005c70cd7e9f7"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/PRODUCTION_IDLE_FINAL.json",
+      "sha256": "0f1e0c09e7e24baaef7839367d6039ece4e2498e6206e9544509c7dd395a08b3"
+    }
+  ]
+}
