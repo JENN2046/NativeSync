@@ -130,7 +130,7 @@ test('unsupported originals are reported individually and do not consume active 
  const {DesktopAttachments}=require(CHAT+'/modules/services/nativeSync/attachments'),client=new DesktopAttachments({queue:f.queue,appDataRoot:f.app,connection:{topics:[selected]},send});await client.uploadLocal();assert.equal(client.skipped,17);assert(client.skippedDetails.every(x=>x.code==='ATTACHMENT_TYPE_REJECTED'));const statuses=store.status('original',[m.id]);assert.equal(statuses.filter(x=>x.state==='unsupported').length,17);assert.equal(statuses.filter(x=>x.state==='available').length,1);assert.equal((await fs.readdir(path.join(f.root,'attachments/temporary'))).length,0);const before=finishes;await client.uploadLocal();assert.equal(finishes,before);assert.equal(client.skipped,17);
 });
 
-test('Chrome displays reference-only history as readonly and expands the complete large text without a send', {skip:!process.env.NATIVESYNC_PWA_DIST},async t=>{
+test('Chrome keeps reference history readonly and reads complete long text through pages without a send', {skip:!process.env.NATIVESYNC_PWA_DIST},async t=>{
  const https=require('node:https'),crypto=require('node:crypto'),{execFileSync}=require('node:child_process');const f=await fixture(t,{scope:{mode:'full'},executionMode:'all-supported'});await f.adopt();await f.pump();
  await f.portal.engine.configs.publish({topics:[{...wireTopic(selected),expectedVersion:1,config:{name:'One',model:'synthetic',systemPrompt:'Portable'}}]});
  const refs=sealed(combinedNativeMessage());f.store.apply({...wireTopic(selected),deviceId:'deviceA',opId:'browser-reference',action:'upsert',baseHash:null,msgId:refs.id,message:refs,metadata:refs._nativeSyncMetadata},{metadataPublisher:true});

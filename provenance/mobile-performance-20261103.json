@@ -1,0 +1,67 @@
+{
+  "sourceCommit": "a78ce02139c6246df72f3a594184dc78d1be6318",
+  "candidateSha256": "4a1fb00213e2771ad52349a09c8e89d1b193c212c9a52a6e1a2b9eac1706ccae",
+  "runtimeFiles": 85,
+  "supportFiles": 38,
+  "productionDelta": [
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile/attachments.js",
+      "before": "9e0802867f2bd1cb4094be0d542e07fcbd2461a1fda256b5d92325408548de6e",
+      "after": "95a35b83671e2f850afe53771cc8425f20838a602d3d90fa70777533cd211f90"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-CcV6qDxz.js",
+      "before": null,
+      "after": "584eedd5d214cf5c6a43a27edb6ce999ed8f8bc21a8331d9da5acf6bc9a6e2f4"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-PVIWXUde.css",
+      "before": null,
+      "after": "c4661591b57c9bbda914e647a212ed9fdded8a50dbce8033ff5ce25a2ad4c898"
+    },
+    {
+      "path": "VCPToolBox/Plugin/NativeSync/mobile-dist/index.html",
+      "before": "fce7e75f423a29905164a2a0f1ad58276faf2062ebfe99812f2eef987fd8069a",
+      "after": "9c1742fb9785a72ad024788120d635eb9a12720cb5f4bfcfd362e659082ed36f"
+    }
+  ],
+  "retainOldResources": [
+    "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-DAYQLHk_.js",
+    "VCPToolBox/Plugin/NativeSync/mobile-dist/assets/index-RI3Q4bWS.css"
+  ],
+  "productionInstalled": false,
+  "windowsWrites": 0,
+  "evidence": [
+    {
+      "path": ".local/mobile-performance-20261103/status-before.tap",
+      "sha256": "1536c5b38070cdc42d6f36c79448c0beffbd51f2c0ab60e299ed4bf9422803b3"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/status-after.tap",
+      "sha256": "acfaf47c6a2e6d708a3bee7526a58452d82ae7b95fbbccafebff31e6535f2b83"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/browser-before.tap",
+      "sha256": "8896f76497468d47571300dee90bb697280334704e771270360a3337bedaa39a"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/candidate-tests.tap",
+      "sha256": "3e3ffaa7725c746790fe09219f7c089f9f9a7528424a9d4677b4da1691dc9d12"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/reference-browser-regression.tap",
+      "sha256": "ea6f69de28e5880bf5fe73e62997c57ba343f1b1e89f65dc64dd23615935f2ba"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/viewport-final.tap",
+      "sha256": "28c254ed0c1f004405f2145e9982d301c40a8447948ca4629f334d8047b24039"
+    },
+    {
+      "path": ".local/mobile-performance-20261103/mobile-page.png",
+      "sha256": "374c6d7d32283ea226af2bd47e5a709a3cf787ba3710f99ade056c3fb32498fc"
+    }
+  ],
+  "candidatePayloadUnchangedAfterTests": true,
+  "androidPerformanceAccepted": false,
+  "databaseOrProtocolChanged": false
+}
