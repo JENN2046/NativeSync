@@ -1,0 +1,185 @@
+{
+  "date": "2026-11-03",
+  "timezone": "America/Adak",
+  "sourceCommit": "be86b980fab4ad8bbaad5db8d8ec0c727d0d87e1",
+  "candidateZipSha256": "b9108e54522de290bb399e746593ebee4b07cd5336aab479ca75a00f9be228cc",
+  "productionInstalled": true,
+  "codeWrites": 2,
+  "configurationWrites": 1,
+  "files": [
+    {
+      "path": "apps/mobile/dist/assets/index-CtwQoamN.js",
+      "before": null,
+      "after": "2b9f0269d5a50ffe9b1df7b9994f132e19f4ed9c6af248e1e5721ad5331514c9"
+    },
+    {
+      "path": "apps/mobile/dist/index.html",
+      "before": "2d601ad48d10905eb7d0cd7aaabfa296fa76b5605c8d7570300a596629c9bd9d",
+      "after": "3fe3b527872a1a671bb4213130f14c108774ce73b02116afcc0dca406f30d52a"
+    },
+    {
+      "path": "Plugin/NativeSync/config.env",
+      "before": "a100a61f87ae6f0e87a09659731a2bb9e234cbf10810645ed10341de4fe414ab",
+      "after": "359fd46a699e7f5659fbac322845fbf383b4cba6c1a7b5e4dfcc978f495e2011",
+      "kind": "runtime-config"
+    }
+  ],
+  "backup": "/opt/AGENTS_OS_Workspace/backups/NativeSync/directory-config-20261103",
+  "consistentBackupSha256": "da0dd634473d98b32a15dca92a2c15b9945a8da564dc85294973db42190f6a96",
+  "normalBackendStopStart": true,
+  "serviceBefore": {
+    "ActiveState": "active",
+    "InvocationID": "f5b621185b3b4547b4e68fa64cb1628b",
+    "MainPID": "1889814",
+    "Result": "success"
+  },
+  "serviceAfter": {
+    "ActiveState": "active",
+    "InvocationID": "ab53c2683bb742d9b0f9ed59924dde33",
+    "MainPID": "1998778",
+    "Result": "success"
+  },
+  "oldStaticAssetsRetained": true,
+  "verifiedProductionPayloadFiles": 58,
+  "nativeMobileTopicsBefore": 4,
+  "nativeMobileTopicsAfter": 35,
+  "nativeBindingsAdded": {
+    "agentTopics": 30,
+    "groupTopics": 1
+  },
+  "mainConfigurationUnchanged": true,
+  "globalAgentMapAndNginxUnchanged": true,
+  "nginxAndAdminServicePreserved": true,
+  "windowsCodeAndOwnerConfigurationChanged": false,
+  "windowsCursor": 1175,
+  "windowsInboxOutboxPendingZero": true,
+  "databaseStateOrCursorRestored": false,
+  "actualRollbackPerformed": false,
+  "storageIntegrity": {
+    "mode": "read-only",
+    "scope": "messages, journal, applied_ops; SQLite quick_check and record/reference validation",
+    "checked": {
+      "messages": 1170,
+      "journal": 1175,
+      "applied_ops": 1175
+    },
+    "issues": 0,
+    "samples": [],
+    "sampleLimit": 20,
+    "ok": true
+  },
+  "acceptedJournalHead": 1175,
+  "protectedTableHashesPreserved": true,
+  "changedTables": [
+    "mobile_pairings",
+    "mobile_sessions",
+    "native_sync_metadata",
+    "owner_execution_configs",
+    "source_baselines",
+    "source_observations"
+  ],
+  "protectedMetadataOutside31IssueKeysPreserved": true,
+  "oldConfigurationSnapshotsPreserved": 9,
+  "configurationSnapshotsBefore": 9,
+  "configurationSnapshotsAfter": 40,
+  "windowsPublication": {
+    "validSnapshots": 32,
+    "validGroupSnapshots": 1,
+    "nativeFrozenPromptChecks": 34,
+    "configurationErrors": 0,
+    "configurationPending": 0,
+    "publicQuery": {
+      "status": 200,
+      "rows": 32,
+      "hasMore": false,
+      "errors": {}
+    }
+  },
+  "phone": {
+    "newFrontendAsset": "index-CtwQoamN.js",
+    "actualAndroidAccepted": true,
+    "acceptanceScope": "same two sources and 56-topic directory, recovered pairing, no stale directory warning, Windows configuration status0, representative group history and existing desktop-reference readonly guard",
+    "fullContinuationModelExecutionTested": false,
+    "sourceCount": 2,
+    "topicCount": 56,
+    "windowsConfiguredTopics": 32,
+    "oldDirectoryFetchWarningVisible": false,
+    "submissionStoragePreserved": true,
+    "representativeGroup": {
+      "visibleMessages": 40,
+      "composerEnabled": false,
+      "desktopReferencePanels": 1,
+      "desktopReasonShown": true,
+      "directoryFetchWarning": false
+    },
+    "groupTotalMessages": 65,
+    "originalSelectionRestored": true,
+    "modelOrToolPosts": 0,
+    "ownedAdbForwardRemoved": true
+  },
+  "pairingRecovery": {
+    "reason": "Previous joint source session expired before this maintenance; original rows were preserved but no longer valid. Native session duration remains eight hours.",
+    "earlierAssumptionCorrected": "Record preservation was incorrectly treated as proof that re-pairing was unnecessary; expiry was checked and disclosed after user reported pairing required.",
+    "oldSessionRowsRetained": 5,
+    "oldPairingRowsRetained": 12,
+    "newPairingsConsumed": 1,
+    "newSessionScopeVerified": true,
+    "scope": "previously approved Linux and Windows sources, current and future topics; no extra source or old-session expansion",
+    "newSessionExpiresUtc": "2026-11-04T09:10:03.859Z"
+  },
+  "limits": [
+    "Windows configuration validity32 does not mean every history is portable: the representative group remains readonly due to desktop references. Initial editable-composer expectation failed; the retained readonly contract was then verified explicitly, without disabling it.",
+    "Linux24 configuration issues and Windows2 unavailable attachments remain outside this install.",
+    "Actual paid model/tool continuation and real-phone injected network-outage scenario were not run; directory outage/recovery was exercised in local Chrome."
+  ],
+  "evidence": [
+    {
+      "path": ".local/directory-config-recovery-20261103/PRODUCTION_INSTALL.json",
+      "sha256": "a60fd02c3d33479ff3c82a7a4fe18e2d442f7924c8b391ce317f9caab6ec6242"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/PRODUCTION_VERIFIED.json",
+      "sha256": "dcb37507b90c701a57fc75434337ec3257e7f75a82d074c777c76011d5935c84"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/PRODUCTION_VERIFIED_FINAL.json",
+      "sha256": "d12a0794bfdc29fd8d64203b32d823cc79c7866124b762fd6cf304daa4473c96"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/WINDOWS_INSTALL_PREFLIGHT.json",
+      "sha256": "a50f20d12c22efae53bfbaead79a4ccd24bd2acf478e791f3e88ec1e74f75d53"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/WINDOWS_INSTALL_FINAL.json",
+      "sha256": "c372d6289ce4c540ec3db35d356e2be83de5c9e3eea265f84c8a85beb0f090d0"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/BINDINGS_ACCEPTANCE.json",
+      "sha256": "1f36c0554e2832b4d66c7304df3710df1992237e04b11bcafe5f042680be3322"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/BINDINGS_ACCEPTANCE_FINAL.json",
+      "sha256": "4200b1040c6e5fac0107ff0edb12a61277fa75b401cac506d01e23f7dde2448b"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/PHONE_PAIR_PREFLIGHT.json",
+      "sha256": "5f0854ab620804d21244d6b176d6187da23496f5b22f515a1a08f2f78c09de54"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/REPAIR_CREATED.json",
+      "sha256": "bc69c96f556956b015eda959aa0ba1983bde37b8cde787bb81fa6526d3b1b1d9"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/PHONE_AFTER_REPAIR.json",
+      "sha256": "b30daf02a49f8f3ec5349c605cd1c45cddd75b9cfb80b6df67c66c7c661d18d4"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/PHONE_CONFIG_READ.json",
+      "sha256": "00c5c617b35985bc7999684b9b23e8b3a24c639eb2d62423c18b15b92d58533f"
+    },
+    {
+      "path": ".local/directory-config-recovery-20261103/PHONE_CONFIG_READ_VERIFIED.json",
+      "sha256": "3ee6e8e4724ee6cbbc93aa382b6544a19f12acd9f0a2a1b7d6cf35770c44e119"
+    }
+  ]
+}
