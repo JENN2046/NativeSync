@@ -211,8 +211,8 @@ class NativeSyncSettings {
         const settings=await this.readSettings(),deviceId=current.value?.deviceId||this.deviceDraft;
         const probe={scopeMode:'source',sourceId:input.sourceId,deviceId,url:endpoint.origin,token:settings.vcpApiKey,topics:[]};
         const info=await this.requestFactory(probe)('/api/v1/sync/source/info?'+new URLSearchParams({sourceId:input.sourceId,deviceId}));
-        if(info.sourceId!==input.sourceId||info.deviceId!==deviceId||info.scope||info.executionMode!=='all-supported'||info.executionConfigPaging!==true)throw fail('SOURCE_EXECUTION_NOT_APPROVED');
-        const next={...(current.value||{}),version:1,enabled:true,scopeMode:'source',fullSelectionApproved:true,sourceId:input.sourceId,deviceId,spaceId:info.spaceId,sourceRoot:this.root,sourceScope:{mode:'full'},topics:[],executionTopics:[],executionMode:'all-supported',serverUrl:endpoint.origin,credentialSource:'existing-vcp-settings',publishCatalog:true,publishExecutionConfigs:true,syncAttachments:true};
+        if(info.sourceId!==input.sourceId||info.deviceId!==deviceId||info.executionMode!=='all-supported'||info.executionConfigPaging!==true)throw fail('SOURCE_EXECUTION_NOT_APPROVED');
+        const next={...(current.value||{}),version:1,enabled:true,scopeMode:'source',fullSelectionApproved:true,sourceId:input.sourceId,deviceId,spaceId:info.spaceId,sourceRoot:this.root,sourceScope:{mode:'full'}, scopeTransition: info.scope ? { opId: require('crypto').randomUUID(), expectedScopeHash: require('../services/nativeSync/sourceScope').hashScope(info.scope) } : undefined,topics:[],executionTopics:[],executionMode:'all-supported',serverUrl:endpoint.origin,credentialSource:'existing-vcp-settings',publishCatalog:true,publishExecutionConfigs:true,syncAttachments:true};
         await this.sourceCheck(next,current);
         const read=folder=>async id=>(await this.owned(path.join(this.root,folder,id,'config.json'))).value;
         const directory=await require('../services/nativeSync/sourceDirectory').sourceDirectory({appDataRoot:this.root,readAgentConfig:read('Agents'),readGroupConfig:read('AgentGroups'),connection:{sourceScope:{mode:'full'}}});
@@ -225,7 +225,7 @@ class NativeSyncSettings {
         const current = await this.config();
         if (input.expectedRevision !== current.revision) throw fail('SETUP_CONFIG_CHANGED');
         if (current.value?.scopeMode === 'source'&&!this.approval?.source&&current.value.executionMode!=='all-supported') throw fail('SETUP_SOURCE_READ_ONLY');
-        if(current.value?.scopeMode==='source'&&require('../services/nativeSync/sourceScope').normalizeScope(current.value.sourceScope))throw fail('SETUP_SOURCE_READ_ONLY');
+        if(current.value?.scopeMode==='source'&&!this.approval?.source&&require('../services/nativeSync/sourceScope').normalizeScope(current.value.sourceScope))throw fail('SETUP_SOURCE_READ_ONLY');
         const binding = await this.binding(current.value);
         let next;
         if (input.enabled) {
