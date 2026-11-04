@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-04",
+  "timezone": "Asia/Shanghai",
+  "runtimeInstallReceiptCommit": "04fc087",
+  "scope": "One production Android single-chat send/reply, Windows identity/hash landing, manual Android standalone reopen",
+  "sourceId": "source_a0b7cf2e3e7feebb23508a4d",
+  "topicKey": "full_60d452de94331ef4391714160374162d49621d91",
+  "accepted": true,
+  "phoneSendAndReplyConfirmedByHuman": true,
+  "phoneReopenWithoutRepairingConfirmedByHuman": true,
+  "phoneRecordsEachOnceConfirmedByHuman": true,
+  "automaticPhoneCDPAvailable": false,
+  "adbDeviceAuthorized": true,
+  "temporaryAdbForwardsRemoved": true,
+  "job": {
+    "id": "job_d7654b8e8d520cb44bb695d27a84d20a",
+    "requestId": "e9fac8eb-c25e-4bd5-ae20-c98e585eb3e3",
+    "topicKey": "full_60d452de94331ef4391714160374162d49621d91",
+    "state": "completed",
+    "errorCode": null,
+    "attempts": 1,
+    "requestDispatched": 1,
+    "toolStarted": 0,
+    "configVersion": 1,
+    "configHash": "28c6006269513730f6427f08a7e8f46b994314be1e27a7705937432276bd1ba6",
+    "toolInvocations": 0,
+    "nativeTasks": 0,
+    "records": [
+      {
+        "id": "mobile_job_d7654b8e8d520cb44bb695d27a84d20a",
+        "role": "user",
+        "hash": "35288129e1c1be2d34836f9711f366a354792f9218d5e4649196c757386c7107",
+        "lastSeq": 1180,
+        "containsMarker": true,
+        "contentBytes": 123,
+        "journalVersions": 1
+      },
+      {
+        "id": "reply_job_d7654b8e8d520cb44bb695d27a84d20a",
+        "role": "assistant",
+        "hash": "3205cab94dec0dafc93020503ec928c6dc1a6f87b694c78c52aa07093ebadd07",
+        "lastSeq": 1181,
+        "containsMarker": true,
+        "contentBytes": 18,
+        "journalVersions": 1
+      }
+    ]
+  },
+  "headBefore": 1179,
+  "headAfter": 1181,
+  "journalAndReceiptDeltaEach": 2,
+  "messageDelta": 2,
+  "executionDelta": 1,
+  "windowsCursor": 1181,
+  "windowsQueuesEmpty": true,
+  "windowsIdentitiesAndContentHashesMatch": true,
+  "protectedPriorJournalRows": 1179,
+  "protectedPriorJournalDigestPreserved": true,
+  "sourceBindingsConfigSnapshotsAndPairingsPreserved": true,
+  "sessionSecurityFactsPreserved": true,
+  "sessionLastSelectedTopicChanged": true,
+  "sessionDefaultEightHoursRetained": true,
+  "productionFreeBytesPreflight": 2993246208,
+  "productCodeChanged": false,
+  "servicesRestarted": false,
+  "databaseStateCursorRestored": false,
+  "newPairingCreated": false,
+  "scopeExpanded": false,
+  "livePhoneFailureInjectionRun": false,
+  "groupOrToolModelAcceptanceRun": false,
+  "evidence": [
+    {
+      "path": ".local/mobile-continuation-20261104/SERVER_BEFORE.json",
+      "sha256": "3663bc7374945d6db71fb5cca74da0b1f6e44b2d25f4e4d534b193fa7f521da5"
+    },
+    {
+      "path": ".local/mobile-continuation-20261104/SERVER_FINAL.json",
+      "sha256": "378539210874632fb267760c7e67e352a4cc71f78837056dee36a85fc64741a5"
+    },
+    {
+      "path": ".local/mobile-continuation-20261104/WINDOWS_FINAL.json",
+      "sha256": "0b1c02f043795d3f395e83214e5a3ec62d56cb27d7d547439bde0f5228733f68"
+    },
+    {
+      "path": ".local/mobile-continuation-20261104/SESSION_FACTS.json",
+      "sha256": "ec8ae9b2b5ebf3f2b6cb186a1ed1e534ad52a9a6a161ffdcbc988fb8b8339d1e"
+    },
+    {
+      "path": ".local/mobile-continuation-20261104/CROSS_CHECK.json",
+      "sha256": "3d7bd0f170df32d23905f766b0af7b8831b5efcb30ca342ec23ce2b8d89593fd"
+    },
+    {
+      "path": ".local/mobile-continuation-20261104/PHONE_HTTP_PROBE.json",
+      "sha256": "f6fe077ef79297494665c73516c6f1bfcfe1576e2a5600f5371d4d72fe072e71"
+    }
+  ]
+}
